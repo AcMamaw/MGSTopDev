@@ -72,8 +72,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     Route::post('/delivery/store', [DeliveryController::class, 'store'])->name('deliveries.store');
+    Route::post('/orders/store', [OrderController::class, 'store'])->name('orders.store');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::post('/auth/users/store', [AuthController::class, 'createEmployeeUser'])->name('auth.users.store');
     Route::post('/deliveries/{delivery}/stock-in', [DeliveryController::class, 'stockIn'])->name('deliveries.stockin');
+    Route::post('/orders/customer/store', [OrderController::class, 'storeCustomer'])->name('orders.customer.store');
 
     Route::get('/roles/fetch', [RoleController::class, 'fetch'])->name('roles.fetch');
 

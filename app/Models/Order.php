@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\OrderDetail; // <-- use OrderDetail
+use App\Models\Customer;
 
 class Order extends Model
 {
@@ -18,14 +20,14 @@ class Order extends Model
         'status'
     ];
 
-    // Relationships
+    public function items()
+    {
+        return $this->hasMany(OrderDetail::class, 'order_id', 'order_id');
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id', 'customer_id');
     }
 
-    public function details()
-    {
-        return $this->hasMany(OrderDetail::class, 'order_id', 'order_id');
-    }
 }

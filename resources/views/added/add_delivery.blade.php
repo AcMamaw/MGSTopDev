@@ -1,10 +1,11 @@
 <div x-show="showAddDelivery" x-transition x-cloak
-     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
 
-    <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-8 relative" 
+    <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl relative
+                overflow-y-auto max-h-[calc(100vh-2rem)] p-8"
          x-data="{
             selectedSupplier: '',
-            products: [{ product_id:'', quantity_product:1, unit_cost:0, total:0 }],
+            products: [{ product_id:'', quantity_product:1, unit:'', unit_cost:0, total:0 }],
 
             supplierProducts: {
                 @foreach($suppliers as $supplier)
@@ -28,7 +29,7 @@
                 @endforeach
             },
 
-          updateTotal(item) {
+            updateTotal(item) {
                 let price = this.productPrices[item.product_id] || 0;
                 item.unit_cost = price;
                 item.total = (price * item.quantity_product).toFixed(2);
@@ -36,23 +37,23 @@
             },
 
             resetProducts() {
-                this.products = [{ product_id:'', quantity_product:1, unit_cost:0, total:0, unit:'' }];
+                this.products = [{ product_id:'', quantity_product:1, unit:'', unit_cost:0, total:0 }];
+            },
+
+            grandTotal() {
+                return this.products.reduce((sum, item) => {
+                    return sum + Number(item.total || 0);
+                }, 0).toFixed(2);
             }
          }"
     >
 
-    <h2 class="text-2xl font-bold mb-4 text-gray-800 flex justify-between items-center">
-
-        <!-- Left: Title -->
-        <span>Add New Delivery</span>
-
-        <!-- Right: Requested by (thin text) -->
-        <span class="text-sm font-light text-gray-600">
-            Requested by: {{ auth()->user()->employee->fname }} {{ auth()->user()->employee->lname }}
-        </span>
-
-    </h2>
-
+        <h2 class="text-2xl font-bold mb-4 text-gray-800 flex justify-between items-center">
+            <span>Add New Delivery</span>
+            <span class="text-sm font-light text-gray-600">
+                Requested by: {{ auth()->user()->employee->fname }} {{ auth()->user()->employee->lname }}
+            </span>
+        </h2>
 
         <form id="add-delivery-form" method="POST" action="{{ route('deliveries.store') }}">
             @csrf
@@ -60,14 +61,12 @@
             <!-- Supplier -->
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-1">Supplier</label>
-
                 <select name="supplier_id"
                         x-model="selectedSupplier"
                         @change="resetProducts()"
                         required
                         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400">
                     <option value="">Select Supplier</option>
-
                     @foreach($suppliers as $supplier)
                         <option value="{{ $supplier->supplier_id }}">
                             {{ $supplier->supplier_name }}
@@ -84,22 +83,20 @@
                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400">
             </div>
 
-             <!-- Products Table -->
-            <div class="mb-4">
+            <!-- Product Table -->
+            <div class="mb-4 overflow-x-auto">
                 <label class="block text-gray-700 font-medium mb-2">Products</label>
-
                 <table class="min-w-full border border-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-2 border w-48">Product</th>
                             <th class="px-4 py-2 border w-20">Qty</th>
-                            <th class="px-4 py-2 border w-24">Unit</th> 
+                            <th class="px-4 py-2 border w-24">Unit</th>
                             <th class="px-4 py-2 border w-40">Cost</th>
                             <th class="px-4 py-2 border w-40">Total</th>
                             <th class="px-4 py-2 border">Action</th>
                         </tr>
                     </thead>
-
                     <tbody>
                         <template x-for="(item, index) in products" :key="index">
                             <tr>
@@ -118,7 +115,7 @@
                                     </select>
                                 </td>
 
-                                <!-- Quantity -->
+                                <!-- Qty -->
                                 <td class="px-2 py-2 border">
                                     <input type="number"
                                            :name="'products['+index+'][quantity_product]'"
@@ -152,27 +149,26 @@
                                            class="w-full px-2 py-1 border rounded bg-gray-100 text-right">
                                 </td>
 
-                                <!-- Remove Row -->
+                                <!-- Action -->
                                 <td class="px-2 py-2 border text-center">
                                     <button type="button"
                                             @click="products.splice(index, 1)"
-                                            class="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="25" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <path d="M3 4h18v4H3z" />
-                                            <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
-                                            <path d="M10 12h4" />
+                                            class="w-10 h-10 flex items-center justify-center ml-3 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="3" y1="6" x2="27" y2="6" />
+                                            <rect x="6" y="6" width="18" height="18" rx="2" ry="2" />
+                                            <line x1="10" y1="10" x2="10" y2="22" />
+                                            <line x1="15" y1="10" x2="15" y2="22" />
+                                            <line x1="20" y1="10" x2="20" y2="22" />
                                         </svg>
                                     </button>
                                 </td>
-
                             </tr>
                         </template>
                     </tbody>
                 </table>
 
-                <!-- Add New Product -->
                 <button type="button"
                         @click="products.push({product_id:'', quantity_product:1, unit:'', unit_cost:0, total:0})"
                         class="mt-2 bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-600">
@@ -180,8 +176,14 @@
                 </button>
             </div>
 
+            <!-- Grand Total -->
+            <div class="text-right text-xl font-bold text-gray-800 mb-4 mt-4">
+                Grand Total: ₱ <span x-text="grandTotal()"></span>
+                <input type="hidden" name="total_amount" :value="grandTotal()">
+            </div>
+
             <!-- Buttons -->
-            <div class="flex justify-end gap-2">
+            <div class="flex flex-wrap justify-end gap-2">
                 <button type="button" @click="showAddDelivery = false"
                         class="bg-gray-300 text-gray-800 px-6 py-2 rounded hover:bg-gray-400">
                     Cancel
@@ -192,8 +194,6 @@
                     Save
                 </button>
             </div>
-
         </form>
-
     </div>
 </div>

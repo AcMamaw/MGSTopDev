@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Order;
+use App\Models\Inventory;
 
 class OrderDetail extends Model
 {
@@ -16,7 +18,7 @@ class OrderDetail extends Model
         'order_id',
         'stock_id',
         'quantity',
-        'price'
+        'price',
     ];
 
     public function order()
@@ -28,4 +30,5 @@ class OrderDetail extends Model
     {
         return $this->belongsTo(Inventory::class, 'stock_id', 'stock_id');
     }
+
 }

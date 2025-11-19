@@ -486,33 +486,9 @@ button[onclick^="toggleDropdown"] {
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6H19m-6 0a1 1 0 11-2 0m2 0a1 1 0 01-2 0" />
                 </svg>
-                <span class="nav-text">Purchase Order</span>
+                <span class="nav-text"> Sales</span>
             </a>
         </li>
-
-      <!-- 💵 Payments -->
-        <li>
-            <a href="{{ route('payment') }}"
-            class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-            {{ request()->routeIs('payments.index') 
-                ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
-                : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
-                <!-- Paper Cash Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" 
-                    class="w-5 h-5 flex-shrink-0" 
-                    fill="none" viewBox="0 0 24 24" 
-                    stroke="currentColor" stroke-width="1.9">
-                    <!-- Outer bill shape -->
-                    <rect x="2" y="6" width="20" height="12" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <!-- Circle in the middle (money symbol) -->
-                    <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>
-                    <!-- Small marks for corners (like cash details) -->
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h.01M20 8h.01M4 16h.01M20 16h.01"/>
-                </svg>
-                <span class="nav-text">Payments</span>
-            </a>
-        </li>
-
 
         <!-- 📊 Reports -->
             <li>

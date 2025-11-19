@@ -21,37 +21,57 @@
         <p class="text-gray-600 mt-2">Manage delivery records and item details for each transaction.</p>
     </header>
 
-    <!-- Controls -->
+<!-- Controls -->
 <div class="max-w-7xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-4">
 
-    <!-- Search Input with Icon -->
-    <div class="relative w-full md:w-1/4">
+    <!-- Search Input with Icon + Filter -->
+    <div x-data="{
+            searchQuery: '',
+            placeholderIndex: 0,
+            placeholders: [
+                'Search Deliveries',
+                'Search ID',
+                'Supplier',
+                'Received By',
+                'Requested By',
+                'Request Date',
+                'Received Date'
+            ],
+            nextPlaceholder() {
+                this.placeholderIndex = (this.placeholderIndex + 1) % this.placeholders.length;
+            }
+        }"
+        class="relative w-full md:w-1/4"
+    >
+        <!-- Search Icon -->
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.3-4.3" />
         </svg>
 
-        <input type="text" placeholder="Search deliveries"
-               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm
+        <!-- Input -->
+        <input type="text"
+               x-model="searchQuery"
+               :placeholder="placeholders[placeholderIndex]"
+               @input="searchFilter()"
+               class="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-xl text-sm
                       focus:ring-2 focus:ring-black focus:outline-none" />
+
+        <!-- Filter Icon -->
+        <button type="button"
+                @click="nextPlaceholder()"
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                title="Filter">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 2 L16 2 L10 10 L10 16 L6 16 L6 10 Z"/>
+            </svg>
+        </button>
     </div>
 
     <!-- Buttons (right) -->
     <div class="flex gap-2">
-
-        <!-- History Button -->
-        <button @click="showHistoryModal = true"
-            class="bg-gray-200 text-black px-6 py-2 rounded-xl font-semibold flex items-center justify-center space-x-2
-                   hover:bg-gray-300 transition shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v6l4 2" />
-            </svg>
-            <span>History</span>
-        </button>
 
         <!-- Include Delivery History Modal -->
         @include('added.delivery_history')
@@ -71,10 +91,10 @@
 </div>
 
 
-    <!-- Delivery Table -->
-    <div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto overflow-x-auto">
-        <table id="delivery-table" class="min-w-full table-auto">
-            <thead class="bg-gray-50">
+  <!-- Delivery Table -->
+<div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto overflow-x-auto">
+    <table id="delivery-table" class="min-w-full table-auto">
+        <thead class="bg-gray-50">
             <tr>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Delivery ID</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Supplier</th>
@@ -84,9 +104,9 @@
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Received By</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Status</th>
             </tr>
-            </thead>
+        </thead>
         <tbody class="divide-y divide-gray-100">
-        @foreach ($deliveries as $delivery)
+        @foreach ($deliveries->where('status', '!=', 'Delivered') as $delivery)
             <tr class="group relative hover:bg-sky-200 cursor-pointer">
                 <!-- Normal row content -->
                 <td class="px-4 py-3 text-center font-medium text-gray-800 group-hover:opacity-0">
@@ -102,12 +122,12 @@
                     {{ $delivery->delivery_date_request }}
                 </td>
                 <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                    {{ $delivery->status === 'Delivered' ? ($delivery->delivery_date_received ?? '--') : '--' }}
+                    {{ $delivery->status === 'Delivered' ? ($delivery->delivery_date_received ?? '- -') : '- -' }}
                 </td>
-               <td class="px-4 py-3 text-center text-gray-600">
+                <td class="px-4 py-3 text-center text-gray-600">
                     {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }}
                 </td>
-               <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
+                <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
                     @php
                         $dotColor = match($delivery->status) {
                             'In Transit' => 'bg-gray-500',
@@ -121,10 +141,9 @@
                     <!-- Colored dot -->
                     <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
 
-                    <!-- Status text in default color -->
+                    <!-- Status text -->
                     <span class="text-gray-800 text-xs font-semibold">{{ $delivery->status }}</span>
                 </td>
-
 
                 <!-- Hover overlay for whole row -->
                 <td colspan="7" class="absolute inset-0 flex items-center justify-center opacity-0 
@@ -134,16 +153,16 @@
                         <div class="w-full h-full flex">
                             <!-- Details button -->
                             <button type="button" class="flex-1 flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
-                            @click="selectedDeliveryId = {{ $delivery->delivery_id }}; showDetails = true">
+                                @click="selectedDeliveryId = {{ $delivery->delivery_id }}; showDetails = true">
                                 <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">
                                     Details
                                 </span>
                             </button>
 
                             <!-- Stock In button -->
-                        <button type="button"
-                                @click="stockInDelivery({{ $delivery->delivery_id }})"
-                                class="flex-1 flex items-center justify-center bg-green-200 hover:bg-green-300 transition-colors">
+                            <button type="button"
+                                    @click="stockInDelivery({{ $delivery->delivery_id }})"
+                                    class="flex-1 flex items-center justify-center bg-green-200 hover:bg-green-300 transition-colors">
                                 <span class="text-green-700 font-semibold text-sm hover:font-bold transition-all duration-200">
                                     Stock In
                                 </span>
@@ -163,9 +182,8 @@
             </tr>
         @endforeach
         </tbody>
-
-        </table>
-    </div>
+    </table>
+</div>
 
 <script>
     async function stockInDelivery(deliveryId) {
@@ -211,9 +229,16 @@
             </tr>
             </thead>
 
-            <tbody class="divide-y divide-gray-100">
-
+         <tbody class="divide-y divide-gray-100">
             @foreach ($deliveries as $delivery)
+
+                @php
+                    // Calculate grand total for this delivery
+                    $grandTotal = $delivery->details->sum(function($d) {
+                        return $d->quantity_product * $d->unit_cost;
+                    });
+                @endphp
+
                 @foreach ($delivery->details as $item)
                     <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}">
                         <td class="px-4 py-2 text-center">
@@ -236,11 +261,22 @@
                         </td>
                     </tr>
                 @endforeach
+
+                <!-- Grand Total Row -->
+                <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}">
+                    <td colspan="5" class="px-4 py-3 text-right font-bold text-gray-700">
+                        GRAND TOTAL:
+                    </td>
+                    <td class="px-4 py-3 text-right font-bold text-gray-900">
+                        ₱{{ number_format($grandTotal, 2) }}
+                    </td>
+                </tr>
+
             @endforeach
 
             </tbody>
-        </table>
 
+        </table>
 
         <!-- Close Button -->
         <div class="mt-6 flex justify-end">
