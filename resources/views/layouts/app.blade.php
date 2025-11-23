@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MGS</title>
     <!-- Load Tailwind CSS -->
@@ -185,51 +186,33 @@ button[onclick^="toggleDropdown"] {
 <!-- 🧭 Scrollable Menu Section -->
 <nav class="flex-1 overflow-y-auto p-4 custom-scrollbar">
     <ul class="space-y-2">
-      <!-- 🏠 Dashboard -->
+        <!-- 🏠 Dashboard (All roles) -->
         <li>
             <a href="{{ route('dashboard') }}"
-            class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-            {{ request()->routeIs('dashboard') 
-                ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
-                : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
-            
-            <svg xmlns="http://www.w3.org/2000/svg" 
-                    viewBox="0 0 24 24" fill="none" 
-                    stroke="currentColor" stroke-width="2" 
-                    stroke-linecap="round" stroke-linejoin="round" 
+                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                {{ request()->routeIs('dashboard') 
+                    ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                    : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                <!-- Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" 
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
                     class="w-6 h-6 flex-shrink-0">
                     <path d="M3 11L12 3l9 8"/>
                     <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/>
                     <path d="M9 21V12h6v9"/>
-            </svg>
-            
-            <span class="nav-text">Dashboard</span>
-            </a>
-        </li>
-
-        <!-- 🚚 Delivery -->
-        <li>
-            <a href="{{ route('delivery') }}"
-            class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-            {{ request()->routeIs('delivery.index') 
-                ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
-                : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
-                <!-- Truck / Delivery icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" 
-                    class="w-6 h-6 flex-shrink-0" 
-                    fill="none" viewBox="0 0 24 24" 
-                    stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M3 7h13v10H3zM16 10h4l1 2v5h-5z" />
-                    <circle cx="7.5" cy="17.5" r="1.5" />
-                    <circle cx="17.5" cy="17.5" r="1.5" />
                 </svg>
-                <span class="nav-text">Deliveries   </span>
+                <span class="nav-text">Dashboard</span>
             </a>
         </li>
 
+        @php
+            $role = auth()->user()->employee->role->role_name;
+        @endphp
 
-  <!-- 📦 Inventory Dropdown -->
+        <!-- (Staff) -->
+        @if(in_array($role, ['All Around Staff']))
+
+       <!-- 📦 Inventory Dropdown -->
         <li class="relative">
             <button 
                 onclick="toggleDropdown('inventoryDropdown')" 
@@ -343,8 +326,145 @@ button[onclick^="toggleDropdown"] {
             </ul>
         </li>
 
+         <!-- 🚚 Delivery -->
+        <li>
+            <a href="{{ route('delivery') }}"
+            class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+            {{ request()->routeIs('delivery.index') 
+                ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                <!-- Truck / Delivery icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" 
+                    class="w-6 h-6 flex-shrink-0" 
+                    fill="none" viewBox="0 0 24 24" 
+                    stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 7h13v10H3zM16 10h4l1 2v5h-5z" />
+                    <circle cx="7.5" cy="17.5" r="1.5" />
+                    <circle cx="17.5" cy="17.5" r="1.5" />
+                </svg>
+                <span class="nav-text">Deliveries   </span>
+            </a>
+        </li>
+        @endif
 
-       <!-- 📁 Management Dropdown -->
+       <!-- (Cashier Only) -->
+        @if($role === 'Cashier')
+    <!-- 🧰 Manage Store Dropdown -->
+        <li class="relative">
+            <button 
+                onclick="toggleDropdown('maintenanceDropdown')" 
+                class="w-full flex items-center justify-between p-3 rounded-lg text-sm font-medium transition duration-150
+                text-gray-800 hover:bg-sky-100 hover:text-sky-700">
+                <div class="flex items-center space-x-3">
+                     <!-- Storefront Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5 flex-shrink-0"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 9l1.5-5h15L21 9M4 9h16v11a1 1 0 01-1 1H5a1 1 0 01-1-1V9zm3 11V13h10v7" />
+                    </svg>
+                    <span class="nav-text whitespace-nowrap">Manage Store</span>
+                </div>
+                <svg id="arrow-maintenanceDropdown" 
+                    class="w-4 h-4 ml-2 transition-transform duration-200" 
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+
+            <ul id="maintenanceDropdown" 
+                class="{{ request()->routeIs('maintenance.*') ? 'block' : 'hidden' }} 
+                    mt-1 bg-white rounded-lg shadow-lg overflow-hidden text-sm">
+                <li>
+                    <a href="{{ route('product') }}" 
+                        class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
+                        {{ request()->routeIs('maintenance.products') 
+                            ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                            : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 7h12l-1 12H7L6 7z" /> <!-- bag outline -->
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 7V5a3 3 0 016 0v2" /> <!-- handles -->
+                        </svg>
+                        <span>Products</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- 🏷️ Sales -->
+        <li>
+            <a href="{{ route('purchaseorder') }}"
+               class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+               {{ request()->routeIs('inventory.purchaseorder') 
+                   ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                   : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                <!-- Shopping Cart Icon (Outline) -->
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="w-5 h-5 flex-shrink-0"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6H19m-6 0a1 1 0 11-2 0m2 0a1 1 0 01-2 0" />
+                </svg>
+                <span class="nav-text"> Sales</span>
+            </a>
+        </li>
+
+            <!-- 📊 Reports -->
+            <li>
+                <a href="{{ route('reports') }}"
+                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                {{ request()->routeIs('reports.index') 
+                    ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                    : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                    <!-- Clipboard with checkmarks icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        class="w-5 h-5 flex-shrink-0" 
+                        fill="none" viewBox="0 0 24 24" 
+                        stroke="currentColor" stroke-width="1.9">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 2h6a2 2 0 012 2h1a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h1a2 2 0 012-2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 8h6M9 12h6M9 16h6M7 12l1 1 2-2M7 16l1 1 2-2" />
+                    </svg>
+                    <span class="nav-text">Reports</span>
+                </a>
+            </li>
+
+
+           <!-- Request -->
+                <li>
+                    <a href="{{ route('request') }}" 
+                    class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                    {{ request()->routeIs('request') 
+                        ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                        : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                    
+                        <!-- Request / Paper Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" 
+                            class="w-5 h-5 flex-shrink-0" 
+                            fill="none" viewBox="0 0 24 24" 
+                            stroke="currentColor" stroke-width="1.9">
+                            <!-- Message bubble -->
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4 4h16v12H6l-2 2V4z" />
+                            <!-- Lines inside the message -->
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6 7h12M6 11h8" />
+                        </svg>
+
+                        <span class="nav-text">Requests</span>
+                    </a>
+                </li>
+        @endif
+
+
+        <!--  (Admin Only) -->
+        @if($role === 'Admin')
+          <!-- 📁 Management Dropdown -->
         <li class="relative">
             <button 
                 onclick="toggleDropdown('managementDropdown')" 
@@ -472,45 +592,6 @@ button[onclick^="toggleDropdown"] {
             </ul>
         </li>
         
-      <!-- 🏷️ Purchase Order -->
-        <li>
-            <a href="{{ route('purchaseorder') }}"
-               class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-               {{ request()->routeIs('inventory.purchaseorder') 
-                   ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
-                   : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
-                <!-- Shopping Cart Icon (Outline) -->
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    class="w-5 h-5 flex-shrink-0"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6H19m-6 0a1 1 0 11-2 0m2 0a1 1 0 01-2 0" />
-                </svg>
-                <span class="nav-text"> Sales</span>
-            </a>
-        </li>
-
-        <!-- 📊 Reports -->
-            <li>
-                <a href="{{ route('reports') }}"
-                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-                {{ request()->routeIs('reports.index') 
-                    ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
-                    : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
-                    <!-- Clipboard with checkmarks icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" 
-                        class="w-5 h-5 flex-shrink-0" 
-                        fill="none" viewBox="0 0 24 24" 
-                        stroke="currentColor" stroke-width="1.9">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 2h6a2 2 0 012 2h1a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h1a2 2 0 012-2z" />
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 8h6M9 12h6M9 16h6M7 12l1 1 2-2M7 16l1 1 2-2" />
-                    </svg>
-                    <span class="nav-text">Reports</span>
-                </a>
-            </li>
-
         <!-- 🧰 Manage Store Dropdown -->
         <li class="relative">
             <button 
@@ -555,6 +636,28 @@ button[onclick^="toggleDropdown"] {
                 </li>
             </ul>
         </li>
+
+         <!-- 📊 Reports -->
+            <li>
+                <a href="{{ route('reports') }}"
+                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                {{ request()->routeIs('reports.index') 
+                    ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                    : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                    <!-- Clipboard with checkmarks icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        class="w-5 h-5 flex-shrink-0" 
+                        fill="none" viewBox="0 0 24 24" 
+                        stroke="currentColor" stroke-width="1.9">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 2h6a2 2 0 012 2h1a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h1a2 2 0 012-2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 8h6M9 12h6M9 16h6M7 12l1 1 2-2M7 16l1 1 2-2" />
+                    </svg>
+                    <span class="nav-text">Reports</span>
+                </a>
+            </li>
+        @endif
     </ul>
 </nav>
 

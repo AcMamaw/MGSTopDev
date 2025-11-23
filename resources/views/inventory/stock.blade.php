@@ -38,6 +38,7 @@
                     <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-500">Total Stock</th>
                     <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-500">Available Stock</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Stock Level</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Action</th>
                 </tr>
             </thead>
           <tbody id="inventory-table-body" class="divide-y divide-gray-100">
@@ -71,6 +72,21 @@
                             <!-- Stock level dot -->
                             <span class="w-3 h-3 rounded-full {{ $stockColor }}"></span>
                             <span class="text-gray-800 text-xs font-semibold">{{ $stockText }}</span>
+                        </td>
+                          <td class="px-4 py-3 text-center text-gray-600">
+                             <button 
+                                    title="Re Order"
+                                    class="p-2 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-100 transition-colors duration-200">       
+                             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                                    <!-- Arc -->
+                                    <path d="M12 2 a10 10 0 1 1-9.95 9.95" />
+
+                                    <!-- Arrow moved slightly left -->
+                                    <polygon points="-2,12 4,9 4,15" fill="currentColor" transform="translate(1,0) rotate(-25 1 12)"/>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
                 @endforeach

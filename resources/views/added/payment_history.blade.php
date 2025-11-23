@@ -17,7 +17,7 @@
          class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
 
         <div @click.outside.stop="showPaymentHistory = false"
-             class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto flex flex-col">
+             class="bg-white w-full max-w-6xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto flex flex-col">
 
             <!-- Header -->
             <div class="flex justify-between items-center p-2 border-b border-gray-200 flex-shrink-0">
@@ -80,51 +80,83 @@
                         <tr>
                             <th class="px-4 py-2 text-center">Payment ID</th>
                             <th class="px-4 py-2 text-center">Order ID</th>
-                            <th class="px-4 py-2 text-center">Employee</th>
+                            <th class="px-4 py-2 text-center">Issued by</th>
                             <th class="px-4 py-2 text-center">Payment Date</th>
                             <th class="px-4 py-2 text-center">Amount</th>
+                            <th class="px-4 py-2 text-center">Cash</th>
+                            <th class="px-4 py-2 text-center">Balance</th>
+                            <th class="px-4 py-2 text-center">Status</th>
+                            <th class="px-4 py-2 text-center">Change Amount</th>
                             <th class="px-4 py-2 text-center">Payment Method</th>
                             <th class="px-4 py-2 text-center">Reference No</th>
                         </tr>
                     </thead>
+
                     <tbody class="divide-y divide-gray-100">
-                        @foreach ($payments as $payment)
-                            <tr class="group relative hover:bg-green-100 cursor-pointer">
-                                <td class="px-4 py-3 text-center text-gray-800 group-hover:opacity-0">
+                        @foreach ($payments->where('status', 'Fully Paid') as $payment)
+                            <tr>
+                                <!-- Payment ID -->
+                                <td class="px-4 py-3 text-center text-gray-800">
                                     P{{ str_pad($payment->payment_id, 3, '0', STR_PAD_LEFT) }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+
+                                <!-- Order ID -->
+                                <td class="px-4 py-3 text-center text-gray-600">
                                     O{{ str_pad($payment->order->order_id ?? 0, 3, '0', STR_PAD_LEFT) }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+
+                                <!-- Employee -->
+                                <td class="px-4 py-3 text-center text-gray-600">
                                     {{ $payment->employee->fname ?? '' }} {{ $payment->employee->lname ?? '' }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+
+                                <!-- Payment Date -->
+                                <td class="px-4 py-3 text-center text-gray-600">
                                     {{ $payment->payment_date }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+
+                                <!-- Amount -->
+                                <td class="px-4 py-3 text-center text-gray-600">
                                     ₱{{ number_format($payment->amount, 2) }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                                    {{ $payment->payment_method ?? '-' }}
-                                </td>
-                                <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                                    {{ $payment->reference_number ?? '-' }}
+
+                                <!-- Cash -->
+                                <td class="px-4 py-3 text-center text-gray-600">
+                                    ₱{{ number_format($payment->cash ?? 0, 2) }}
                                 </td>
 
-                                <!-- Details Button -->
-                                <td colspan="7" class="absolute inset-0 flex items-center justify-center opacity-0 
-                                    group-hover:opacity-100 transition-opacity duration-200 bg-green-100">
-                                    <button type="button"
-                                            class="w-full h-full flex items-center justify-center bg-green-200 hover:bg-green-300 transition-colors"
-                                            @click="selectedPaymentId = {{ $payment->payment_id }}; showDetails = true; showPaymentHistory = false">
-                                        <span class="text-green-700 font-semibold text-sm hover:font-bold transition-all duration-200">
-                                            Details
-                                        </span>
-                                    </button>
+                                <!-- Balance -->
+                                <td class="px-4 py-3 text-center text-gray-600">
+                                    ₱{{ number_format($payment->balance ?? 0, 2) }}
+                                </td>
+
+                                <!-- Status -->
+                                <td class="px-4 py-3 text-center text-gray-600">
+                                    {{ $payment->status ?? '-' }}
+                                </td>
+
+                                <!-- Change Amount -->
+                                <td class="px-4 py-3 text-center text-gray-600">
+                                    ₱{{ number_format($payment->change_amount ?? 0, 2) }}
+                                </td>
+
+                                <!-- Payment Method -->
+                                <td class="px-4 py-3 text-center text-gray-600">
+                                    {{ $payment->payment_method ?? '-' }}
+                                </td>
+
+                                <!-- Reference Number -->
+                                <td class="px-4 py-3 text-center text-gray-600">
+                                    {{ $payment->reference_number ?? '-' }}
                                 </td>
                             </tr>
                         @endforeach
+
+                        @if($payments->where('status', 'Fully Paid')->isEmpty())
+                            <tr>
+                                <td colspan="11" class="text-center py-4 text-gray-500">No fully paid payments found</td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>

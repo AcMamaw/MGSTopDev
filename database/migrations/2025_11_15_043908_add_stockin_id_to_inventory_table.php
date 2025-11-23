@@ -9,12 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('inventory', function (Blueprint $table) {
-            $table->unsignedBigInteger('stockin_id')->after('stock_id');
-            $table->foreign('stockin_id')
-                  ->references('stockin_id')
-                  ->on('stockins')
-                  ->onDelete('cascade');
-        });
+        $table->unsignedBigInteger('stockin_id')
+            ->nullable()                 
+            ->after('stock_id');
+
+        $table->foreign('stockin_id')
+            ->references('stockin_id')
+            ->on('stockins')
+            ->onDelete('cascade');
+         });
+
     }
 
     public function down(): void

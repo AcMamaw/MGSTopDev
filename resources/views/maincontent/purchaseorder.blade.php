@@ -8,11 +8,8 @@
     [x-cloak] { display: none !important; }
 </style>
 
-<div x-data="{
-    showAddOrder: false,
-    showOrderDetails: false,
-    selectedOrderId: null
-}">
+
+<div x-data="paymentComponent()">
 
 <header class="mb-8 max-w-7xl mx-auto">
     <div class="flex items-center justify-between border-b pb-3 border-gray-200">
@@ -24,19 +21,50 @@
 <!-- Controls -->
 <div class="max-w-7xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-4">
 
-    <!-- Search Input with Icon -->
-    <div class="relative w-full md:w-1/4">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-        </svg>
+   <!-- Search Input with Icon + Filter -->
+<div x-data="{
+        searchQuery: '',
+        placeholderIndex: 0,
+        placeholders: [
+            'Search orders',
+            'Search ID',
+            'Customer',
+            'Order Date',
+            'Status'
+        ],
+        nextPlaceholder() {
+            this.placeholderIndex = (this.placeholderIndex + 1) % this.placeholders.length;
+        }
+    }"
+    class="relative w-full md:w-1/4"
+>
+    <!-- Search Icon -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+    </svg>
 
-        <input type="text" placeholder="Search orders"
-               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm
-                      focus:ring-2 focus:ring-black focus:outline-none" />
-    </div>
+    <!-- Input -->
+    <input type="text"
+           x-model="searchQuery"
+           :placeholder="placeholders[placeholderIndex]"
+           @input="searchFilter()"
+           class="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-xl text-sm
+                  focus:ring-2 focus:ring-black focus:outline-none" />
+
+    <!-- Filter Icon -->
+    <button type="button"
+            @click="nextPlaceholder()"
+            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            title="Filter">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 2 L16 2 L10 10 L10 16 L6 16 L6 10 Z"/>
+        </svg>
+    </button>
+</div>
+
 
     <!-- Buttons (right) -->
     <div class="flex gap-2">
@@ -74,102 +102,161 @@
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Customer</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Order Date</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Total Amount</th>
+                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Balance</th>
+                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Payment</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Status</th>
             </tr>
         </thead>
-   <tbody class="divide-y divide-gray-100 relative">
-    @foreach ($orders as $order)
-        <tr class="group relative hover:bg-sky-200 cursor-pointer">
-            <!-- Normal row content -->
-            <td class="px-4 py-3 text-center font-medium text-gray-800 group-hover:opacity-0">
-                O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
-            </td>
-            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
-            </td>
-            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                {{ $order->order_date }}
-            </td>
-            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                ₱{{ number_format($order->total_amount, 2) }}
-            </td>
-            <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
-                @php
-                    $dotColor = match($order->status) {
-                        'Pending' => 'bg-gray-500',
-                        'Released' => 'bg-yellow-500',
-                        'Approved' => 'bg-green-500',
-                        'Cancelled' => 'bg-red-500',
-                        default => 'bg-gray-400'
-                    };
-                @endphp
+            <tbody class="divide-y divide-gray-100 relative">
+            @foreach ($orders as $order)
+                @if ($order->status !== 'Completed')
+                    <tr class="group relative hover:bg-sky-200 cursor-pointer">
 
-                <!-- Colored dot -->
-                <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
+                        <!-- Order ID -->
+                        <td class="px-4 py-3 text-center font-medium text-gray-800 group-hover:opacity-0">
+                            O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
+                        </td>
 
-                <!-- Status text -->
-                <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
-            </td>
-            <!-- Hover overlay for whole row -->
-            <td colspan="5" class="absolute inset-0 flex items-center justify-center opacity-0 
-                group-hover:opacity-100 transition-opacity duration-200 bg-sky-100">
+                        <!-- Customer Name -->
+                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                            {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
+                        </td>
 
-                @if($order->status === 'Pending')
-                    <!-- Only Details button -->
-                    <button type="button"
-                            class="w-full h-full flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
-                            @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                        <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">
-                            Details
-                        </span>
-                    </button>
+                        <!-- Order Date -->
+                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                            {{ \Carbon\Carbon::parse($order->order_date)->format('M d, Y') }}
+                        </td>
 
-                @elseif($order->status === 'Released')
-                    <!-- Details + Proceed Payment buttons -->
-                    <div class="w-full h-full flex">
-                        <!-- Details button -->
-                        <button type="button"
-                                class="flex-1 flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
+                        <!-- Total Amount -->
+                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                            ₱{{ number_format($order->total_amount, 2) }}
+                        </td>
+
+                        <!-- Balance -->
+                        <td class="px-4 py-3 text-center group-hover:opacity-0">
+                            @php
+                                $balance = $order->payment->balance ?? $order->total_amount;
+                            @endphp
+                            ₱{{ number_format($balance, 2) }}
+                        </td>
+
+                        <!-- Payment Status -->
+                        <td class="px-4 py-3 text-center group-hover:opacity-0">
+                            @php
+                                $payStatus = $order->payment->status ?? 'Not Paid';
+                            @endphp
+                            {{ $payStatus }}
+                        </td>
+
+                        <!-- Order Status -->
+                        <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
+                            @php
+                                $dotColor = match($order->status) {
+                                    'In Progress' => 'bg-gray-500',
+                                    'Released' => 'bg-yellow-500',
+                                    'Completed' => 'bg-green-500',
+                                    'Cancelled' => 'bg-red-500',
+                                    default => 'bg-gray-400'
+                                };
+                            @endphp
+                            <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
+                            <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
+                        </td>
+
+                     <!-- Hover overlay for whole row -->
+                    <td colspan="7" class="absolute inset-0 flex items-center justify-center opacity-0 
+                        group-hover:opacity-100 transition-opacity duration-200 bg-sky-100">
+
+                        @php $payStatus = $order->payment->status ?? 'Not Paid'; @endphp
+
+                        {{-- Payment Partial = Details + Complete Payment --}}
+                        @if ($payStatus === 'Partial')
+                            <div class="w-full h-full flex">
+                                <button type="button"
+                                    class="flex-1 flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
+                                    @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
+                                    <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
+                                </button>
+                               <button type="button"
+                                class="flex-1 flex items-center justify-center bg-yellow-200 hover:bg-yellow-300 transition-colors"
+                                @click="openPaymentModal({{ $order->order_id }}, {{ $order->payment->balance ?? $order->total_amount }})">
+                                <span class="text-yellow-700 font-semibold text-sm hover:font-bold transition-all duration-200">
+                                    Complete Payment
+                                </span>
+                            </button>
+                            </div>
+
+                        {{-- In Progress = Details only --}}
+                        @elseif ($order->status === 'In Progress')
+                            <button type="button"
+                                class="w-full h-full flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
                                 @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                            <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">
-                                Details
-                            </span>
-                        </button>
+                                <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
+                            </button>
 
-                        <!-- Proceed Payment button -->
-                        <button type="button"
-                                @click="proceedPayment({{ $order->order_id }})"
-                                class="flex-1 flex items-center justify-center bg-green-200 hover:bg-green-300 transition-colors">
-                            <span class="text-green-700 font-semibold text-sm hover:font-bold transition-all duration-200">
-                                Proceed Payment
-                            </span>
-                        </button>
-                    </div>
+                        {{-- Released = Details + Ready to Claim --}}
+                        @elseif ($order->status === 'Released')
+                            <div class="w-full h-full flex">
+                                <button type="button"
+                                    class="flex-1 flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
+                                    @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
+                                    <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
+                                </button>
+                               <button type="button"
+                                    class="flex-1 flex items-center justify-center bg-green-200 hover:bg-green-300 transition-colors"
+                                    @click="markAsCompleted({{ $order->order_id }})">
+                                    <span class="text-green-700 font-semibold text-sm hover:font-bold transition-all duration-200">
+                                        Ready to Claim
+                                    </span>
+                                </button>
+                            </div>
 
-                @else
-                    <!-- Single Details button for other statuses -->
-                    <button type="button"
-                            class="w-full h-full flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
-                            @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                        <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">
-                            Details
-                        </span>
-                    </button>
+                        {{-- Default = Details only --}}
+                        @else
+                            <button type="button"
+                                class="w-full h-full flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
+                                @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
+                                <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
+                            </button>
+                        @endif
+                    </td>
+                    </tr>
                 @endif
-            </td>
-        </tr>
-    @endforeach
+            @endforeach
 
-    @if($orders->isEmpty())
-        <tr>
-            <td colspan="5" class="text-center py-4 text-gray-500">No orders found</td>
-        </tr>
-    @endif
-</tbody>
-
+            @if($orders->isEmpty())
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-gray-500">No orders found</td>
+                </tr>
+            @endif
+        </tbody>
     </table>
 </div>
 
+@include('added.payment_complete')
+
+<script>
+function markAsCompleted(orderId) {
+    fetch(`/orders/${orderId}/complete`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            // Optionally, reload or remove the row
+            location.reload(); // simple way to update the table
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(err => console.error(err));
+}
+</script>
 
 <!-- Order Details Modal -->
 <div x-show="showOrderDetails" x-transition x-cloak
@@ -251,7 +338,7 @@
     </div>
 
 </div>
-
+</div>
 
 <!-- Pagination -->
 <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600">
@@ -321,4 +408,105 @@ function renderOrderPagination() {
 
 showOrderPage(1);
 </script>
+
+
+<script>
+function paymentComponent() {
+    return {
+        // Shared properties
+        showAddOrder: false,
+        showOrderDetails: false,
+        showCompletePaymentModal: false,
+        selectedOrderId: null,
+
+        // Payment-related properties
+        paymentBalance: 0,
+        paymentCash: 0,
+        paymentMethod: '',
+        paymentReference: '',
+
+        // Function to open the payment modal
+        openPaymentModal(orderId, balance) {
+            this.selectedOrderId = orderId;
+            this.paymentBalance = balance;
+            this.paymentCash = 0;
+            this.paymentMethod = '';
+            this.paymentReference = '';
+            this.showCompletePaymentModal = true;
+            console.log('Modal opened for Order ID:', orderId, 'Balance:', balance);
+        },
+
+        // Function to submit payment
+        submitCompletePayment() {
+            console.log('🚀 Submit clicked!');
+            console.log('Order ID:', this.selectedOrderId);
+            console.log('Cash:', this.paymentCash);
+            console.log('Method:', this.paymentMethod);
+
+            // Validation
+            if (!this.paymentMethod) {
+                alert('Please select a payment method.');
+                return;
+            }
+            if (this.paymentMethod === 'GCash' && !this.paymentReference.trim()) {
+                alert('Please enter a reference number for GCash.');
+                return;
+            }
+
+            // Calculate values
+            let cashReceived = parseFloat(this.paymentCash) || 0;
+            let currentBalance = parseFloat(this.paymentBalance) || 0;
+            let newBalance = Math.max(currentBalance - cashReceived, 0);
+            let changeAmount = Math.max(cashReceived - currentBalance, 0);
+            let paymentStatus = newBalance === 0 ? 'Fully Paid' : 'Partial';
+
+            const paymentData = {
+                order_id: this.selectedOrderId,
+                cash: cashReceived,
+                balance: newBalance,
+                status: paymentStatus,
+                change_amount: changeAmount,
+                payment_method: this.paymentMethod,
+                reference_number: this.paymentMethod === 'GCash' ? this.paymentReference : null
+            };
+
+            console.log('📤 Sending:', paymentData);
+
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (!csrfToken) {
+                alert('CSRF token not found. Please refresh the page.');
+                return;
+            }
+
+            // Send request
+            fetch('/payments/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(paymentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('✅ Response:', data);
+                if (data.success) {
+                    alert(data.message);
+                    this.showCompletePaymentModal = false;
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to update payment.');
+                }
+            })
+            .catch(err => {
+                console.error('❌ Error:', err);
+                alert('An error occurred: ' + err.message);
+            });
+        }
+    }
+}
+</script>
+
 @endsection

@@ -24,9 +24,9 @@ class Employee extends Model
     ];
 
     // Relationship to Role
-    public function role()
+   public function role()
     {
-        return $this->belongsTo(Role::class, 'role_id', 'role_id');
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
     public function stockAdjustments()
@@ -43,5 +43,12 @@ class Employee extends Model
     {
         return $this->hasMany(StockAdjustment::class, 'adjusted_by', 'employee_id');
     }
+    
+    // Employee.php
+    public function user()
+    {
+        return $this->hasOne(User::class, 'employee_id', 'employee_id');
+    }
+
 
 }

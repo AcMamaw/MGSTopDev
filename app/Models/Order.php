@@ -16,7 +16,8 @@ class Order extends Model
     protected $fillable = [
         'customer_id',
         'order_date',
-        'total_amount',
+        'ordered_by', 
+        'total_amount', 
         'status'
     ];
 
@@ -28,6 +29,17 @@ class Order extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id', 'customer_id');
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'order_id', 'order_id')
+                    ->orderBy('payment_id', 'desc');
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'ordered_by'); 
     }
 
 }

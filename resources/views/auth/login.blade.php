@@ -47,6 +47,7 @@
         <!-- Register Link -->
         <a href="{{ route('register') }}" 
            class="text-black underline font-semibold hover:text-sky-600 transition">
+               
         </a>
     </div>
 

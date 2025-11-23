@@ -9,10 +9,10 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+        public function up()
     {
-        Schema::table('deliveries', function (Blueprint $table) {
-            //
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('plain_password')->nullable();
         });
     }
 
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('deliveries', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
             //
         });
     }

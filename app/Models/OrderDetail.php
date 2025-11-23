@@ -19,6 +19,7 @@ class OrderDetail extends Model
         'stock_id',
         'quantity',
         'price',
+        'total'
     ];
 
     public function order()

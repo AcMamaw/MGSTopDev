@@ -19,6 +19,7 @@ return new class extends Migration
                   ->onDelete('cascade'); // FK
 
             $table->foreignId('employee_id')
+                  ->nullable()          
                   ->constrained('employees', 'employee_id')
                   ->onDelete('cascade'); // FK
 

@@ -17,9 +17,11 @@ class Payment extends Model
         'payment_date',
         'amount',
         'cash',
-        'change',
+        'change_amount', 
         'payment_method',
         'reference_number',
+        'balance', 
+        'status',  
     ];
 
     // Relationships
@@ -32,4 +34,5 @@ class Payment extends Model
     {
         return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
     }
+
 }

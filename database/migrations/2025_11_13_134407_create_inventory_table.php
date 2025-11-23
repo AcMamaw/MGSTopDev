@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id('stock_id'); // Primary key
 
             $table->foreignId('deliverydetails_id')
+                ->nullable()          
                 ->constrained('delivery_details', 'deliverydetails_id')
                 ->onDelete('cascade');
 

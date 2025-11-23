@@ -6,10 +6,8 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-   
-
-    // Main content dashboard
-    public function mainDashboard()
+    // Show main dashboard
+    public function index()
     {
         return view('maincontent.dashboard');
     }

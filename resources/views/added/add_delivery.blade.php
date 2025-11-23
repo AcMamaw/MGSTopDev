@@ -50,9 +50,6 @@
 
         <h2 class="text-2xl font-bold mb-4 text-gray-800 flex justify-between items-center">
             <span>Add New Delivery</span>
-            <span class="text-sm font-light text-gray-600">
-                Requested by: {{ auth()->user()->employee->fname }} {{ auth()->user()->employee->lname }}
-            </span>
         </h2>
 
         <form id="add-delivery-form" method="POST" action="{{ route('deliveries.store') }}">
@@ -176,12 +173,23 @@
                 </button>
             </div>
 
-            <!-- Grand Total -->
-            <div class="text-right text-xl font-bold text-gray-800 mb-4 mt-4">
-                Grand Total: ₱ <span x-text="grandTotal()"></span>
-                <input type="hidden" name="total_amount" :value="grandTotal()">
+           <!-- Footer: Requested By + Grand Total -->
+            <div class="mt-auto pt-4 border-t flex justify-between items-center text-gray-800">
+
+                <!-- Requested By on the left -->
+                <div class="text-lg font-semibold">
+                    Requested by: {{ auth()->user()->employee->fname ?? '-' }} {{ auth()->user()->employee->lname ?? '-' }}
+                </div>
+
+                <!-- Grand Total on the right -->
+                <div class="text-xl font-bold text-right">
+                    Grand Total: ₱ <span x-text="grandTotal()"></span>
+                    <input type="hidden" name="total_amount" :value="grandTotal()">
+                </div>
+
             </div>
 
+              <br>
             <!-- Buttons -->
             <div class="flex flex-wrap justify-end gap-2">
                 <button type="button" @click="showAddDelivery = false"
