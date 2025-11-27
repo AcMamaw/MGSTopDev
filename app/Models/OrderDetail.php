@@ -19,7 +19,9 @@ class OrderDetail extends Model
         'stock_id',
         'quantity',
         'price',
-        'total'
+        'total',
+        'color',
+        'size'
     ];
 
     public function order()
@@ -31,5 +33,4 @@ class OrderDetail extends Model
     {
         return $this->belongsTo(Inventory::class, 'stock_id', 'stock_id');
     }
-
 }

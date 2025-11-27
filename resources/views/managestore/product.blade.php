@@ -22,6 +22,30 @@
     <p class="text-gray-600 mt-2">Manage product records including supplier, price, unit, and status.</p>
 </header>
 
+<!-- Message Container (Dynamic) -->
+<div id="message-container" class="max-w-7xl mx-auto mb-6" style="display: none;">
+    <div id="message-content" class="px-4 py-3 rounded"></div>
+</div>
+
+<!-- Success Message (Server-side - for page reloads) -->
+@if(session('success'))
+<div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded max-w-7xl mx-auto">
+    {{ session('success') }}
+</div>
+@endif
+
+<!-- Error Messages (Server-side - for page reloads) -->
+@if($errors->any())
+<div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-7xl mx-auto">
+    <ul>
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+    
+
 <!-- Controls -->
 <div class="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row items-stretch justify-between gap-4">
     <!-- Search -->
@@ -59,7 +83,6 @@
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Supplier</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Product Name</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Description</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Price</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Unit</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Action</th>
                 </tr>
@@ -73,7 +96,6 @@
                     <td class="px-4 py-3 text-center text-gray-600">{{ $product->supplier->supplier_name ?? '-' }}</td>
                     <td class="px-4 py-3 text-center text-gray-600">{{ $product->product_name }}</td>
                     <td class="px-4 py-3 text-center text-gray-600">{{ $product->description }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">₱{{ number_format($product->price,2) }}</td>
                     <td class="px-4 py-3 text-center text-gray-600">{{ $product->unit }}</td>
                     <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center space-x-2">
@@ -106,10 +128,15 @@
 <!-- Add Product Modal -->
 <div x-show="showAddProductModal" x-cloak x-transition
     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+
     <div @click.away="showAddProductModal = false" x-transition
         class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md relative">
+
         <h2 class="text-2xl font-bold mb-4 text-gray-800">Add Product</h2>
+
         <div class="space-y-4">
+
+            <!-- Supplier -->
             <div>
                 <label class="block text-gray-700 font-medium mb-1">Supplier</label>
                 <select x-model="supplierId"
@@ -120,36 +147,44 @@
                     @endforeach
                 </select>
             </div>
+
+            <!-- Product Name -->
             <div>
                 <label class="block text-gray-700 font-medium mb-1">Product Name</label>
                 <input type="text" x-model="productName"
                     class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     placeholder="Enter product name">
             </div>
+
+            <!-- Description -->
             <div>
                 <label class="block text-gray-700 font-medium mb-1">Description</label>
                 <input type="text" x-model="description"
                     class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     placeholder="Enter description">
             </div>
-            <div>
-                <label class="block text-gray-700 font-medium mb-1">Price</label>
-                <input type="number" step="0.01" x-model="price"
-                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    placeholder="Enter price">
-            </div>
+
+            <!-- Unit -->
             <div>
                 <label class="block text-gray-700 font-medium mb-1">Unit</label>
                 <input type="text" x-model="unit"
                     class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                     placeholder="Enter unit">
             </div>
+
         </div>
+
         <div class="mt-6 flex justify-end gap-3">
+
+            <!-- Cancel -->
             <button @click="showAddProductModal = false"
-                class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Cancel</button>
-           <button @click="
-                if(productName && supplierId && price && unit){
+                class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+                Cancel
+            </button>
+
+            <button 
+            @click="if(productName && supplierId && unit){
+
                     fetch('{{ route('products.store') }}', {
                         method: 'POST',
                         headers: { 
@@ -159,38 +194,40 @@
                         body: JSON.stringify({ 
                             supplier_id: supplierId, 
                             product_name: productName, 
-                            description, 
-                            price, 
-                            unit 
+                            description: description, 
+                            unit: unit 
                         })
                     })
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) {
+                            return res.json().then(err => Promise.reject(err));
+                        }
+                        return res.json();
+                    })
                     .then(data => {
+
                         const tbody = document.getElementById('product-table-body');
                         const row = document.createElement('tr');
                         row.className = 'hover:bg-gray-50';
+
                         row.innerHTML = `
-                            <td class='px-4 py-3 text-center text-gray-800 font-medium'>P${String(data.product_id).padStart(3,'0')}</td>
+                            <td class='px-4 py-3 text-center font-medium text-gray-800'>
+                                P${String(data.product_id).padStart(3,'0')}
+                            </td>
                             <td class='px-4 py-3 text-center text-gray-600'>${data.supplier_name}</td>
                             <td class='px-4 py-3 text-center text-gray-600'>${data.product_name}</td>
                             <td class='px-4 py-3 text-center text-gray-600'>${data.description ?? ''}</td>
-                            <td class='px-4 py-3 text-center text-gray-600'>₱${parseFloat(data.price).toFixed(2)}</td>
                             <td class='px-4 py-3 text-center text-gray-600'>${data.unit}</td>
                             <td class='px-4 py-3 text-center'>
                                 <div class='flex items-center justify-center space-x-2'>
-                                    <!-- Edit Button -->
-                                    <button title='Edit' class='p-2 rounded-full text-gray-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200'>
-                                        <svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor'
-                                            stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-square-pen'>
+                                    <button title='Edit' class='p-2 rounded-full text-gray-400 hover:text-green-600 hover:bg-green-100 transition'>
+                                        <svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
                                             <path d='M12 20h9' />
                                             <path d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z' />
                                         </svg>
                                     </button>
-
-                                    <!-- Archive/Delete Button -->
-                                    <button title='Archive' onclick='deleteRow(this)' class='p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200'>
-                                        <svg xmlns='http://www.w3.org/2000/svg' width='22' height='25' fill='none' stroke='currentColor'
-                                            stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-archive'>
+                                    <button title='Archive' onclick='deleteRow(this)' class='p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 transition'>
+                                        <svg xmlns='http://www.w3.org/2000/svg' width='22' height='25' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
                                             <path d='M3 4h18v4H3z' />
                                             <path d='M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8' />
                                             <path d='M10 12h4' />
@@ -199,28 +236,67 @@
                                 </div>
                             </td>
                         `;
+
                         tbody.appendChild(row);
 
-                        // Reset modal values
+                        // Reset Fields
                         supplierId = '';
                         productName = '';
                         description = '';
-                        price = '';
                         unit = '';
                         showAddProductModal = false;
 
-                        // Update pagination if needed
+                        // Show Success Message
+                        showMessage('Product added successfully!', 'success');
+
                         updateProductPagination();
+
                     })
-                    .catch(err => alert('Error saving product'));
+                    .catch(err => {
+                        console.error(err);
+                        let errorMsg = 'Error saving product';
+                        if (err.errors) {
+                            errorMsg = Object.values(err.errors).flat().join(', ');
+                        } else if (err.message) {
+                            errorMsg = err.message;
+                        }
+                        showMessage(errorMsg, 'error');
+                    });
+
                 } else {
-                    alert('Please fill all required fields.');
-                }"
-                class="px-6 py-2 rounded-lg bg-yellow-400 font-semibold hover:bg-yellow-500 transition">Confirm
+                    showMessage('Please fill all required fields.', 'error');
+                }
+            "
+            class="px-6 py-2 rounded-lg bg-yellow-400 font-semibold hover:bg-yellow-500 transition">
+                Confirm
             </button>
         </div>
     </div>
 </div>
+
+<script>
+function showMessage(message, type) {
+    const container = document.getElementById('message-container');
+    const content = document.getElementById('message-content');
+    
+    // Reset classes
+    content.className = 'px-4 py-3 rounded';
+    
+    if (type === 'success') {
+        content.className += ' bg-green-100 border border-green-400 text-green-700';
+    } else if (type === 'error') {
+        content.className += ' bg-red-100 border border-red-400 text-red-700';
+    }
+    
+    content.textContent = message;
+    container.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        container.style.display = 'none';
+    }, 5000);
+}
+</script>
 
 <!-- Pagination -->
 <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600">

@@ -5,45 +5,43 @@
                 overflow-y-auto max-h-[calc(100vh-2rem)] p-8"
          x-data="{
             selectedSupplier: '',
-            products: [{ product_id:'', quantity_product:1, unit:'', unit_cost:0, total:0 }],
+            products: [{ product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0 }],
 
+            // Supplier => Products mapping
             supplierProducts: {
                 @foreach($suppliers as $supplier)
                     '{{ $supplier->supplier_id }}': [
                         @foreach($products->where('supplier_id', $supplier->supplier_id) as $product)
-                            { id: '{{ $product->product_id }}', name: '{{ $product->product_name }}' },
+                            { id: '{{ $product->product_id }}', name: '{{ $product->product_name }}', unit: '{{ $product->unit }}' },
                         @endforeach
                     ],
                 @endforeach
             },
 
-            productUnits: {
-                @foreach($products as $product)
-                    '{{ $product->product_id }}': '{{ $product->unit }}',
-                @endforeach
-            },
-
-            productPrices: {
-                @foreach($products as $product)
-                    '{{ $product->product_id }}': {{ $product->price }},
-                @endforeach
+            updateUnit(item) {
+                if (item.product_id) {
+                    // Get the unit of the selected product
+                    const product = (this.supplierProducts[this.selectedSupplier] || []).find(p => p.id == item.product_id);
+                    item.unit = product?.unit || 'pcs';
+                    item.unit_cost = 0; // reset cost to 0 so user can input manually
+                    item.total = (item.quantity_product * item.unit_cost).toFixed(2);
+                } else {
+                    item.unit = '';
+                    item.unit_cost = 0;
+                    item.total = 0;
+                }
             },
 
             updateTotal(item) {
-                let price = this.productPrices[item.product_id] || 0;
-                item.unit_cost = price;
-                item.total = (price * item.quantity_product).toFixed(2);
-                item.unit = this.productUnits[item.product_id] || '';
+                item.total = (item.quantity_product * item.unit_cost).toFixed(2);
             },
 
             resetProducts() {
-                this.products = [{ product_id:'', quantity_product:1, unit:'', unit_cost:0, total:0 }];
+                this.products = [{ product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0 }];
             },
 
             grandTotal() {
-                return this.products.reduce((sum, item) => {
-                    return sum + Number(item.total || 0);
-                }, 0).toFixed(2);
+                return this.products.reduce((sum, item) => sum + Number(item.total || 0), 0).toFixed(2);
             }
          }"
     >
@@ -87,8 +85,8 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-2 border w-48">Product</th>
-                            <th class="px-4 py-2 border w-20">Qty</th>
                             <th class="px-4 py-2 border w-24">Unit</th>
+                            <th class="px-4 py-2 border w-20">Qty</th>
                             <th class="px-4 py-2 border w-40">Cost</th>
                             <th class="px-4 py-2 border w-40">Total</th>
                             <th class="px-4 py-2 border">Action</th>
@@ -102,23 +100,14 @@
                                     <select 
                                         :name="'products['+index+'][product_id]'"
                                         x-model="item.product_id"
-                                        @change="updateTotal(item)"
+                                        @change="updateUnit(item)"
                                         required
                                         class="w-full px-2 py-1 border rounded">
                                         <option value="">Select</option>
-                                        <template x-for="p in (supplierProducts[selectedSupplier] || [])" :key="p.id">
+                                        <template x-for="p in (supplierProducts[selectedSupplier] || []).filter(prod => !products.some(pr => pr.product_id == prod.id && pr !== item))" :key="p.id">
                                             <option :value="p.id" x-text="p.name"></option>
                                         </template>
                                     </select>
-                                </td>
-
-                                <!-- Qty -->
-                                <td class="px-2 py-2 border">
-                                    <input type="number"
-                                           :name="'products['+index+'][quantity_product]'"
-                                           x-model="item.quantity_product" min="1"
-                                           @input="updateTotal(item)"
-                                           class="w-full px-2 py-1 border rounded text-right">
                                 </td>
 
                                 <!-- Unit -->
@@ -130,20 +119,35 @@
                                         class="w-full px-2 py-1 border rounded bg-gray-100 text-center">
                                 </td>
 
+
+                                  <!-- Qty -->
+                                <td class="px-2 py-2 border">
+                                    <input type="number"
+                                        :name="'products['+index+'][quantity_product]'"
+                                        x-model="item.quantity_product" min="1"
+                                        @input="updateTotal(item)"
+                                        class="w-full px-2 py-1 border rounded text-right">
+                                </td>
+
+
                                 <!-- Unit Cost -->
                                 <td class="px-2 py-2 border">
                                     <input type="number"
-                                           :name="'products['+index+'][unit_cost]'"
-                                           x-model="item.unit_cost" readonly
-                                           class="w-full px-2 py-1 border rounded bg-gray-100 text-right">
+                                        :name="'products['+index+'][unit_cost]'"
+                                        x-model="item.unit_cost"
+                                        @input="updateTotal(item)"
+                                        step="0.01"
+                                        min="0"
+                                        class="w-full px-2 py-1 border rounded text-right">
                                 </td>
 
                                 <!-- Total -->
                                 <td class="px-2 py-2 border">
                                     <input type="number"
-                                           :name="'products['+index+'][total]'"
-                                           x-model="item.total" readonly
-                                           class="w-full px-2 py-1 border rounded bg-gray-100 text-right">
+                                        :name="'products['+index+'][total]'"
+                                        x-model="item.total"
+                                        readonly
+                                        class="w-full px-2 py-1 border rounded bg-gray-100 text-right">
                                 </td>
 
                                 <!-- Action -->
@@ -167,29 +171,24 @@
                 </table>
 
                 <button type="button"
-                        @click="products.push({product_id:'', quantity_product:1, unit:'', unit_cost:0, total:0})"
+                        @click="products.push({product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0})"
                         class="mt-2 bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-600">
                     Add Product
                 </button>
             </div>
 
-           <!-- Footer: Requested By + Grand Total -->
+            <!-- Footer: Requested By + Grand Total -->
             <div class="mt-auto pt-4 border-t flex justify-between items-center text-gray-800">
-
-                <!-- Requested By on the left -->
                 <div class="text-lg font-semibold">
                     Requested by: {{ auth()->user()->employee->fname ?? '-' }} {{ auth()->user()->employee->lname ?? '-' }}
                 </div>
-
-                <!-- Grand Total on the right -->
                 <div class="text-xl font-bold text-right">
                     Grand Total: ₱ <span x-text="grandTotal()"></span>
                     <input type="hidden" name="total_amount" :value="grandTotal()">
                 </div>
-
             </div>
 
-              <br>
+            <br>
             <!-- Buttons -->
             <div class="flex flex-wrap justify-end gap-2">
                 <button type="button" @click="showAddDelivery = false"

@@ -78,7 +78,7 @@
                                     </span>
                                 </button>
 
-                                @if($delivery->status === 'In Transit')
+                                @if($delivery->status === 'Pending')
                                     <button type="button" class="flex-1 flex items-center justify-center bg-blue-200 hover:bg-blue-300 transition-colors"
                                         @click="updateDeliveryStatus({{ $delivery->delivery_id }}, 'Out for Delivery')">
                                         <span class="text-blue-700 font-semibold text-sm hover:font-bold transition-all duration-200">

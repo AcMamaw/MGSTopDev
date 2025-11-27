@@ -12,7 +12,7 @@ class Product extends Model
     protected $primaryKey = 'product_id';
 
     protected $fillable = [
-        'supplier_id', 'product_name', 'description', 'price', 'unit'
+        'supplier_id', 'product_name', 'description', 'unit'
     ];
 
     public function supplier()

@@ -55,7 +55,7 @@
                         <td class="px-4 py-3 text-right text-gray-600">
                             {{ $item->current_stock }}
                         </td>
-                        <td class="px-4 py-3 text-right flex justify-center items-center space-x-2">
+                          <td class="px-4 py-3">
                             @php
                                 if ($item->current_stock <= 30) {
                                     $stockColor = 'bg-red-500';
@@ -69,10 +69,13 @@
                                 }
                             @endphp
 
-                            <!-- Stock level dot -->
-                            <span class="w-3 h-3 rounded-full {{ $stockColor }}"></span>
-                            <span class="text-gray-800 text-xs font-semibold">{{ $stockText }}</span>
+                            <div class="flex justify-center items-center space-x-2">
+                                <!-- Stock level dot -->
+                                <span class="w-3 h-3 rounded-full {{ $stockColor }}"></span>
+                                <span class="text-gray-800 text-xs font-semibold">{{ $stockText }}</span>
+                            </div>
                         </td>
+
                           <td class="px-4 py-3 text-center text-gray-600">
                              <button 
                                     title="Re Order"

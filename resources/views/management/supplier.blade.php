@@ -14,6 +14,26 @@
     <p class="text-gray-600 mt-2">Manage supplier records including contact details and addresses.</p>
 </header>
 
+
+     <!-- Success Message -->
+    @if(session('success'))
+    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+        {{ session('success') }}
+    </div>
+    @endif
+
+    <!-- Error Messages -->
+    @if($errors->any())
+    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <ul>
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+    
+
 <!-- Controls -->
 <div class="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row items-stretch justify-between gap-4">
     <!-- Search -->

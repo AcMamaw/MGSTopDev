@@ -18,7 +18,6 @@ class ProductController extends Controller
 
         return view('managestore.product', compact('products', 'suppliers'));
     }
-
     public function store(Request $request)
     {
         // Validate input
@@ -26,7 +25,6 @@ class ProductController extends Controller
             'supplier_id' => 'required|exists:suppliers,supplier_id',
             'product_name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
             'unit' => 'required|string|max:50',
         ]);
 
@@ -35,21 +33,21 @@ class ProductController extends Controller
             'supplier_id' => $request->supplier_id,
             'product_name' => $request->product_name,
             'description' => $request->description,
-            'price' => $request->price,
             'unit' => $request->unit,
         ]);
 
-        // Return supplier name for dynamic table row
+        // Load supplier relationship
         $product->load('supplier');
 
+        // Return JSON for AlpineJS
         return response()->json([
             'product_id' => $product->product_id,
             'supplier_id' => $product->supplier_id,
-            'supplier_name' => $product->supplier->supplier_name, // added
+            'supplier_name' => $product->supplier->supplier_name,
             'product_name' => $product->product_name,
             'description' => $product->description,
-            'price' => $product->price,
             'unit' => $product->unit
         ]);
     }
-}
+
+} 

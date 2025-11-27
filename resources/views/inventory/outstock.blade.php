@@ -36,11 +36,10 @@
                 <tr>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Stock Out ID</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Stock ID</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Employee ID</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Quantity Out</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Date Out</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Reason</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Approved By</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Employee ID</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Status</th>
                 </tr>
             </thead>
@@ -53,27 +52,19 @@
                         <td class="px-4 py-3 text-center text-gray-600">
                             S{{ str_pad($so->stock->stock_id ?? 0, 3, '0', STR_PAD_LEFT) }}
                         </td>
-                        <td class="px-4 py-3 text-center text-gray-600">
-                            E{{ str_pad($so->employee->employee_id ?? 0, 3, '0', STR_PAD_LEFT) }}
-                        </td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ $so->quantity_out }}</td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ $so->date_out->format('Y-m-d') }}</td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ $so->reason }}</td>
-                        <td class="px-4 py-3 text-center text-gray-600">
-                            {{ $so->status === 'Completed' ? ($so->approver->fname ?? '—') . ' ' . ($so->approver->lname ?? '') : '—' }}
+                         <td class="px-4 py-3 text-center text-gray-600">
+                            {{ $so->employee->fname ?? '' }} {{ $so->employee->lname ?? '' }}
                         </td>
-                       <td class="px-4 py-3 text-center">
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold
-                                {{
-                                    $so->status === 'Requested' ? 'bg-gray-200 text-gray-700' :
-                                    ($so->status === 'Released' ? 'bg-yellow-100 text-yellow-700' :
-                                    ($so->status === 'Completed' ? 'bg-green-100 text-green-700' :
-                                    ($so->status === 'Cancelled' ? 'bg-red-100 text-red-700' :
-                                    'bg-red-200 text-red-800')))
-                                }}">
-                                {{ $so->status }}
-                            </span>
-                        </td>
+                      <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
+                        <!-- Green dot -->
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+
+                        <!-- Status text in black -->
+                        <span class="text-xs font-semibold text-black">{{ $so->status }}</span>
+                    </td>
                     </tr>
                 @endforeach
             </tbody>

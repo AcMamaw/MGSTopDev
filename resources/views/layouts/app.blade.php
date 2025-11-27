@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="//unpkg.com/alpinejs" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jaames/iro/dist/iro.min.js"></script>
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
 
 <style>
@@ -247,23 +248,18 @@ button[onclick^="toggleDropdown"] {
                 class="{{ request()->routeIs('inventory.*') ? 'block' : 'hidden' }} 
                 mt-1 bg-white rounded-lg shadow-lg overflow-hidden text-sm">
                  <li>
-                    <a href="{{ route('instock') }}" 
+                    <a href="{{ route('stock') }}" 
                         class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
                         {{ request()->routeIs('inventory.stockentry') 
                             ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
                             : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-                            viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-
-                            <!-- Box -->
-                            <path d="M3 7l9-4 9 4v10l-9 4-9-4z" />
-                            <path d="M3 7l9 4 9-4" />
-                            <path d="M12 21V11" />
-
-                            <!-- Check  (moved up) -->
-                        <path d="M14.5 13.6l1.65 1.65 2.85-3" />
+                            viewBox="0 0 24 24">
+                            <path d="M3 7l9-4 9 4v10l-9 4-9-4z" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M3 7l9 4 9-4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 21V11" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span>In Stocks</span>
+                        <span>Total Stocks</span>
                     </a>
                 </li>
                 <li>
@@ -284,21 +280,6 @@ button[onclick^="toggleDropdown"] {
                             <path d="M15 12.5l4 4M15 16.1l4-4" />
                          </svg>
                         <span>Out Stocks</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('stock') }}" 
-                        class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
-                        {{ request()->routeIs('inventory.stockentry') 
-                            ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
-                            : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-                            viewBox="0 0 24 24">
-                            <path d="M3 7l9-4 9 4v10l-9 4-9-4z" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M3 7l9 4 9-4" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M12 21V11" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>Total Stocks</span>
                     </a>
                 </li>
                 <li>
@@ -326,27 +307,48 @@ button[onclick^="toggleDropdown"] {
             </ul>
         </li>
 
-         <!-- 🚚 Delivery -->
-        <li>
-            <a href="{{ route('delivery') }}"
-            class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-            {{ request()->routeIs('delivery.index') 
-                ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
-                : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
-                <!-- Truck / Delivery icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" 
-                    class="w-6 h-6 flex-shrink-0" 
-                    fill="none" viewBox="0 0 24 24" 
-                    stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M3 7h13v10H3zM16 10h4l1 2v5h-5z" />
-                    <circle cx="7.5" cy="17.5" r="1.5" />
-                    <circle cx="17.5" cy="17.5" r="1.5" />
-                </svg>
-                <span class="nav-text">Deliveries   </span>
-            </a>
-        </li>
-        @endif
+                 <li>
+                    <a href="{{ route('instock') }}" 
+                      class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                        {{ request()->routeIs('inventory.stockentry') 
+                            ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                            : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
+                            viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+
+                            <!-- Box -->
+                            <path d="M3 7l9-4 9 4v10l-9 4-9-4z" />
+                            <path d="M3 7l9 4 9-4" />
+                            <path d="M12 21V11" />
+
+                            <!-- Check  (moved up) -->
+                        <path d="M14.5 13.6l1.65 1.65 2.85-3" />
+                        </svg>
+                        <span>In Stocks</span>
+                    </a>
+                </li>
+
+            <!-- 🚚 Delivery -->
+            <li>
+                <a href="{{ route('delivery') }}"
+                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                {{ request()->routeIs('delivery.index') 
+                    ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                    : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                    <!-- Truck / Delivery icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        class="w-6 h-6 flex-shrink-0" 
+                        fill="none" viewBox="0 0 24 24" 
+                        stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 7h13v10H3zM16 10h4l1 2v5h-5z" />
+                        <circle cx="7.5" cy="17.5" r="1.5" />
+                        <circle cx="17.5" cy="17.5" r="1.5" />
+                    </svg>
+                    <span class="nav-text">Deliveries   </span>
+                </a>
+            </li>
+            @endif
 
        <!-- (Cashier Only) -->
         @if($role === 'Cashier')
@@ -390,6 +392,25 @@ button[onclick^="toggleDropdown"] {
                                 d="M9 7V5a3 3 0 016 0v2" /> <!-- handles -->
                         </svg>
                         <span>Products</span>
+                    </a>
+                </li>
+               <li>
+                    <a href="{{ route('category') }}" 
+                        class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
+                        {{ request()->routeIs('category.index') 
+                            ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                            : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Top-left square -->
+                            <rect x="3" y="3" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <!-- Top-right square -->
+                            <rect x="13" y="3" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <!-- Bottom-left square -->
+                            <rect x="3" y="13" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <!-- Bottom-right square -->
+                            <rect x="13" y="13" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            </svg>
+                        <span>Categories</span>
                     </a>
                 </li>
             </ul>
@@ -634,6 +655,27 @@ button[onclick^="toggleDropdown"] {
                         <span>Products</span>
                     </a>
                 </li>
+                   <li>
+            </li>
+               <li>
+                    <a href="{{ route('category') }}" 
+                        class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
+                        {{ request()->routeIs('category.index') 
+                            ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                            : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Top-left square -->
+                            <rect x="3" y="3" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <!-- Top-right square -->
+                            <rect x="13" y="3" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <!-- Bottom-left square -->
+                            <rect x="3" y="13" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <!-- Bottom-right square -->
+                            <rect x="13" y="13" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            </svg>
+                        <span>Categories</span>
+                    </a>
+                </li>
             </ul>
         </li>
 
@@ -658,10 +700,104 @@ button[onclick^="toggleDropdown"] {
                 </a>
             </li>
         @endif
+
+
+ <!-- (Layout Artist Only) -->
+        @if($role === 'Layout Artist')
+    <!-- 🧰 Manage Store Dropdown -->
+        <li class="relative">
+            <button 
+                onclick="toggleDropdown('maintenanceDropdown')" 
+                class="w-full flex items-center justify-between p-3 rounded-lg text-sm font-medium transition duration-150
+                text-gray-800 hover:bg-sky-100 hover:text-sky-700">
+                <div class="flex items-center space-x-3">
+                     <!-- Storefront Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5 flex-shrink-0"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 9l1.5-5h15L21 9M4 9h16v11a1 1 0 01-1 1H5a1 1 0 01-1-1V9zm3 11V13h10v7" />
+                    </svg>
+                    <span class="nav-text whitespace-nowrap">Manage Store</span>
+                </div>
+                <svg id="arrow-maintenanceDropdown" 
+                    class="w-4 h-4 ml-2 transition-transform duration-200" 
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+
+            <ul id="maintenanceDropdown" 
+                class="{{ request()->routeIs('maintenance.*') ? 'block' : 'hidden' }} 
+                    mt-1 bg-white rounded-lg shadow-lg overflow-hidden text-sm">
+                <li>
+                    <a href="{{ route('product') }}" 
+                        class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
+                        {{ request()->routeIs('maintenance.products') 
+                            ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                            : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 7h12l-1 12H7L6 7z" /> <!-- bag outline -->
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 7V5a3 3 0 016 0v2" /> <!-- handles -->
+                        </svg>
+                        <span>Products</span>
+                    </a>
+                </li>
+               <li>
+                    <a href="{{ route('category') }}" 
+                        class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
+                        {{ request()->routeIs('category.index') 
+                            ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                            : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Top-left square -->
+                            <rect x="3" y="3" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <!-- Top-right square -->
+                            <rect x="13" y="3" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <!-- Bottom-left square -->
+                            <rect x="3" y="13" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <!-- Bottom-right square -->
+                            <rect x="13" y="13" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            </svg>
+                        <span>Categories</span>
+                    </a>
+                </li>
+            </ul>
+        </li>   
+            <!-- Production Flow -->
+                <li>
+                    <a href="#" 
+                    class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                    {{ request()->routeIs('request') 
+                        ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                        : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                    
+                        <!-- Job Order Icon - Wider Paper -->
+                        <svg xmlns="http://www.w3.org/2000/svg" 
+                            class="w-5 h-5 flex-shrink-0" 
+                            fill="none" viewBox="0 0 28 24" 
+                            stroke="currentColor" stroke-width="1.9">
+                        <!-- Wider Paper/document outline -->
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6 2H22C23.1046 2 24 2.89543 24 4V20C24 21.1046 23.1046 22 22 22H6C4.89543 22 4 21.1046 4 20V4C4 2.89543 4.89543 2 6 2Z" />
+                        <!-- Lines inside the paper -->
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M8 7H20M8 11H20M8 15H16" />
+                        <!-- Optional check mark for “job done” -->
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M10 18L13 21L19 16" />
+                        </svg>
+
+                        <span class="nav-text">Job Order</span>
+                    </a>
+                </li>
+        @endif
     </ul>
 </nav>
 
-        
       <!-- 🚪 Fixed Logout Button -->
         <div class="p-4 border-t border-gray-200 bg-white sticky bottom-0">
            <form action="{{ route('logout') }}" method="POST">

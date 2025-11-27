@@ -16,7 +16,9 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ProductController; 
-use App\Http\Controllers\RequestController;
+use App\Http\Controllers\RequestController; 
+use App\Http\Controllers\CategoryController; 
+
 
 // --------------------------
 // Guest Routes
@@ -43,7 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('maincontent')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index']); // optional alias
         Route::get('/delivery', [DeliveryController::class, 'index'])->name('delivery');
-        Route::get('/purchaseorder', [OrderController::class, 'index'])->name('purchaseorder');
+        Route::get('/sales', [OrderController::class, 'index'])->name('purchaseorder');
         Route::get('/reports', [ReportController::class, 'index'])->name('reports');
         Route::get('/payment', [PaymentController::class, 'index'])->name('payment');
         Route::get('/request', [RequestController::class, 'index'])->name('request');
@@ -59,6 +61,9 @@ Route::middleware('auth')->group(function () {
 
         // Stock Adjustment
         Route::get('/stockadjustment', [StockAdjustmentController::class, 'index'])->name('stockadjustment');
+        Route::post('/instock/store', [StockInController::class, 'store'])->name('instock.store');
+        Route::post('/instock/product/store', [StockInController::class, 'storeProduct'])->name('instock.product.store');
+
     });
 
     // --------------------------
@@ -88,6 +93,8 @@ Route::middleware('auth')->group(function () {
     Route::prefix('managestore')->group(function () {
         Route::get('/product', [ProductController::class, 'index'])->name('product');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::get('/category', [CategoryController::class, 'index'])->name('category');
+        Route::post('/category', [CategoryController::class, 'store'])->name('category.store');
     });
 
     // --------------------------

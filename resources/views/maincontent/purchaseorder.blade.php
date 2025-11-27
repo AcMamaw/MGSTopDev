@@ -18,6 +18,7 @@
     <p class="text-gray-600 mt-2">Manage purchase orders and their details for each transaction.</p>
 </header>
 
+
 <!-- Controls -->
 <div class="max-w-7xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-4">
 
@@ -100,6 +101,7 @@
             <tr>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Order ID</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Customer</th>
+                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Category</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Order Date</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Total Amount</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Balance</th>
@@ -121,6 +123,12 @@
                         <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
                             {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
                         </td>
+
+                        <!-- Category Name -->
+                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                            {{ $order->category->category_name ?? 'N/A' }}
+                        </td>
+
 
                         <!-- Order Date -->
                         <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
@@ -152,8 +160,9 @@
                         <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
                             @php
                                 $dotColor = match($order->status) {
-                                    'In Progress' => 'bg-gray-500',
-                                    'Released' => 'bg-yellow-500',
+                                    'Pending' => 'bg-gray-500',
+                                    'In Progress' => 'bg-yellow-500',
+                                    'Released' => 'bg-blue-500',
                                     'Completed' => 'bg-green-500',
                                     'Cancelled' => 'bg-red-500',
                                     default => 'bg-gray-400'
@@ -163,63 +172,62 @@
                             <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
                         </td>
 
-                     <!-- Hover overlay for whole row -->
-                    <td colspan="7" class="absolute inset-0 flex items-center justify-center opacity-0 
-                        group-hover:opacity-100 transition-opacity duration-200 bg-sky-100">
+                         <!-- Hover overlay for whole row -->
+                        <td colspan="7" class="absolute inset-0 flex items-center justify-center opacity-0 
+                            group-hover:opacity-100 transition-opacity duration-200 bg-sky-100">
 
-                        @php $payStatus = $order->payment->status ?? 'Not Paid'; @endphp
+                            @php 
+                                $payStatus = $order->payment->status ?? 'Not Paid';
+                                $orderStatus = $order->status;
+                                $isPartialPayment = ($payStatus === 'Partial');
+                                $isFullyPaid = ($payStatus === 'Fully Paid');
+                            @endphp
 
-                        {{-- Payment Partial = Details + Complete Payment --}}
-                        @if ($payStatus === 'Partial')
                             <div class="w-full h-full flex">
+
+                                <!-- Details Button always -->
                                 <button type="button"
                                     class="flex-1 flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
                                     @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
                                     <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
                                 </button>
-                               <button type="button"
-                                class="flex-1 flex items-center justify-center bg-yellow-200 hover:bg-yellow-300 transition-colors"
-                                @click="openPaymentModal({{ $order->order_id }}, {{ $order->payment->balance ?? $order->total_amount }})">
-                                <span class="text-yellow-700 font-semibold text-sm hover:font-bold transition-all duration-200">
-                                    Complete Payment
-                                </span>
-                            </button>
-                            </div>
 
-                        {{-- In Progress = Details only --}}
-                        @elseif ($order->status === 'In Progress')
-                            <button type="button"
-                                class="w-full h-full flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
-                                @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                                <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
-                            </button>
+                                @if ($orderStatus === 'Pending')
+                                    <!-- Assign Job Order -->
+                                    <button type="button"
+                                        class="flex-1 flex items-center justify-center bg-purple-200 hover:bg-purple-300 transition-colors"
+                                        @click="assignJobOrder({{ $order->order_id }})">
+                                        <span class="text-purple-700 font-semibold text-sm hover:font-bold transition-all duration-200">Assign Job Order</span>
+                                    </button>
 
-                        {{-- Released = Details + Ready to Claim --}}
-                        @elseif ($order->status === 'Released')
-                            <div class="w-full h-full flex">
-                                <button type="button"
-                                    class="flex-1 flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
-                                    @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                                    <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
-                                </button>
-                               <button type="button"
-                                    class="flex-1 flex items-center justify-center bg-green-200 hover:bg-green-300 transition-colors"
-                                    @click="markAsCompleted({{ $order->order_id }})">
-                                    <span class="text-green-700 font-semibold text-sm hover:font-bold transition-all duration-200">
-                                        Ready to Claim
-                                    </span>
-                                </button>
-                            </div>
+                                    <!-- Complete Payment (only if partial) -->
+                                    @if ($isPartialPayment)
+                                        <button type="button"
+                                            class="flex-1 flex items-center justify-center bg-yellow-200 hover:bg-yellow-300 transition-colors"
+                                            @click="openPaymentModal({{ $order->order_id }}, {{ $order->payment->balance ?? $order->total_amount }})">
+                                            <span class="text-yellow-700 font-semibold text-sm hover:font-bold transition-all duration-200">Complete Payment</span>
+                                        </button>
+                                    @endif
 
-                        {{-- Default = Details only --}}
-                        @else
-                            <button type="button"
-                                class="w-full h-full flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
-                                @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                                <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
-                            </button>
-                        @endif
-                    </td>
+                                @elseif ($orderStatus === 'In Progress' || $orderStatus === 'Released')
+                                    <!-- Complete Payment (only if partial) -->
+                                    @if ($isPartialPayment)
+                                        <button type="button"
+                                            class="flex-1 flex items-center justify-center bg-yellow-200 hover:bg-yellow-300 transition-colors"
+                                            @click="openPaymentModal({{ $order->order_id }}, {{ $order->payment->balance ?? $order->total_amount }})">
+                                            <span class="text-yellow-700 font-semibold text-sm hover:font-bold transition-all duration-200">Complete Payment</span>
+                                        </button>
+                                    @elseif ($isFullyPaid && $orderStatus === 'Released')
+                                        <!-- Ready to Claim (only if fully paid and released) -->
+                                        <button type="button"
+                                            class="flex-1 flex items-center justify-center bg-green-200 hover:bg-green-300 transition-colors"
+                                            @click="markAsCompleted({{ $order->order_id }})">
+                                            <span class="text-green-700 font-semibold text-sm hover:font-bold transition-all duration-200">Ready to Claim</span>
+                                        </button>
+                                    @endif
+                                @endif
+                        </div>
+                        </td>
                     </tr>
                 @endif
             @endforeach
@@ -258,86 +266,99 @@ function markAsCompleted(orderId) {
 }
 </script>
 
-<!-- Order Details Modal -->
-<div x-show="showOrderDetails" x-transition x-cloak
-     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <!-- Order Details Modal -->
+    <div x-show="showOrderDetails" x-transition x-cloak
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
 
-    <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative">
 
-        <!-- Modal Header -->
-        <h2 class="text-2xl font-bold mb-4 text-gray-800">
-            Order Details - ID: <span x-text="selectedOrderId"></span>
-        </h2>
+            <!-- Modal Header -->
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">
+                Order Details - ID: <span x-text="selectedOrderId"></span>
+            </h2>
 
-        <!-- Order Items Table -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full border border-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Detail ID</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Product</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Quantity</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Unit</th>
-                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Price</th>
-                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
-                    </tr>
-                </thead>
+            <!-- Order Items Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full border border-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Detail ID</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Product</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Size</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Color</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Quantity</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Unit</th>
+                            <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Price</th>
+                            <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
+                        </tr>
+                    </thead>
 
-                <tbody class="divide-y divide-gray-100">
-                    @foreach ($orders as $order)
+                   <tbody class="divide-y divide-gray-100">
+                        @foreach ($orders as $order)
 
-                        @php
-                            $grandTotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
-                        @endphp
+                            @php
+                                $grandTotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
+                            @endphp
 
-                        @foreach ($order->items ?? [] as $item)
+                            @foreach ($order->items ?? [] as $item)
+                                <tr x-show="selectedOrderId === {{ $order->order_id }}">
+                                    <td class="px-4 py-2 text-center">
+                                        OD{{ str_pad($item->orderdetails_id, 3, '0', STR_PAD_LEFT) }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        {{ $item->stock->product->product_name ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        {{ $item->size ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <div class="flex items-center justify-center space-x-1">
+                                            <span class="w-4 h-4 rounded-full" 
+                                                style="background-color: {{ $item->color ?? '#ffffff' }};">
+                                            </span>
+                                            <span>{{ $item->color ?? '-' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        {{ $item->quantity }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        {{ $item->stock->product->unit ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-2 text-right">
+                                        ₱{{ number_format($item->price, 2) }}
+                                    </td>
+                                    <td class="px-4 py-2 text-right font-semibold">
+                                        ₱{{ number_format($item->quantity * $item->price, 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+
+                            <!-- GRAND TOTAL -->
                             <tr x-show="selectedOrderId === {{ $order->order_id }}">
-                                <td class="px-4 py-2 text-center">
-                                    OD{{ str_pad($item->orderdetails_id, 3, '0', STR_PAD_LEFT) }}
+                                <td colspan="7" class="px-4 py-3 text-right font-bold text-gray-700">
+                                    GRAND TOTAL:
                                 </td>
-                                <td class="px-4 py-2 text-center">
-                                    {{ $item->stock->product->product_name ?? '-' }}
-                                </td>
-                                <td class="px-4 py-2 text-center">
-                                    {{ $item->quantity }}
-                                </td>
-                                <td class="px-4 py-2 text-center">
-                                    {{ $item->stock->product->unit ?? '-' }}
-                                </td>
-                                <td class="px-4 py-2 text-right">
-                                    ₱{{ number_format($item->price, 2) }}
-                                </td>
-                                <td class="px-4 py-2 text-right font-semibold">
-                                    ₱{{ number_format($item->quantity * $item->price, 2) }}
+                                <td class="px-4 py-3 text-right font-bold text-gray-900">
+                                    ₱{{ number_format($grandTotal, 2) }}
                                 </td>
                             </tr>
                         @endforeach
+                    </tbody>
+                </table>
+            </div>
 
-                        <!-- GRAND TOTAL -->
-                        <tr x-show="selectedOrderId === {{ $order->order_id }}">
-                            <td colspan="5" class="px-4 py-3 text-right font-bold text-gray-700">
-                                GRAND TOTAL:
-                            </td>
-                            <td class="px-4 py-3 text-right font-bold text-gray-900">
-                                ₱{{ number_format($grandTotal, 2) }}
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+            <!-- Close Button -->
+            <div class="mt-6 flex justify-end">
+                <button @click="showOrderDetails = false"
+                        class="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition">
+                    Close
+                </button>
+            </div>
 
-        <!-- Close Button -->
-        <div class="mt-6 flex justify-end">
-            <button @click="showOrderDetails = false"
-                    class="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition">
-                Close
-            </button>
         </div>
 
     </div>
-
-</div>
 </div>
 
 <!-- Pagination -->

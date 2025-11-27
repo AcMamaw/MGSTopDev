@@ -70,6 +70,7 @@
                 <thead class="bg-gray-100 sticky top-0 z-10">
                     <tr>
                         <th class="px-4 py-2 text-center">Order ID</th>
+                        <th class="px-4 py-2 text-center">Category</th>
                         <th class="px-4 py-2 text-center">Customer</th>
                         <th class="px-4 py-2 text-center">Issued by</th>
                         <th class="px-4 py-2 text-center">Order Date</th>
@@ -83,6 +84,9 @@
                             <tr class="group relative hover:bg-green-100 cursor-pointer">
                                 <td class="px-4 py-3 text-center text-gray-800 group-hover:opacity-0">
                                     O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
+                                </td>
+                               <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                                    {{ $order->category->category_name ?? 'N/A' }}
                                 </td>
                                 <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
                                     {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
@@ -137,6 +141,7 @@
                     <tr>
                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Item ID</th>
                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Product</th>
+                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Color</th>
                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Quantity</th>
                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Unit</th>
                         <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Unit Cost</th>
@@ -150,6 +155,14 @@
                             <tr x-show="selectedOrderId === {{ $order->order_id }}">
                                 <td class="px-4 py-2 text-center">OD{{ str_pad($item->orderdetails_id,3,'0',STR_PAD_LEFT) }}</td>
                                 <td class="px-4 py-2 text-center">{{ $item->stock->product->product_name ?? '-' }}</td>
+                                  <td class="px-4 py-2 text-center">
+                                        <div class="flex items-center justify-center space-x-1">
+                                            <span class="w-4 h-4 rounded-full" 
+                                                style="background-color: {{ $item->color ?? '#ffffff' }};">
+                                            </span>
+                                            <span>{{ $item->color ?? '-' }}</span>
+                                        </div>
+                                    </td>
                                 <td class="px-4 py-2 text-center">{{ $item->quantity }}</td>
                                 <td class="px-4 py-2 text-center">{{ $item->stock->product->unit ?? '-' }}</td>
                                 <td class="px-4 py-2 text-right">₱{{ number_format($item->price,2) }}</td>

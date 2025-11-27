@@ -61,6 +61,7 @@ class EmployeeController extends Controller
             'employee' => $employee,
             'username' => $username,
             'plain_password' => $plainPassword
+             
         ]);
     }
 }

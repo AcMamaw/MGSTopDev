@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\OrderDetail; // <-- use OrderDetail
+use App\Models\OrderDetail; 
 use App\Models\Customer;
 
 class Order extends Model
@@ -13,8 +13,9 @@ class Order extends Model
 
     protected $primaryKey = 'order_id';
 
-    protected $fillable = [
+     protected $fillable = [
         'customer_id',
+        'category_id', 
         'order_date',
         'ordered_by', 
         'total_amount', 
@@ -40,6 +41,11 @@ class Order extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class, 'ordered_by'); 
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id', 'category_id');
     }
 
 }

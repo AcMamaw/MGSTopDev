@@ -81,14 +81,13 @@
                             <th class="px-4 py-2 text-center">Payment ID</th>
                             <th class="px-4 py-2 text-center">Order ID</th>
                             <th class="px-4 py-2 text-center">Issued by</th>
-                            <th class="px-4 py-2 text-center">Payment Date</th>
                             <th class="px-4 py-2 text-center">Amount</th>
                             <th class="px-4 py-2 text-center">Cash</th>
-                            <th class="px-4 py-2 text-center">Balance</th>
-                            <th class="px-4 py-2 text-center">Status</th>
                             <th class="px-4 py-2 text-center">Change Amount</th>
+                            <th class="px-4 py-2 text-center">Payment Date</th>
                             <th class="px-4 py-2 text-center">Payment Method</th>
                             <th class="px-4 py-2 text-center">Reference No</th>
+                            <th class="px-4 py-2 text-center">Status</th>
                         </tr>
                     </thead>
 
@@ -110,11 +109,6 @@
                                     {{ $payment->employee->fname ?? '' }} {{ $payment->employee->lname ?? '' }}
                                 </td>
 
-                                <!-- Payment Date -->
-                                <td class="px-4 py-3 text-center text-gray-600">
-                                    {{ $payment->payment_date }}
-                                </td>
-
                                 <!-- Amount -->
                                 <td class="px-4 py-3 text-center text-gray-600">
                                     ₱{{ number_format($payment->amount, 2) }}
@@ -125,19 +119,14 @@
                                     ₱{{ number_format($payment->cash ?? 0, 2) }}
                                 </td>
 
-                                <!-- Balance -->
-                                <td class="px-4 py-3 text-center text-gray-600">
-                                    ₱{{ number_format($payment->balance ?? 0, 2) }}
-                                </td>
-
-                                <!-- Status -->
-                                <td class="px-4 py-3 text-center text-gray-600">
-                                    {{ $payment->status ?? '-' }}
-                                </td>
-
                                 <!-- Change Amount -->
                                 <td class="px-4 py-3 text-center text-gray-600">
                                     ₱{{ number_format($payment->change_amount ?? 0, 2) }}
+                                </td>
+                                
+                                <!-- Payment Date -->
+                                <td class="px-4 py-3 text-center text-gray-600">
+                                    {{ $payment->payment_date }}
                                 </td>
 
                                 <!-- Payment Method -->
@@ -148,6 +137,11 @@
                                 <!-- Reference Number -->
                                 <td class="px-4 py-3 text-center text-gray-600">
                                     {{ $payment->reference_number ?? '-' }}
+                                </td>
+
+                                <!-- Status -->
+                                <td class="px-4 py-3 text-center text-gray-600">
+                                    {{ $payment->status ?? '-' }}
                                 </td>
                             </tr>
                         @endforeach

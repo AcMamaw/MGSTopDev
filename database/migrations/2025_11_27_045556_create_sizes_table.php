@@ -11,15 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
-            $table->id('product_id'); // Primary key
-            $table->foreignId('supplier_id')
-                ->nullable() 
-                ->constrained('suppliers', 'supplier_id')
-                ->nullOnDelete(); 
-            $table->string('product_name');
+        Schema::create('sizes', function (Blueprint $table) {
+            $table->id('size_id');        // Primary key
+            $table->string('size_name');  // Example: Small, Medium, Large
+            $table->string('short_code')->nullable(); // Example: S, M, L
             $table->text('description')->nullable();
-            $table->string('unit');
             $table->timestamps();
         });
     }
@@ -29,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('sizes');
     }
 };
