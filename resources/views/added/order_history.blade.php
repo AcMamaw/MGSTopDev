@@ -1,4 +1,45 @@
-<div x-data="{ showOrderHistory: false, showOrderDetails2: false, selectedOrderId: null }">
+<div x-data="{ 
+    showOrderHistory: false, 
+    showOrderDetails2: false, 
+    selectedOrderId: null,
+    searchQuery: '',
+    placeholderIndex: 0,
+    placeholders: [
+        'Search Orders',
+        'Search ID',
+        'Customer',
+        'Order Date',
+        'Status'
+    ],
+    nextPlaceholder() {
+        this.placeholderIndex = (this.placeholderIndex + 1) % this.placeholders.length;
+    },
+    filterOrders() {
+        const query = this.searchQuery.toLowerCase().trim();
+        if (!query) return true; // Show all if no search
+        
+        const rows = document.querySelectorAll('#ordersTableBody tr[data-order]');
+        let hasVisibleRows = false;
+        
+        rows.forEach(row => {
+            const searchableText = row.getAttribute('data-search').toLowerCase();
+            if (searchableText.includes(query)) {
+                row.style.display = '';
+                hasVisibleRows = true;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Show/hide empty state
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) {
+            emptyState.style.display = hasVisibleRows ? 'none' : '';
+        }
+        
+        return hasVisibleRows;
+    }
+}">
 
     <!-- Button to open Order History -->
     <button @click="showOrderHistory = true"        
@@ -12,56 +53,33 @@
     </button>
 
     <!-- Order History Modal -->
-    <div x-show="showOrderHistory" x-cloak x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-        <div @click.outside.stop="showOrderHistory = false" class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto flex flex-col">
-
+    <div x-show="showOrderHistory" x-cloak x-transition
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div @click.outside.stop="showOrderHistory = false"
+         class="bg-white w-full max-w-6xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto flex flex-col">
             <div class="flex justify-between items-center p-2 border-b border-gray-200 flex-shrink-0">
                 <h2 class="text-2xl font-bold text-gray-800">Order History</h2>
                 <button @click="showOrderHistory = false" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
             </div>
 
             <!-- Orders Search + Filter Icon -->
-<div x-data="{
-        searchQuery: '',
-        placeholderIndex: 0,
-        placeholders: [
-            'Search Orders',
-            'Search ID',
-            'Customer',
-            'Order Date',
-            'Status'
-        ],
-        nextPlaceholder() {
-            this.placeholderIndex = (this.placeholderIndex + 1) % this.placeholders.length;
-        }
-    }"
-    class="flex items-center gap-2 mb-2 mt-2"
->
-    <div class="relative w-full max-w-xs">
-        <input type="text"
-               x-model="searchQuery"
-               :placeholder="placeholders[placeholderIndex]"
-               class="w-full pl-8 pr-10 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+            <div class="flex items-center gap-2 mb-2 mt-2">
+                <div class="relative w-full max-w-xs">
+                    <input type="text"
+                           x-model="searchQuery"
+                           @input="filterOrders()"
+                           :placeholder="placeholders[placeholderIndex]"
+                           class="w-full pl-8 pr-10 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none">
 
-        <!-- Search Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.3-4.3"/>
-        </svg>
-
-        <!-- Filter Icon -->
-        <button type="button"
-                @click="nextPlaceholder()"
-                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                title="Filter">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 2 L16 2 L10 10 L10 16 L6 16 L6 10 Z"/>
-            </svg>
-        </button>
-    </div>
-</div>
+                    <!-- Search Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         class="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.3-4.3"/>
+                    </svg>
+                </div>
+            </div>
 
             
           <!-- Orders Table -->
@@ -72,54 +90,96 @@
                         <th class="px-4 py-2 text-center">Order ID</th>
                         <th class="px-4 py-2 text-center">Category</th>
                         <th class="px-4 py-2 text-center">Customer</th>
+                        <th class="px-4 py-2 text-center">Product Type</th>
                         <th class="px-4 py-2 text-center">Issued by</th>
                         <th class="px-4 py-2 text-center">Order Date</th>
                         <th class="px-4 py-2 text-center">Total Amount</th>
                         <th class="px-4 py-2 text-center">Status</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach ($orders as $order)
-                        @if($order->status === 'Completed')
-                            <tr class="group relative hover:bg-green-100 cursor-pointer">
-                                <td class="px-4 py-3 text-center text-gray-800 group-hover:opacity-0">
-                                    O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
-                                </td>
-                               <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                                    {{ $order->category->category_name ?? 'N/A' }}
-                                </td>
-                                <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                                    {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
-                                </td>
-                               <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                                    {{ $order->employee ? $order->employee->fname . ' ' . $order->employee->lname : '-' }}
-                                </td>
-                                <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                                    {{ $order->order_date }}
-                                </td>
-                                <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                                    ₱{{ number_format($order->total_amount, 2) }}
-                                </td>
-                                <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
+                <tbody id="ordersTableBody" class="divide-y divide-gray-100">
+                    @php
+                        $completedOrders = $orders->where('status','Completed');
+                    @endphp
+
+                    @forelse ($completedOrders as $order)
+                        <tr class="group relative hover:bg-green-100 cursor-pointer"
+                            data-order
+                            data-search="O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }} {{ $order->category->category_name ?? 'N/A' }} {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }} {{ $order->product_type ?? 'N/A' }} {{ $order->employee ? $order->employee->fname . ' ' . $order->employee->lname : '-' }} {{ $order->order_date }} {{ $order->status }}">
+                            <td class="px-4 py-3 text-center text-gray-800 group-hover:opacity-0">
+                                O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                                {{ $order->category->category_name ?? 'N/A' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                                {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                                {{ $order->product_type ?? 'N/A' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                                {{ $order->employee ? $order->employee->fname . ' ' . $order->employee->lname : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                                {{ $order->order_date }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                                ₱{{ number_format($order->total_amount, 2) }}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <div class="flex justify-center items-center space-x-2">
                                     <span class="w-3 h-3 rounded-full bg-green-500"></span>
                                     <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
-                                </td>
+                                </div>
+                            </td>
 
-                                <!-- Details Button -->
-                                <td colspan="7" class="absolute inset-0 flex items-center justify-center opacity-0 
-                                    group-hover:opacity-100 transition-opacity duration-200 bg-green-100">
-                                    <button type="button"
+                            <!-- Details Button -->
+                            <td colspan="7" class="absolute inset-0 flex items-center justify-center opacity-0 
+                                group-hover:opacity-100 transition-opacity duration-200 bg-green-100">
+                                <button type="button"
                                         class="w-full h-full flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
-                                            @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails2 = true; showOrderHistory = false">
-                                      <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">
-                                            Details
-                                        </span>
-                                    </button>
-                                </td>
-                            </tr>
-                        @endif
-                    @endforeach
+                                        @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails2 = true; showOrderHistory = false">
+                                    <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">
+                                        Details
+                                    </span>
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <!-- No completed orders in database -->
+                        <tr>
+                            <td colspan="8" class="px-4 py-16 text-center">
+                                <div class="flex flex-col items-center justify-center text-gray-400">
+                                    <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="11" cy="11" r="8" stroke-width="2"/>
+                                        <path d="m21 21-4.3-4.3" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    <p class="text-lg font-medium text-gray-500">No completed orders found</p>
+                                    <p class="text-sm text-gray-400 mt-1">Completed orders will appear here once available</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+
+                    <!-- JS Empty State (for search/filter) -->
+                    <tr id="emptyState" style="display: none;">
+                        <td colspan="8" class="px-4 py-16 text-center">
+                            <div class="flex flex-col items-center justify-center text-gray-400">
+                                <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="11" cy="11" r="8" stroke-width="2"/>
+                                    <path d="m21 21-4.3-4.3" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                <p class="text-lg font-medium text-gray-500"
+                                x-text="searchQuery ? 'No orders match your filter' : 'No orders found'"></p>
+                                <p class="text-sm text-gray-400 mt-1" x-show="searchQuery">
+                                    Try adjusting your search or filter criteria
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
                 </tbody>
+
             </table>
         </div>
 

@@ -22,7 +22,7 @@ return new class extends Migration
             $table->foreignId('employee_id')
                 ->constrained('employees', 'employee_id')
                 ->onDelete('cascade');
-
+            
             $table->string('adjustment_type'); // Type (Addition, Deduction, etc.)
             $table->integer('quantity_adjusted'); // Quantity adjusted
             $table->date('request_date'); // Date of adjustment request

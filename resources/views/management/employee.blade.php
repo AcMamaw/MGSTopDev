@@ -79,15 +79,15 @@
             <tbody id="employee-table-body" class="divide-y divide-gray-100">
                 @foreach ($employees as $emp)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 text-center text-gray-800 font-medium">EMP{{ str_pad($emp->employee_id,3,'0',STR_PAD_LEFT) }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $emp->role->role_name ?? 'N/A' }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $emp->fname }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $emp->lname }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $emp->gender }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $emp->bdate }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $emp->email }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $emp->contact_no }}</td>
-                    <td class="px-4 py-3 text-center">
+                    <td class="px-4 py-3 text-center text-gray-500 font-medium">EMP{{ str_pad($emp->employee_id,3,'0',STR_PAD_LEFT) }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $emp->role->role_name ?? 'N/A' }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $emp->fname }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $emp->lname }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $emp->gender }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $emp->bdate }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $emp->email }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">{{ $emp->contact_no }}</td>
+                    <td class="px-4 py-3 text-center text-gray-500">
                         <div class="flex items-center justify-center space-x-2">
                             <!-- User Password -->
                             <button @click="username='{{ $emp->user->username ?? '' }}'; password='{{ $emp->user->plain_password ?? '' }}'; showUserModal=true"
@@ -155,7 +155,8 @@
             </div>
             <div class="mt-6 flex justify-end gap-3">
                 <button @click="showAddEmployeeModal=false" class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">Cancel</button>
-                <button @click="addEmployee()" class="px-6 py-2 rounded-lg bg-yellow-400 font-semibold hover:bg-yellow-500 transition">Confirm</button>
+                <button @click="addEmployee()" class="px-6 py-2 rounded-lg bg-yellow-400 font-semibold hover:bg-yellow-500 text-white
+                 transition">Confirm</button>
             </div>
         </div>
     </div>
@@ -223,15 +224,15 @@ function employeePage() {
                 row.className = 'hover:bg-gray-50';
 
                 row.innerHTML = `
-                    <td class='px-4 py-3 text-center font-medium'>EMP${String(e.employee_id).padStart(3,'0')}</td>
-                    <td class='px-4 py-3 text-center'>${e.role?.role_name ?? 'N/A'}</td>
-                    <td class='px-4 py-3 text-center'>${e.fname}</td>
-                    <td class='px-4 py-3 text-center'>${e.lname}</td>
-                    <td class='px-4 py-3 text-center'>${e.gender}</td>
-                    <td class='px-4 py-3 text-center'>${e.bdate}</td>
-                    <td class='px-4 py-3 text-center'>${e.email ?? ''}</td>
-                    <td class='px-4 py-3 text-center'>${e.contact_no ?? ''}</td>
-                    <td class='px-4 py-3 text-center'>
+                    <td class='px-4 py-3 text-center font-medium text-gray-500"'>EMP${String(e.employee_id).padStart(3,'0')}</td>
+                    <td class='px-4 py-3 text-center text-gray-500"'>${e.role?.role_name ?? 'N/A'}</td>
+                    <td class='px-4 py-3 text-center text-gray-500"'>${e.fname}</td>
+                    <td class='px-4 py-3 text-center text-gray-500"'>${e.lname}</td>
+                    <td class='px-4 py-3 text-center text-gray-500"'>${e.gender}</td>
+                    <td class='px-4 py-3 text-center text-gray-500"'>${e.bdate}</td>
+                    <td class='px-4 py-3 text-center text-gray-500"'>${e.email ?? ''}</td>
+                    <td class='px-4 py-3 text-center text-gray-500"'>${e.contact_no ?? ''}</td>
+                    <td class='px-4 py-3 text-center text-gray-500"'>
                        <!-- User Password -->
                             <button 
                                 onclick="window.employeeShowPassword('{{ $emp->user->username ?? '' }}', '{{ $emp->user->plain_password ?? '' }}')"

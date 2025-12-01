@@ -26,51 +26,67 @@ class DeliveryController extends Controller
         return view('maincontent.delivery', compact('deliveries', 'suppliers', 'products'));
     }
 
-    // Store a new delivery
     public function store(Request $request)
     {
-        $request->validate([
+        // Validate request
+        $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,supplier_id',
             'delivery_date_request' => 'required|date',
             'products' => 'required|array|min:1',
             'products.*.product_id' => 'required|exists:products,product_id',
+            'products.*.product_type' => 'required|string|in:Ready Made,Customize Item',
             'products.*.quantity_product' => 'required|integer|min:1',
             'products.*.unit' => 'nullable|string|max:50',
-            'products.*.unit_cost' => 'required|numeric|min:0', // manually inputted cost
+            'products.*.unit_cost' => 'required|numeric|min:0',
+            'products.*.size' => 'nullable|string|max:50',
         ]);
 
-        $employeeId = auth()->user()->employee_id;
+        $employeeId = auth()->user()->employee->employee_id;
 
-        DB::transaction(function () use ($request, $employeeId) {
+        try {
+            DB::beginTransaction();
 
-            // Create main delivery record
+            // Create Delivery
             $delivery = Delivery::create([
-                'supplier_id' => $request->supplier_id,
+                'supplier_id' => $validated['supplier_id'],
                 'employee_id' => $employeeId,
-                'delivery_date_request' => $request->delivery_date_request,
+                'delivery_date_request' => $validated['delivery_date_request'],
                 'status' => 'Pending',
                 'delivery_date_received' => null,
+                'received_by' => null,
             ]);
 
-            // Insert delivery details
-            foreach ($request->products as $item) {
-                // Ensure unit is set; fallback to product default or pcs
+            // Create Delivery Details
+            foreach ($validated['products'] as $item) {
                 $unit = $item['unit'] ?? Product::find($item['product_id'])->unit ?? 'pcs';
+                $total = $item['quantity_product'] * $item['unit_cost'];
 
                 DeliveryDetail::create([
                     'delivery_id' => $delivery->delivery_id,
                     'product_id' => $item['product_id'],
+                    'product_type' => $item['product_type'], // ✅ Saved to delivery_details
                     'quantity_product' => $item['quantity_product'],
                     'unit' => $unit,
-                    'unit_cost' => $item['unit_cost'], // <-- manually inputted
-                    'total' => $item['quantity_product'] * $item['unit_cost'],
+                    'unit_cost' => $item['unit_cost'],
+                    'total' => $total,
+                    'size' => $item['size'] ?? null,
                 ]);
             }
-        });
 
-        return redirect()
-            ->route('delivery')
-            ->with('success', 'Delivery created successfully!');
+            DB::commit();
+
+            return redirect()
+                ->route('delivery')
+                ->with('success', 'Delivery created successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Failed to create delivery: ' . $e->getMessage());
+        }
     }
 
     // Update delivery status
@@ -87,15 +103,17 @@ class DeliveryController extends Controller
 
         $delivery->save();
 
-        return back()->with('success', 'Delivery updated.');
+        return back()->with('success', 'Delivery status updated successfully.');
     }
 
-    // Stock in a delivery
-    public function stockIn(Request $request, $delivery_id)
-    {
-        $delivery = Delivery::with('details')->findOrFail($delivery_id);
+  // Stock in a delivery
+public function stockIn(Request $request, $delivery_id)
+{
+    try {
+        DB::beginTransaction();
 
-        $employeeId = auth()->user()->employee_id;
+        $delivery = Delivery::with('details')->findOrFail($delivery_id);
+        $employeeId = auth()->user()->employee->employee_id;
 
         // Update delivery: mark as delivered and set received_by/date
         $delivery->update([
@@ -111,18 +129,32 @@ class DeliveryController extends Controller
                 'product_id' => $detail->product_id,
                 'total_stock' => $detail->quantity_product,
                 'current_stock' => $detail->quantity_product,
-                'unit_cost' => $detail->unit_cost, // <-- use unit_cost from delivery detail
+                'unit_cost' => $detail->unit_cost,
                 'date_received' => Carbon::now()->toDateString(),
                 'received_by' => $employeeId,
                 'last_updated' => now(),
+                'size' => $detail->size,
+                'product_type' => $detail->product_type ?? 'Ready Made', // use the actual type from detail
             ]);
         }
+
+        DB::commit();
 
         return response()->json([
             'success' => true,
             'message' => 'Delivery successfully stocked in and inventory updated.',
         ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to stock in delivery: ' . $e->getMessage()
+        ], 500);
     }
+}
+
 
     // Show inventory page with delivered deliveries
     public function inventoryPage(Request $request)

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Order;
 use App\Models\Inventory;
+use App\Models\Joborder;
 
 class OrderDetail extends Model
 {
@@ -20,6 +21,7 @@ class OrderDetail extends Model
         'quantity',
         'price',
         'total',
+        'vat',
         'color',
         'size'
     ];
@@ -32,5 +34,11 @@ class OrderDetail extends Model
     public function stock()
     {
         return $this->belongsTo(Inventory::class, 'stock_id', 'stock_id');
+    }
+
+    // NEW: Add this relationship for job orders
+    public function jobOrders()
+    {
+        return $this->hasMany(Joborder::class, 'orderdetails_id', 'orderdetails_id');
     }
 }

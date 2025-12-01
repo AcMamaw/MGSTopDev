@@ -17,6 +17,8 @@ class DeliveryDetail extends Model
         'quantity_product',
         'unit',
         'unit_cost',
+        'size',
+        'product_type',
         'total'
     ];
 

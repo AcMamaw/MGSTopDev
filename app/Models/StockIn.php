@@ -9,27 +9,32 @@ class StockIn extends Model
 {
     use HasFactory;
 
-    protected $table = 'stockins';  // table name
+    protected $table = 'stockins';
     protected $primaryKey = 'stockin_id';
-    public $timestamps = true;      // has created_at and updated_at
 
     protected $fillable = [
         'employee_id',
         'product_id',
+        'product_type',
+        'size',
         'quantity_product',
         'unit_cost',
         'total',
     ];
 
-    // Relationship: StockIn belongs to Product
+    // Relationships
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
 
-    // Relationship: StockIn received by Employee
     public function employee()
     {
         return $this->belongsTo(Employee::class, 'employee_id', 'employee_id');
+    }
+
+    public function inventory()
+    {
+        return $this->hasOne(Inventory::class, 'stockin_id', 'stockin_id');
     }
 }

@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Role;
-use App\Models\User; // Import User
+use App\Models\User; 
+use Illuminate\Support\Facades\DB;
 
 class EmployeeController extends Controller
 {
@@ -64,4 +65,5 @@ class EmployeeController extends Controller
              
         ]);
     }
+
 }

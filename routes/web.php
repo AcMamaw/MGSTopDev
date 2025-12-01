@@ -18,6 +18,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ProductController; 
 use App\Http\Controllers\RequestController; 
 use App\Http\Controllers\CategoryController; 
+use App\Http\Controllers\JoborderController;
 
 
 // --------------------------
@@ -49,7 +50,27 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports');
         Route::get('/payment', [PaymentController::class, 'index'])->name('payment');
         Route::get('/request', [RequestController::class, 'index'])->name('request');
-    });
+ 
+        Route::get('/joborders', [JoborderController::class, 'index'])->name('joborders');
+        Route::post('/joborders/{orderId}/update-status', [JoborderController::class, 'updateStatus'])
+            ->name('joborders.update-status');
+        
+        Route::post('/joborders/{orderId}/complete', [JoborderController::class, 'completeJobOrder'])
+            ->name('joborders.complete');
+
+        Route::get('/joborders/joborder-history', [JoborderController::class, 'jobOrderHistory'])->name('joborders.joborder-history');
+
+        Route::get('/joborders/{joborderId}', [JoborderController::class, 'show'])
+            ->name('joborders.show');});
+        
+        Route::post('/joborders/{orderId}/pick', [JoborderController::class, 'pickJobOrder'])->name('joborders.pick');
+        Route::post('/joborders/{orderId}/done', [JoborderController::class, 'doneJobOrder'])->name('joborders.done');
+
+        Route::post('/deliveries/{deliveryId}/update-status', [RequestController::class, 'updateStatus'])
+            ->name('deliveries.update-status');
+
+        Route::post('/stock-adjustments/{id}/approve', [RequestController::class, 'approveStockAdjustment'])
+            ->name('stock-adjustments.approve');
 
     // --------------------------
     // Inventory 
@@ -59,11 +80,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/outstock', [StockOutController::class, 'index'])->name('outstock');
         Route::get('/stock', [InventoryController::class, 'index'])->name('stock');
 
+        Route::post('/instock/store', [StockInController::class, 'store'])->name('instock.store');
+        Route::post('/instock/storeproduct', [StockInController::class, 'storeProduct'])->name('instock.storeProduct');
+
+        
         // Stock Adjustment
         Route::get('/stockadjustment', [StockAdjustmentController::class, 'index'])->name('stockadjustment');
-        Route::post('/instock/store', [StockInController::class, 'store'])->name('instock.store');
-        Route::post('/instock/product/store', [StockInController::class, 'storeProduct'])->name('instock.product.store');
-
+        Route::post('/stockadjustment/store', [StockAdjustmentController::class, 'store'])->name('stockadjustment.store');
+        Route::patch('/stockadjustment/{id}/approve', [StockAdjustmentController::class, 'approve'])->name('stockadjustment.approve');
+        Route::patch('/stockadjustment/{id}/reject', [StockAdjustmentController::class, 'reject'])->name('stockadjustment.reject');
     });
 
     // --------------------------
@@ -82,8 +107,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
         Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
         Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
-
         // Optional fetch route
+     
         Route::get('/roles/fetch', [RoleController::class, 'fetch'])->name('roles.fetch');
     });
 
@@ -112,10 +137,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/customer/store', [OrderController::class, 'storeCustomer'])->name('orders.customer.store');
     Route::post('/orders/{order}/complete', [OrderController::class, 'markAsCompleted'])->name('orders.complete');
     Route::post('/payments/update', [OrderController::class, 'updatePayment'])->name('payments.update');
+     Route::get('/employees/active', [OrderController::class, 'getActiveEmployees'])
+        ->name('employees.active');
+    
+    Route::post('/orders/assign', [OrderController::class, 'assignJobOrder'])
+        ->name('orders.assign');  
 
-    // --------------------------
-    // Employee Users (Admin only)
-    // --------------------------
     Route::post('/auth/users/store', [AuthController::class, 'createEmployeeUser'])
         ->middleware('role:Admin')->name('auth.users.store');
 

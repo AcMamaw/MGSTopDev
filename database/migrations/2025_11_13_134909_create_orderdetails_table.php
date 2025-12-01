@@ -23,8 +23,9 @@ return new class extends Migration
                 ->constrained('inventory', 'stock_id')
                 ->onDelete('cascade');
 
-            $table->integer('quantity'); // Quantity ordered
-            $table->decimal('price', 12, 2); // Price per unit
+            $table->integer('quantity');           // Quantity ordered
+            $table->decimal('price', 12, 2);       // Price per unit
+            $table->decimal('vat', 5, 2)->default(0); // VAT amount or percentage per item
             $table->timestamps();
         });
     }

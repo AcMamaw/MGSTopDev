@@ -18,6 +18,7 @@ class InventoryController extends Controller
             'product'       => $group->first()->product,
             'total_stock'   => $group->sum('total_stock'),
             'current_stock' => $group->sum('current_stock'),
+            'sizes'         => $group->pluck('size')->unique()->implode(', '), // <-- collect all sizes
         ];
     });
 

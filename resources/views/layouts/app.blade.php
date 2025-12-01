@@ -769,7 +769,7 @@ button[onclick^="toggleDropdown"] {
         </li>   
             <!-- Production Flow -->
                 <li>
-                    <a href="#" 
+                  <a href="{{ route('joborders') }}" 
                     class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
                     {{ request()->routeIs('request') 
                         ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 

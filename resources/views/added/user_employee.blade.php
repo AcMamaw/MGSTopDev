@@ -22,7 +22,7 @@
 
         <div class="mt-6 flex justify-end">
             <button @click="showUserModal=false"
-                class="px-6 py-2 rounded-lg bg-yellow-400 font-semibold hover:bg-yellow-500 transition">
+                class="px-6 py-2 rounded-lg text-white bg-yellow-400 font-semibold hover:bg-yellow-500 transition">
                 OK
             </button>
         </div>

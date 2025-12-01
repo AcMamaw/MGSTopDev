@@ -18,6 +18,9 @@ return new class extends Migration
                   ->after('customer_id') // adjust position if needed
                   ->constrained('categories', 'category_id')
                   ->onDelete('set null'); // optional: if category deleted, set null
+
+            // Add product_type column
+            $table->string('product_type')->nullable()->after('category_id');
         });
     }
 
@@ -28,7 +31,7 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             $table->dropForeign(['category_id']);
-            $table->dropColumn('category_id');
+            $table->dropColumn(['category_id', 'product_type']);
         });
     }
 };

@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreignId('received_by')->nullable()
                   ->constrained('employees', 'employee_id')
                   ->onDelete('set null');
-
+           
             $table->date('delivery_date_request');
             $table->date('delivery_date_received')->nullable(); // Nullable
             $table->string('status'); // e.g., Pending, Received

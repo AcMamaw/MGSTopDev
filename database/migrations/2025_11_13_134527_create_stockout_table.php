@@ -23,6 +23,8 @@ return new class extends Migration
                 ->constrained('employees', 'employee_id')
                 ->onDelete('cascade');
 
+            $table->string('size')->nullable();
+            $table->string('product_type')->nullable();
             $table->integer('quantity_out'); // Quantity taken out
             $table->date('date_out'); // Date of stock out
             $table->text('reason'); // Reason for stock out

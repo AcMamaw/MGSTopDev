@@ -11,29 +11,34 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('inventory', function (Blueprint $table) {
+        Schema::create('inventory', function (Blueprint $table) {
             $table->id('stock_id'); // Primary key
 
             $table->foreignId('deliverydetails_id')
-                ->nullable()          
+                ->nullable()
                 ->constrained('delivery_details', 'deliverydetails_id')
                 ->onDelete('cascade');
-
 
             $table->foreignId('product_id')
                 ->constrained('products', 'product_id')
                 ->onDelete('cascade');
 
-            $table->integer('total_stock'); // Total stock received
-            $table->integer('current_stock'); // Current stock remaining
-            $table->decimal('unit_cost', 12, 2); // Cost per unit
-            $table->date('date_received'); // Date received
+            // ✅ SIZE ONLY (NEW FIELD)
+            $table->string('size')->nullable();   // ex: S, M, L, XL, Custom, etc.
+
+            // ✅ PRODUCT TYPE
+            $table->string('product_type')->nullable(); // ex: "Ready Made" or "Customize Item"
+
+            $table->integer('total_stock');        // Total stock received
+            $table->integer('current_stock');      // Current stock remaining
+            $table->decimal('unit_cost', 12, 2);   // Cost per unit
+            $table->date('date_received');         // Date received
 
             $table->foreignId('received_by')
                 ->constrained('employees', 'employee_id')
                 ->onDelete('cascade');
 
-            $table->timestamp('last_updated')->useCurrent()->useCurrentOnUpdate(); // Timestamp for last update
+            $table->timestamp('last_updated')->useCurrent()->useCurrentOnUpdate();
             $table->timestamps();
         });
     }

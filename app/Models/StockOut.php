@@ -21,6 +21,7 @@ class StockOut extends Model
         'quantity_out',
         'date_out',
         'reason',
+        'size',
         'status',
         'approved_by'
     ];

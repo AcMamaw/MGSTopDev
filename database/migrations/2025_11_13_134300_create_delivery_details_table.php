@@ -11,12 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('delivery_details', function (Blueprint $table) {
+        Schema::create('delivery_details', function (Blueprint $table) {
             $table->id('deliverydetails_id'); // Primary key
             $table->foreignId('delivery_id')->constrained('deliveries', 'delivery_id')->onDelete('cascade'); // FK to deliveries
             $table->foreignId('product_id')->constrained('products', 'product_id')->onDelete('cascade'); // FK to products
             $table->integer('quantity_product'); // Quantity of product
             $table->decimal('unit_cost', 12, 2); // Unit cost
+
+            // Added size column
+            $table->string('size')->nullable();
+
+            // Added product_type column
+            $table->string('product_type')->nullable();
+
             $table->decimal('total', 12, 2); // Total amount
             $table->timestamps();
         });

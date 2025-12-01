@@ -35,6 +35,7 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Product</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Available Size</th>
                     <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-500">Total Stock</th>
                     <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-500">Available Stock</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Stock Level</th>
@@ -47,7 +48,9 @@
                         <td class="px-4 py-3 text-center text-gray-800 font-medium">
                             {{ $item->product->product_name }}
                         </td>
-
+                         <td class="px-4 py-3 text-center text-gray-800 font-medium">
+                            {{ $item->sizes}}
+                        </td>
                         <td class="px-4 py-3 text-right text-gray-600">
                             {{ $item->total_stock }}
                         </td>

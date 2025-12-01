@@ -23,52 +23,60 @@ class StockInController extends Controller
         // Pass data to the view
         return view('inventory.instock', compact('stockins', 'products'));
     }
-   
+    
     public function store(Request $request)
     {
-        // Validate input
+        // Validate input including product_type and size
         $request->validate([
             'product_id' => 'required|exists:products,product_id',
+            'product_type' => 'required|string|max:50', // Make sure product_type is required
+            'size' => 'required|string|max:50',
             'quantity_product' => 'required|integer|min:1',
             'unit_cost' => 'required|numeric|min:0',
         ]);
 
-        // Get logged-in employee ID
         $employeeId = Auth::user()->employee_id;
-
-        // Calculate total for stock-in
         $total = $request->quantity_product * $request->unit_cost;
 
         // Create StockIn record
         $stockIn = StockIn::create([
             'employee_id' => $employeeId,
             'product_id' => $request->product_id,
+            'product_type' => $request->product_type,
+            'size' => $request->size,
             'quantity_product' => $request->quantity_product,
             'unit_cost' => $request->unit_cost,
             'total' => $total,
-            'date_received' => Carbon::now()->toDateString(),
         ]);
 
         // Create corresponding Inventory record
         Inventory::create([
-            'stockin_id' => $stockIn->stockin_id,      // Link to this stock-in
-            'deliverydetails_id' => null,              // Manual stock-in
+            'stockin_id' => $stockIn->stockin_id,
+            'deliverydetails_id' => null,
             'product_id' => $request->product_id,
             'total_stock' => $request->quantity_product,
             'current_stock' => $request->quantity_product,
             'unit_cost' => $request->unit_cost,
+            'size' => $request->size,
+            'product_type' => $request->product_type, // <-- Add product_type here
             'date_received' => Carbon::now()->toDateString(),
             'received_by' => $employeeId,
             'last_updated' => now(),
         ]);
 
+        // Return JSON if AJAX request
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Stock-in added successfully!',
+                'product_id' => $stockIn->product_id,
+                'product_name' => $stockIn->product->product_name,
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Stock-in added successfully and inventory updated!');
     }
 
-    /**
-     * Store a new product from Stock In page (no supplier)
-     * This is specifically for quick product creation during stock-in process
-     */
     public function storeProduct(Request $request)
     {
         // Validate input
