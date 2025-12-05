@@ -55,7 +55,7 @@
     </button>
 
     <!-- Order History Modal -->
-  <div x-show="showOrderHistory" x-cloak x-transition
+   <div x-show="showOrderHistory" x-cloak x-transition
      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
     <div @click.outside.stop="showOrderHistory = false"
          class="bg-white w-full max-w-[95vw] rounded-xl shadow-2xl p-8 relative max-h-[90vh] flex flex-col">
@@ -88,19 +88,21 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-100 sticky top-0 z-10">
                         <tr>
-                            <th class="px-4 py-2 text-center">ID</th>
-                            <th class="px-4 py-2 text-center">Category</th>
-                            <th class="px-4 py-2 text-center">Customer</th>
-                            <th class="px-4 py-2 text-center">Product type</th>
-                            <th class="px-4 py-2 text-center">Issued by</th>
-                            <th class="px-4 py-2 text-center">Order date</th>
-                            <th class="px-4 py-2 text-center">Total</th>
-                            <th class="px-4 py-2 text-center">Status</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">ID</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Category</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Customer</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Product type</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Issued by</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Order date</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Total</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
                         </tr>
                     </thead>
                     <tbody id="ordersTableBody" class="divide-y divide-gray-100">
                         @php
-                            $completedOrders = $orders->where('status','Completed');
+                            $completedOrders = isset($allOrders) 
+                                ? $allOrders->where('status','Completed') 
+                                : collect([]);
                         @endphp
 
                         @forelse ($completedOrders as $order)
@@ -123,12 +125,12 @@
                                     {{ $order->employee ? $order->employee->fname . ' ' . $order->employee->lname : '-' }}
                                 </td>
                                 <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
-                                    {{ $order->order_date }}
+                                    {{ \Carbon\Carbon::parse($order->order_date)->format('M d, Y') }}
                                 </td>
                                 <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
                                     ₱{{ number_format($order->total_amount, 2) }}
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-4 py-3 text-center group-hover:opacity-0">
                                     <div class="flex justify-center items-center space-x-2">
                                         <span class="w-3 h-3 rounded-full bg-green-500"></span>
                                         <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
@@ -136,7 +138,7 @@
                                 </td>
 
                                 <!-- Hover Details Button -->
-                                <td colspan="7" class="absolute inset-0 flex items-center justify-center opacity-0 
+                                <td colspan="8" class="absolute inset-0 flex items-center justify-center opacity-0 
                                     group-hover:opacity-100 transition-opacity duration-200 bg-green-100">
                                     <button type="button"
                                             class="w-full h-full flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
@@ -192,13 +194,13 @@
         </div>
     </div>
 
-    <!-- Order Details Modal (unchanged except already has Close) -->
+    <!-- Order Details Modal -->
     <div x-show="showOrderDetails2" x-cloak x-transition
          class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
         <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto flex flex-col">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-gray-800">
-                    Order Details - ID: <span x-text="selectedOrderId"></span>
+                    Order Details - ID: <span x-text="'O' + String(selectedOrderId).padStart(3, '0')"></span>
                 </h2>
             </div>
 
@@ -207,6 +209,7 @@
                     <tr>
                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Item ID</th>
                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Product</th>
+                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Size</th>
                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Color</th>
                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Quantity</th>
                         <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Unit</th>
@@ -215,36 +218,39 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    @foreach ($orders as $order)
-                        @php $grandTotal = $order->items->sum(fn($item)=> $item->quantity * $item->price); @endphp
-                        @foreach ($order->items as $item)
+                    @if(isset($allOrders))
+                        @foreach ($allOrders as $order)
+                            @php $grandTotal = $order->items->sum(fn($item)=> $item->quantity * $item->price); @endphp
+                            @foreach ($order->items as $item)
+                                <tr x-show="selectedOrderId === {{ $order->order_id }}">
+                                    <td class="px-4 py-2 text-center">OD{{ str_pad($item->orderdetails_id,3,'0',STR_PAD_LEFT) }}</td>
+                                    <td class="px-4 py-2 text-center">{{ $item->stock->product->product_name ?? '-' }}</td>
+                                    <td class="px-4 py-2 text-center">{{ $item->size ?? '-' }}</td>
+                                    <td class="px-4 py-2 text-center">
+                                        <div class="flex items-center justify-center space-x-1">
+                                            <span class="w-4 h-4 rounded-full border" 
+                                                  style="background-color: {{ $item->color ?? '#ffffff' }};">
+                                            </span>
+                                            <span>{{ $item->color ?? '-' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-2 text-center">{{ $item->quantity }}</td>
+                                    <td class="px-4 py-2 text-center">{{ $item->stock->product->unit ?? '-' }}</td>
+                                    <td class="px-4 py-2 text-right">₱{{ number_format($item->price,2) }}</td>
+                                    <td class="px-4 py-2 text-right font-semibold">₱{{ number_format($item->quantity * $item->price,2) }}</td>
+                                </tr>
+                            @endforeach
                             <tr x-show="selectedOrderId === {{ $order->order_id }}">
-                                <td class="px-4 py-2 text-center">OD{{ str_pad($item->orderdetails_id,3,'0',STR_PAD_LEFT) }}</td>
-                                <td class="px-4 py-2 text-center">{{ $item->stock->product->product_name ?? '-' }}</td>
-                                <td class="px-4 py-2 text-center">
-                                    <div class="flex items-center justify-center space-x-1">
-                                        <span class="w-4 h-4 rounded-full" 
-                                              style="background-color: {{ $item->color ?? '#ffffff' }};">
-                                        </span>
-                                        <span>{{ $item->color ?? '-' }}</span>
-                                    </div>
+                                <td colspan="7"
+                                    class="px-4 py-3 text-right font-bold text-gray-700">
+                                    GRAND TOTAL:
                                 </td>
-                                <td class="px-4 py-2 text-center">{{ $item->quantity }}</td>
-                                <td class="px-4 py-2 text-center">{{ $item->stock->product->unit ?? '-' }}</td>
-                                <td class="px-4 py-2 text-right">₱{{ number_format($item->price,2) }}</td>
-                                <td class="px-4 py-2 text-right font-semibold">₱{{ number_format($item->quantity * $item->price,2) }}</td>
+                                <td class="px-4 py-3 text-right font-bold text-gray-900">
+                                    ₱{{ number_format($grandTotal,2) }}
+                                </td>
                             </tr>
                         @endforeach
-                      <tr x-show="selectedOrderId === {{ $order->order_id }}">
-                        <td colspan="6"
-                            class="px-4 py-3 text-right font-bold text-gray-700">
-                            GRAND TOTAL:
-                        </td>
-                        <td class="px-4 py-3 text-right font-bold text-gray-900">
-                            ₱{{ number_format($grandTotal,2) }}
-                        </td>
-                    </tr>
-                    @endforeach
+                    @endif
                 </tbody>
             </table>
 

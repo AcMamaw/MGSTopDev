@@ -63,7 +63,7 @@
             </div>
 
             <button type="submit"
-                class="w-full py-2 px-4 bg-sky-300 hover:bg-sky-700 text-white font-semibold rounded-lg transition">
+                class="w-full py-2 px-4 bg-sky-300 hover:bg-sky-700 text-black font-semibold rounded-lg transition">
                 Login
             </button>
         </form>

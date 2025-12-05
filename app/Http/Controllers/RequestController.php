@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Delivery;
 use App\Models\StockAdjustment;
 use Illuminate\Http\Request;
+use App\Models\Stockout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -62,7 +63,7 @@ class RequestController extends Controller
 
         if ($request->action === 'reject') {
             $adjustment->status = 'Rejected';
-            $adjustment->approved_by = Auth::id();
+            $adjustment->approved_by = Auth::user()->employee_id;
             $adjustment->save();
 
             return response()->json([
@@ -81,6 +82,7 @@ class RequestController extends Controller
 
             $qty = (int) $adjustment->quantity_adjusted;
             $type = $adjustment->adjustment_type; // 'Addition', 'Deduction', 'Correction'
+            $employeeId = Auth::user()->employee_id;
 
             // current values
             $current = (int) $stock->current_stock;
@@ -94,22 +96,36 @@ class RequestController extends Controller
                 $total   -= $qty;
                 if ($current < 0) $current = 0;
                 if ($total < 0) $total = 0;
+
+                // ✅ CREATE STOCK OUT RECORD FOR DEDUCTION
+                Stockout::create([
+                    'stock_id' => $stock->stock_id,
+                    'employee_id' => $employeeId,
+                    'quantity_out' => $qty,
+                    'date_out' => now(),
+                    'reason' => 'Stock Adjustment Deduction - ' . $adjustment->reason,
+                    'size' => $stock->size ?? null,
+                    'status' => 'Deducted', // ✅ Set status as "Deducted"
+                    'approved_by' => $employeeId,
+                ]);
             } elseif ($type === 'Correction') {
-                // no change to stock numbers
+                // For correction, set to adjusted quantity
+                $current = $qty;
             }
 
             $stock->current_stock = $current;
             $stock->total_stock   = $total;
+            $stock->last_updated = now();
             $stock->save();
 
             $adjustment->status      = 'Approved';
-            $adjustment->approved_by = Auth::id(); // user who approved
+            $adjustment->approved_by = $employeeId; // ✅ Changed from Auth::id() to employee_id
             $adjustment->save();
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'Stock adjustment approved and inventory updated.',
+            'message' => 'Stock adjustment approved, inventory updated, and stock out record created.',
         ]);
     }
 }

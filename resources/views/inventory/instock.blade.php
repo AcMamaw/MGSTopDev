@@ -4,7 +4,7 @@
 
 @section('content')
 
-<div class="max-w-7xl mx-auto" x-data="stockInComponent()" x-cloak>
+<div class="w-full px-4 md:px-0" x-data="stockInComponent()" x-cloak>
 
     <!-- Header -->
     <header class="mb-8">
@@ -49,7 +49,7 @@
                 <input type="text"
                     x-model="searchQuery"
                     @input="filterStockins()"
-                    placeholder="Search by Stock ID"
+                    placeholder="Search by Stock"
                     class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:outline-none w-full md:w-80"
                     style="min-width:200px;" />
             </div>
@@ -81,7 +81,7 @@
     </div>
 
     <!-- Table -->
-    <div class="bg-white p-6 rounded-xl shadow">
+    <div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto overflow-x-auto">
         <table class="min-w-full table-auto" id="stockInTable">
             <thead class="bg-gray-50">
                 <tr>
@@ -181,7 +181,7 @@
 
                     <button type="button"
                         onclick="openAddProductModal()"
-                        class="px-4 py-2 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 font-semibold flex-shrink-0">
+                        class="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 font-semibold flex-shrink-0">
                         Add
                     </button>
                 </div>
@@ -194,7 +194,7 @@
                     class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none">
                     <option value="">Select Type</option>
                     <option value="Ready Made">Ready Made</option>
-                    <option value="Customize Item">Customize Item</option>
+                    <option value="Customize Item">Customize Item (Optional)</option>
                 </select>
             </div>
 
@@ -242,12 +242,12 @@
             <!-- Buttons -->
             <div class="flex justify-end gap-2 mt-6">
                 <button type="button" onclick="closeStockModal()"
-                    class="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium">
+                        class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
                     Cancel
                 </button>
 
                 <button type="submit"
-                    class="px-6 py-2 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 font-semibold">
+                    class="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 font-semibold">
                     Save
                 </button>
             </div>
@@ -290,12 +290,12 @@
             <!-- Buttons -->
             <div class="flex justify-end gap-2 mt-6">
                 <button type="button" onclick="closeAddProductModal()"
-                    class="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium">
+                        class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
                     Cancel
                 </button>
 
                 <button type="submit"
-                    class="px-6 py-2 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 font-semibold">
+                    class="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 font-semibold">
                     Add Product
                 </button>
             </div>
@@ -305,7 +305,7 @@
 
 <!-- Scripts -->
 <script>
-    // Alpine component for search + filter + empty state
+    // ==================== ALPINE COMPONENT ====================
     function stockInComponent() {
         return {
             searchQuery: '',
@@ -324,10 +324,10 @@
                     const matchesSearch = !q || searchText.includes(q);
 
                     if (matchesType && matchesSearch) {
-                        row.style.display = '';
+                        row.classList.remove('filtered-out');
                         visibleCount++;
                     } else {
-                        row.style.display = 'none';
+                        row.classList.add('filtered-out');
                     }
                 });
 
@@ -336,7 +336,8 @@
                     emptyFilterRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
                 }
 
-                // Re-paginate after filtering
+                // Re-initialize pagination with filtered rows
+                updateStockinPagination();
                 showStockinPage(1);
             }
         }
@@ -404,8 +405,116 @@
         }, 300);
     }
 
+    // ==================== SUCCESS MESSAGE ====================
+    function showSuccessMessage(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-6 py-3 rounded-lg shadow-lg z-[70] transform translate-x-0 transition-transform duration-300';
+        successDiv.textContent = message;
+        
+        document.body.appendChild(successDiv);
+        
+        setTimeout(() => {
+            successDiv.classList.add('translate-x-0');
+        }, 10);
+        
+        setTimeout(() => {
+            successDiv.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(successDiv);
+            }, 300);
+        }, 3000);
+    }
+
+    // ==================== PAGINATION (UPDATED) ====================
+    const stockinRowsPerPage = 5;
+    let stockinCurrentPage = 1;
+    let visibleStockinRows = [];
+
+    function updateStockinPagination() {
+        const stockinTableBody = document.getElementById('stockInTableBody');
+        const allRows = Array.from(stockinTableBody.querySelectorAll('.stock-row'));
+        
+        // Get only visible rows (not filtered out)
+        visibleStockinRows = allRows.filter(row => !row.classList.contains('filtered-out'));
+    }
+
+    function showStockinPage(page) {
+        const stockinTotalPages = Math.ceil(visibleStockinRows.length / stockinRowsPerPage);
+        
+        if (page < 1) page = 1;
+        if (page > stockinTotalPages && stockinTotalPages > 0) page = stockinTotalPages;
+        
+        stockinCurrentPage = page;
+        
+        // Hide all stock rows first
+        document.querySelectorAll('.stock-row').forEach(row => row.style.display = 'none');
+        
+        // Show only the visible rows for current page
+        const start = (page - 1) * stockinRowsPerPage;
+        const end = start + stockinRowsPerPage;
+        visibleStockinRows.slice(start, end).forEach(row => row.style.display = '');
+        
+        renderStockinPagination();
+        
+        // Update pagination info
+        const stockinPaginationInfo = document.getElementById('stockin-pagination-info');
+        const startItem = visibleStockinRows.length ? start + 1 : 0;
+        const endItem = end > visibleStockinRows.length ? visibleStockinRows.length : end;
+        stockinPaginationInfo.textContent = `Showing ${startItem} to ${endItem} of ${visibleStockinRows.length} results`;
+    }
+
+    function renderStockinPagination() {
+        const stockinPaginationLinks = document.getElementById('stockin-pagination-links');
+        const stockinTotalPages = Math.ceil(visibleStockinRows.length / stockinRowsPerPage);
+        
+        stockinPaginationLinks.innerHTML = '';
+
+        // Previous button
+        const prev = document.createElement('li');
+        prev.className = 'border rounded px-2 py-1';
+        prev.innerHTML = stockinCurrentPage === 1 ? '« Prev' : `<a href="#">« Prev</a>`;
+        if (stockinCurrentPage !== 1) {
+            prev.querySelector('a').addEventListener('click', e => { 
+                e.preventDefault(); 
+                showStockinPage(stockinCurrentPage - 1); 
+            });
+        }
+        stockinPaginationLinks.appendChild(prev);
+
+        // Page numbers
+        for (let i = 1; i <= stockinTotalPages; i++) {
+            const li = document.createElement('li');
+            li.className = 'border rounded px-2 py-1' + (i === stockinCurrentPage ? ' bg-yellow-400 text-black' : '');
+            li.innerHTML = i === stockinCurrentPage ? i : `<a href="#">${i}</a>`;
+            if (i !== stockinCurrentPage) {
+                li.querySelector('a').addEventListener('click', e => { 
+                    e.preventDefault(); 
+                    showStockinPage(i); 
+                });
+            }
+            stockinPaginationLinks.appendChild(li);
+        }
+
+        // Next button
+        const next = document.createElement('li');
+        next.className = 'border rounded px-2 py-1';
+        next.innerHTML = stockinCurrentPage === stockinTotalPages ? 'Next »' : `<a href="#">Next »</a>`;
+        if (stockinCurrentPage !== stockinTotalPages) {
+            next.querySelector('a').addEventListener('click', e => { 
+                e.preventDefault(); 
+                showStockinPage(stockinCurrentPage + 1); 
+            });
+        }
+        stockinPaginationLinks.appendChild(next);
+    }
+
     // ==================== AJAX FORM SUBMISSION FOR STOCK IN ====================
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize pagination
+        updateStockinPagination();
+        showStockinPage(1);
+
+        // Stock In Form
         const addStockForm = document.getElementById('addStockForm');
         
         addStockForm.addEventListener('submit', function(e) {
@@ -418,7 +527,7 @@
             submitButton.disabled = true;
             submitButton.textContent = 'Saving...';
 
-            fetch('{{ route("instock.store") }}', {
+            fetch(this.action, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -451,10 +560,8 @@
                 submitButton.textContent = originalText;
             });
         });
-    });
 
-    // ==================== AJAX FORM SUBMISSION FOR ADD PRODUCT ====================
-    document.addEventListener('DOMContentLoaded', function() {
+        // Add Product Form
         const addProductForm = document.getElementById('addProductForm');
         
         addProductForm.addEventListener('submit', function(e) {
@@ -501,74 +608,6 @@
             });
         });
     });
-
-    // ==================== SUCCESS MESSAGE ====================
-    function showSuccessMessage(message) {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-6 py-3 rounded-lg shadow-lg z-[70] transform translate-x-0 transition-transform duration-300';
-        successDiv.textContent = message;
-        
-        document.body.appendChild(successDiv);
-        
-        setTimeout(() => {
-            successDiv.classList.add('translate-x-0');
-        }, 10);
-        
-        setTimeout(() => {
-            successDiv.classList.add('translate-x-full');
-            setTimeout(() => {
-                document.body.removeChild(successDiv);
-            }, 300);
-        }, 3000);
-    }
-
-    // ==================== PAGINATION ====================
-    const stockinRowsPerPage = 5;
-    const stockinTableBody = document.getElementById('stockInTableBody');
-    const stockinRows = Array.from(stockinTableBody.querySelectorAll('.stock-row'));
-    const stockinPaginationLinks = document.getElementById('stockin-pagination-links');
-    const stockinPaginationInfo = document.getElementById('stockin-pagination-info');
-
-    let stockinCurrentPage = 1;
-    const stockinTotalPages = Math.ceil(stockinRows.length / stockinRowsPerPage);
-
-    function showStockinPage(page) {
-        stockinCurrentPage = page;
-        stockinRows.forEach(row => row.style.display = 'none');
-        const start = (page - 1) * stockinRowsPerPage;
-        const end = start + stockinRowsPerPage;
-        stockinRows.slice(start, end).forEach(row => row.style.display = '');
-        renderStockinPagination();
-        const startItem = stockinRows.length ? start + 1 : 0;
-        const endItem = end > stockinRows.length ? stockinRows.length : end;
-        stockinPaginationInfo.textContent = `Showing ${startItem} to ${endItem} of ${stockinRows.length} results`;
-    }
-
-    function renderStockinPagination() {
-        stockinPaginationLinks.innerHTML = '';
-
-        const prev = document.createElement('li');
-        prev.className = 'border rounded px-2 py-1';
-        prev.innerHTML = stockinCurrentPage === 1 ? '« Prev' : `<a href="#">« Prev</a>`;
-        if (stockinCurrentPage !== 1) prev.querySelector('a').addEventListener('click', e => { e.preventDefault(); showStockinPage(stockinCurrentPage - 1); });
-        stockinPaginationLinks.appendChild(prev);
-
-        for (let i = 1; i <= stockinTotalPages; i++) {
-            const li = document.createElement('li');
-            li.className = 'border rounded px-2 py-1' + (i === stockinCurrentPage ? ' bg-sky-400 text-white' : '');
-            li.innerHTML = i === stockinCurrentPage ? i : `<a href="#">${i}</a>`;
-            if (i !== stockinCurrentPage) li.querySelector('a').addEventListener('click', e => { e.preventDefault(); showStockinPage(i); });
-            stockinPaginationLinks.appendChild(li);
-        }
-
-        const next = document.createElement('li');
-        next.className = 'border rounded px-2 py-1';
-        next.innerHTML = stockinCurrentPage === stockinTotalPages ? 'Next »' : `<a href="#">Next »</a>`;
-        if (stockinCurrentPage !== stockinTotalPages) next.querySelector('a').addEventListener('click', e => { e.preventDefault(); showStockinPage(stockinCurrentPage + 1); });
-        stockinPaginationLinks.appendChild(next);
-    }
-
-    showStockinPage(1);
 </script>
 
 @endsection

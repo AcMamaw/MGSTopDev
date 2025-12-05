@@ -73,11 +73,11 @@
 
             <div class="flex justify-end gap-3">
                 <button type="button" @click="showCompletePaymentModal = false"
-                        class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+                     class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
                     Cancel
                 </button>
                 <button type="submit"
-                        class="px-6 py-2 rounded-lg bg-yellow-400 text-white font-semibold hover:bg-yellow-500 transition">
+                        class="px-6 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
                     Confirm Payment
                 </button>
             </div>

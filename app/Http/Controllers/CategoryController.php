@@ -31,4 +31,20 @@ class CategoryController extends Controller
         return response()->json($category);
     }
 
+      public function update(Request $request, Category $category)
+    {
+        $data = $request->validate([
+            'category_name' => 'sometimes|nullable|string|max:255',
+            'description'   => 'sometimes|nullable|string',
+        ]);
+
+        $category->fill($data)->save();
+
+        return response()->json([
+            'category_id'   => $category->category_id,
+            'category_name' => $category->category_name,
+            'description'   => $category->description,
+        ]);
+    }
+
 }

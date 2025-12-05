@@ -31,4 +31,19 @@ class SupplierController extends Controller
         return response()->json($supplier);
     }
 
+
+       public function update(Request $request, Supplier $supplier)
+    {
+        $data = $request->validate([
+            'supplier_name'  => 'required|string|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'contact_no'     => 'nullable|string|max:50',
+            'email'          => 'nullable|email|max:255',
+            'address'        => 'nullable|string|max:255',
+        ]);
+
+        $supplier->update($data);
+
+        return response()->json($supplier);
+    }
 }

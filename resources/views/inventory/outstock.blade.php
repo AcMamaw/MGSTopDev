@@ -14,16 +14,34 @@
 <div class="max-w-7xl mx-auto mb-6">
     <div class="flex flex-col md:flex-row items-stretch justify-between gap-4">
 
-        <!-- Search -->
-        <div class="relative w-full md:w-1/4">
-            <input type="text" id="stockout-search" placeholder="Search stock out"
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:outline-none">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-            </svg>
+        <!-- Left: Search + Status filter -->
+        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
+
+           <!-- Search -->
+            <div class="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                </svg>
+
+                <input type="text" id="stockout-search" placeholder="Search stock out"
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm
+                            focus:ring-2 focus:ring-black focus:outline-none">
+            </div>
+
+                <!-- Status Filter -->
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700">Status:</label>
+                <select id="stockout-status-filter"
+                        class="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black">
+                    <option value="all">All Status</option>
+                    <option value="Picked">Picked</option>
+                    <option value="Deducted">Deducted</option>
+                    <option value="Completed">Completed</option>
+                 </select>
+            </div>
         </div>
     </div>
 </div>
@@ -39,13 +57,14 @@
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Quantity Out</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Date Out</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Reason</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Employee ID</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Employee</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Status</th>
                 </tr>
             </thead>
            <tbody id="stockout-table-body" class="divide-y divide-gray-100">
                 @foreach($outstock as $so)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 stockout-row"
+                        data-status="{{ $so->status }}">
                         <td class="px-4 py-3 text-center text-gray-800 font-medium">
                             SO{{ str_pad($so->stockout_id, 3, '0', STR_PAD_LEFT) }}
                         </td>
@@ -58,90 +77,155 @@
                          <td class="px-4 py-3 text-center text-gray-600">
                             {{ $so->employee->fname ?? '' }} {{ $so->employee->lname ?? '' }}
                         </td>
-                      <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
-                        <!-- Green dot -->
-                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
-
-                        <!-- Status text in black -->
-                        <span class="text-xs font-semibold text-black">{{ $so->status }}</span>
-                    </td>
+                        <td class="px-4 py-3 text-center flex justify-center items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                            <span class="text-xs font-semibold text-black">{{ $so->status }}</span>
+                        </td>
                     </tr>
                 @endforeach
+
+                {{-- Empty state row --}}
+                <tr id="stockout-empty-row" class="{{ $outstock->count() ? 'hidden' : '' }}">
+                    <td colspan="7" class="px-4 py-10 text-center text-gray-500 text-sm">
+                        <div class="flex flex-col items-center justify-center space-y-2">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-16 w-16 text-gray-300"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+                                <path d="M14 3v5h5" />
+                                <path d="M9 13h6" />
+                                <path d="M9 17h3" />
+                            </svg>
+                            <p class="text-gray-700 font-semibold">
+                                No stock-out records found
+                            </p>
+                            <p class="text-gray-400 text-xs">
+                                There are currently no records matching these filters.
+                            </p>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
 </div>
 
-
-
 <!-- Pagination -->
 <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600">
-    <div id="stockout-pagination-info">Showing 1 to 1 of 3 results</div>
+    <div id="stockout-pagination-info"></div>
     <ul id="stockout-pagination-links" class="pagination-links flex gap-2"></ul>
 </div>
 
 <script>
-// Pagination
-const rowsPerPage = 5;
-const tableBody = document.getElementById('stockout-table-body');
-const rows = Array.from(tableBody.querySelectorAll('tr'));
-const paginationLinks = document.getElementById('stockout-pagination-links');
-const paginationInfo = document.getElementById('stockout-pagination-info');
+// Pagination + status filter + search + empty state
+const soRowsPerPage   = 5;
+const soTableBody     = document.getElementById('stockout-table-body');
+const soAllRows       = Array.from(soTableBody.querySelectorAll('.stockout-row'));
+const soEmptyRow      = document.getElementById('stockout-empty-row');
+const soPaginationLinks = document.getElementById('stockout-pagination-links');
+const soPaginationInfo  = document.getElementById('stockout-pagination-info');
 
-let currentPage = 1;
-const totalPages = Math.ceil(rows.length / rowsPerPage);
+const soSearchInput  = document.getElementById('stockout-search');
+const soStatusFilter = document.getElementById('stockout-status-filter');
 
-function showPage(page) {
-    currentPage = page;
+let soCurrentPage  = 1;
+let soFilteredRows = [...soAllRows];
 
-    rows.forEach(row => row.style.display = 'none');
+function applySOFilters() {
+    const q      = (soSearchInput.value || '').toLowerCase();
+    const status = soStatusFilter ? soStatusFilter.value : 'all';
 
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    rows.slice(start, end).forEach(row => row.style.display = '');
+    soFilteredRows = soAllRows.filter(row => {
+        const rowStatus = (row.getAttribute('data-status') || '').trim();
 
-    renderPagination();
+        if (status !== 'all' && rowStatus !== status) return false;
 
-    const startItem = rows.length ? start + 1 : 0;
-    const endItem = end > rows.length ? rows.length : end;
-    saPaginationInfo.textContent = `Showing ${startItem} to ${saCurrentPage} of ${saRows.length} results`;
+        if (q) {
+            const text = row.textContent.toLowerCase();
+            if (!text.includes(q)) return false;
+        }
+        return true;
+    });
+
+    if (soFilteredRows.length === 0) {
+        soAllRows.forEach(r => r.style.display = 'none');
+        soEmptyRow.classList.remove('hidden');
+        soPaginationInfo.textContent = 'Showing 0 to 0 of 0 results';
+        soPaginationLinks.innerHTML = '';
+        return;
+    } else {
+        soEmptyRow.classList.add('hidden');
+    }
+
+    soCurrentPage = 1;
+    showSOPage(1);
 }
 
-function renderPagination() {
-    paginationLinks.innerHTML = '';
+function showSOPage(page) {
+    const soTotalPages = Math.ceil(soFilteredRows.length / soRowsPerPage) || 1;
+
+    if (page < 1) page = 1;
+    if (page > soTotalPages) page = soTotalPages;
+
+    soCurrentPage = page;
+
+    soAllRows.forEach(row => row.style.display = 'none');
+
+    const start = (page - 1) * soRowsPerPage;
+    const end   = start + soRowsPerPage;
+    soFilteredRows.slice(start, end).forEach(row => row.style.display = '');
+
+    renderSOPagination(soTotalPages);
+
+    const startItem = soFilteredRows.length ? start + 1 : 0;
+    const endItem   = end > soFilteredRows.length ? soFilteredRows.length : end;
+    soPaginationInfo.textContent = `Showing ${startItem} to ${endItem} of ${soFilteredRows.length} results`;
+}
+
+function renderSOPagination(soTotalPages) {
+    soPaginationLinks.innerHTML = '';
 
     const prev = document.createElement('li');
     prev.className = 'border rounded px-2 py-1';
-    prev.innerHTML = currentPage === 1 ? '« Prev' : `<a href="#">« Prev</a>`;
-    if (currentPage !== 1) prev.querySelector('a').addEventListener('click', e => { e.preventDefault(); showPage(currentPage - 1); });
-    paginationLinks.appendChild(prev);
+    prev.innerHTML = soCurrentPage === 1 ? '« Prev' : `<a href="#">« Prev</a>`;
+    if (soCurrentPage !== 1) {
+        prev.querySelector('a').addEventListener('click', e => {
+            e.preventDefault();
+            showSOPage(soCurrentPage - 1);
+        });
+    }
+    soPaginationLinks.appendChild(prev);
 
-    for (let i = 1; i <= totalPages; i++) {
+    for (let i = 1; i <= soTotalPages; i++) {
         const li = document.createElement('li');
-        li.className = 'border rounded px-2 py-1' + (i === currentPage ? ' bg-sky-400 text-white' : '');
-        li.innerHTML = i === currentPage ? i : `<a href="#">${i}</a>`;
-        if (i !== currentPage) li.querySelector('a').addEventListener('click', e => { e.preventDefault(); showPage(i); });
-        paginationLinks.appendChild(li);
+        li.className = 'border rounded px-2 py-1' + (i === soCurrentPage ? ' bg-yellow-400 text-black' : '');
+        li.innerHTML = i === soCurrentPage ? i : `<a href="#">${i}</a>`;
+        if (i !== soCurrentPage) {
+            li.querySelector('a').addEventListener('click', e => {
+                e.preventDefault();
+                showSOPage(i);
+            });
+        }
+        soPaginationLinks.appendChild(li);
     }
 
     const next = document.createElement('li');
     next.className = 'border rounded px-2 py-1';
-    next.innerHTML = currentPage === totalPages ? 'Next »' : `<a href="#">Next »</a>`;
-    if (currentPage !== totalPages) next.querySelector('a').addEventListener('click', e => { e.preventDefault(); showPage(currentPage + 1); });
-    paginationLinks.appendChild(next);
+    next.innerHTML = soCurrentPage === soTotalPages ? 'Next »' : `<a href="#">Next »</a>`;
+    if (soCurrentPage !== soTotalPages) {
+        next.querySelector('a').addEventListener('click', e => {
+            e.preventDefault();
+            showSOPage(soCurrentPage + 1);
+        });
+    }
+    soPaginationLinks.appendChild(next);
 }
 
-// Initialize
-showPage(1);
+soSearchInput.addEventListener('input', applySOFilters);
+if (soStatusFilter) soStatusFilter.addEventListener('change', applySOFilters);
 
-// Search
-document.getElementById('stockout-search').addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    rows.forEach(row => {
-        const cells = Array.from(row.querySelectorAll('td'));
-        const match = cells.some(cell => cell.textContent.toLowerCase().includes(query));
-        row.style.display = match ? '' : 'none';
-    });
-});
+// Init
+applySOFilters();
 </script>
 @endsection

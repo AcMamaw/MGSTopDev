@@ -10,14 +10,12 @@
     <p class="text-gray-600 mt-2">Manage stock adjustment records including quantity changes, reasons, and approval status.</p>
 </header>
 
-<!-- Success Message -->
 @if(session('success'))
 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded max-w-7xl mx-auto">
     {{ session('success') }}
 </div>
 @endif
 
-<!-- Validation Errors -->
 @if($errors->any())
 <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-7xl mx-auto">
     <ul>
@@ -32,29 +30,59 @@
 <div class="max-w-7xl mx-auto mb-6">
     <div class="flex flex-col md:flex-row items-stretch justify-between gap-4">
 
-        <!-- Search -->
-        <div class="relative w-full md:w-1/4">
-            <input type="text" id="stockadjustment-search" placeholder="Search stock adjustments"
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:outline-none">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-            </svg>
+        <!-- Left: Search + Filters -->
+        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
+
+            <!-- Search -->
+            <div class="relative w-full md:w-1/3">
+                <input type="text" id="stockadjustment-search" placeholder="Search stock adjustments"
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                </svg>
+            </div>
+
+            <!-- Adjustment Type Filter -->
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700">Type:</label>
+                <select id="sa-type-filter"
+                        class="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black">
+                    <option value="all">All Types</option>
+                    <option value="Addition">Addition</option>
+                    <option value="Deduction">Deduction</option>
+                    <option value="Correction">Correction</option>
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700">Status:</label>
+                <select id="sa-status-filter"
+                        class="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black">
+                    <option value="all">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
         </div>
 
-         <!-- Add StockAdjustment -->
-        <button onclick="openAdjustmentModal()"
-            class="w-full md:w-auto bg-yellow-400 text-black px-6 py-2 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-plus">
-                <path d="M12 5v14" />
-                <path d="M5 12h14" />
-            </svg>
-            <span>Adjust Stocks</span>
-        </button>
+        <!-- Right: Add StockAdjustment button -->
+       <div class="flex items-center justify-end">
+           <button onclick="openAdjustmentModal()"
+              class="w-60 bg-yellow-400 text-black px-6 py-2 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     class="lucide lucide-plus">
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                </svg>
+                <span>Adjust Stocks</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -77,7 +105,9 @@
             </thead>
             <tbody id="stockadjustment-table-body" class="divide-y divide-gray-100">
                @foreach($adjustments as $sa)
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-gray-50 sa-row"
+                    data-type="{{ $sa->adjustment_type }}"
+                    data-status="{{ $sa->status }}">
                     <td class="px-4 py-3 text-center text-gray-800 font-medium">
                         SA{{ str_pad($sa->stockadjustment_id,3,'0',STR_PAD_LEFT) }}
                     </td>
@@ -94,36 +124,61 @@
                     <td class="px-4 py-3 text-center text-gray-600">
                         {{ $sa->status === 'Approved' ? ($sa->approvedBy->fname ?? '') . ' ' . ($sa->approvedBy->lname ?? '') : '—' }}
                     </td>
-                  <td class="px-4 py-3">
-                    @php
-                        switch($sa->status) {
-                            case 'Pending':
-                                $statusColor = 'bg-gray-500';
-                                $statusText  = 'Pending';
-                                break;
-                            case 'Approved':
-                                $statusColor = 'bg-green-500';
-                                $statusText  = 'Approved';
-                                break;
-                            case 'Rejected':
-                                $statusColor = 'bg-red-500';
-                                $statusText  = 'Rejected';
-                                break;
-                            default:
-                                $statusColor = 'bg-gray-500';
-                                $statusText  = $sa->status;
-                        }
-                    @endphp
-
-                    <div class="flex justify-center items-center space-x-2">
-                        <!-- Status dot -->
-                        <span class="w-3 h-3 rounded-full {{ $statusColor }}"></span>
-                        <span class="text-gray-800 text-xs font-semibold">{{ $statusText }}</span>
-                    </div>
-                </td>
-
+                    <td class="px-4 py-3">
+                        @php
+                            switch($sa->status) {
+                                case 'Pending':
+                                    $statusColor = 'bg-gray-500';
+                                    $statusText  = 'Pending';
+                                    break;
+                                case 'Approved':
+                                    $statusColor = 'bg-green-500';
+                                    $statusText  = 'Approved';
+                                    break;
+                                case 'Rejected':
+                                    $statusColor = 'bg-red-500';
+                                    $statusText  = 'Rejected';
+                                    break;
+                                default:
+                                    $statusColor = 'bg-gray-500';
+                                    $statusText  = $sa->status;
+                            }
+                        @endphp
+                        <div class="flex justify-center items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full {{ $statusColor }}"></span>
+                            <span class="text-gray-800 text-xs font-semibold">{{ $statusText }}</span>
+                        </div>
+                    </td>
                 </tr>
-                @endforeach
+               @endforeach
+
+             {{-- Empty state row --}}
+                <tr id="sa-empty-row" class="{{ $adjustments->count() ? 'hidden' : '' }}">
+                    <td colspan="9" class="px-4 py-10 text-center text-gray-500 text-sm">
+                        <div class="flex flex-col items-center justify-center space-y-2">
+                            <!-- Icon -->
+                           <svg xmlns="http://www.w3.org/2000/svg"
+                                class="h-16 w-16 text-gray-300"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+                                <path d="M14 3v5h5" />
+                                <path d="M9 13h6" />
+                                <path d="M9 17h3" />
+                            </svg>
+
+                            <!-- Title -->
+                            <p class="text-gray-700 font-semibold">
+                                No stock adjustments found
+                            </p>
+
+                            <!-- Subtitle -->
+                            <p class="text-gray-400 text-xs">
+                                There are currently no adjustments matching these filters.
+                            </p>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -131,51 +186,64 @@
 
 <!-- Pagination -->
 <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto">
-    <div id="stockadjustment-pagination-info">Showing 1 to 1 of {{ count($adjustments) }} results</div>
+    <div id="stockadjustment-pagination-info"></div>
     <ul id="stockadjustment-pagination-links" class="pagination-links flex gap-2"></ul>
 </div>
 
 <!-- ADD STOCK ADJUSTMENT MODAL -->
 <div id="adjustmentModal" 
     class="fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-0 invisible transition-all duration-300">
-
     <div id="adjustmentModalBox"
-        class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-lg transform scale-90 opacity-0 transition-all duration-300">
-
+        class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl transform scale-90 opacity-0 transition-all duration-300">
         <h2 class="text-2xl font-bold mb-4 text-gray-800">Adjust Stock</h2>
 
         <form id="adjustmentForm" method="POST" action="{{ route('stockadjustment.store') }}">
             @csrf
-
-            <!-- Stock Selection -->
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-1">Select Product Stock</label>
-                <select name="stock_id" id="stockSelect" required 
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
-                    onchange="updateCurrentStock()">
+               <select name="stock_group_key" id="stockSelect" required
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                        onchange="updateCurrentStock()">
                     <option value="">Select Stock</option>
                     @foreach($stocks as $stock)
-                    <option value="{{ $stock->stock_id }}" 
-                            data-current="{{ $stock->current_stock }}"
-                            data-product="{{ $stock->product->product_name ?? 'Unknown' }}"
-                            data-size="{{ $stock->size ?? 'N/A' }}">
-                        {{ $stock->product->product_name ?? 'Unknown' }} 
-                        (Size: {{ $stock->size ?? 'N/A' }}) - 
-                        Current: {{ $stock->current_stock }}
-                    </option>
+                        <option value="{{ $stock->stock_id }}" 
+                                data-current="{{ $stock->current_stock }}"
+                                data-product="{{ $stock->product->product_name ?? 'Unknown' }}"
+                                data-type="{{ $stock->product_type ?? 'N/A' }}"
+                                data-size="{{ $stock->size ?? 'N/A' }}"
+                                data-stock-ids='@json($stock->stock_ids)'>
+                            {{ $stock->product->product_name ?? 'Unknown' }} 
+                            (Type: {{ $stock->product_type ?? 'N/A' }}) 
+                            (Size: {{ $stock->size ?? 'N/A' }}) - 
+                            Current: {{ $stock->current_stock }}
+                        </option>
                     @endforeach
                 </select>
+
+                <input type="hidden" name="stock_ids" id="stockIds">
             </div>
 
-            <!-- Current Stock Display -->
             <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-                <p class="text-sm text-gray-700">
-                    <span class="font-semibold">Current Stock:</span> 
-                    <span id="currentStockDisplay" class="text-blue-600 font-bold">0</span>
-                </p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-semibold">Product</p>
+                        <p id="productDisplay" class="text-sm text-gray-800 font-medium">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-semibold">Product Type</p>
+                        <p id="productTypeDisplay" class="text-sm text-gray-800 font-medium">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-semibold">Size</p>
+                        <p id="sizeDisplay" class="text-sm text-gray-800 font-medium">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase font-semibold">Current Stock</p>
+                        <p id="currentStockDisplay" class="text-sm text-blue-600 font-bold">0</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Adjustment Type -->
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-1">Adjustment Type</label>
                 <select name="adjustment_type" required 
@@ -187,7 +255,6 @@
                 </select>
             </div>
 
-            <!-- Quantity Adjusted -->
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-1">Quantity to Adjust</label>
                 <input type="number" name="quantity_adjusted" min="1" required 
@@ -195,7 +262,6 @@
                     placeholder="Enter quantity">
             </div>
 
-            <!-- Reason -->
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-1">Reason</label>
                 <textarea name="reason" rows="3" required
@@ -203,18 +269,16 @@
                     placeholder="Explain the reason for this adjustment"></textarea>
             </div>
 
-            <!-- Request Date (auto-filled) -->
             <input type="hidden" name="request_date" value="{{ date('Y-m-d') }}">
 
-            <!-- Buttons -->
             <div class="flex justify-end gap-2 mt-6">
                 <button type="button" onclick="closeAdjustmentModal()"
-                    class="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium">
+                        class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
                     Cancel
                 </button>
 
                 <button type="submit"
-                    class="px-6 py-2 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 font-semibold">
+                    class="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 font-semibold">
                     Submit Adjustment
                 </button>
             </div>
@@ -223,7 +287,7 @@
 </div>
 
 <script>
-// ==================== MODAL FUNCTIONS ====================
+// MODAL
 function openAdjustmentModal() {
     const modal = document.getElementById('adjustmentModal');
     const box = document.getElementById('adjustmentModalBox');
@@ -254,15 +318,26 @@ function closeAdjustmentModal() {
     }, 300);
 }
 
-// Update current stock display
 function updateCurrentStock() {
     const select = document.getElementById('stockSelect');
     const selectedOption = select.options[select.selectedIndex];
-    const currentStock = selectedOption.getAttribute('data-current') || 0;
+
+    const currentStock = selectedOption.getAttribute('data-current') || '0';
+    const productName = selectedOption.getAttribute('data-product') || '-';
+    const productType = selectedOption.getAttribute('data-type') || '-';
+    const size = selectedOption.getAttribute('data-size') || '-';
+    const stockIds = selectedOption.getAttribute('data-stock-ids') || '[]';
+
     document.getElementById('currentStockDisplay').textContent = currentStock;
+    document.getElementById('productDisplay').textContent = productName;
+    document.getElementById('productTypeDisplay').textContent = productType;
+    document.getElementById('sizeDisplay').textContent = size;
+
+    document.getElementById('stockIds').value = stockIds;
 }
 
-// ==================== AJAX FORM SUBMISSION ====================
+
+// AJAX submit (same as yours)
 document.addEventListener('DOMContentLoaded', function() {
     const adjustmentForm = document.getElementById('adjustmentForm');
     
@@ -295,11 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 adjustmentForm.reset();
                 document.getElementById('currentStockDisplay').textContent = '0';
                 showSuccessMessage(data.message || 'Stock adjustment submitted successfully!');
-                
-                // Reload the page to show the new adjustment
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                setTimeout(() => { window.location.reload(); }, 1000);
             }
         })
         .catch(error => {
@@ -313,7 +384,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// ==================== SUCCESS MESSAGE ====================
 function showSuccessMessage(message) {
     const successDiv = document.createElement('div');
     successDiv.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-6 py-3 rounded-lg shadow-lg z-[70] transform translate-x-0 transition-transform duration-300';
@@ -321,78 +391,125 @@ function showSuccessMessage(message) {
     
     document.body.appendChild(successDiv);
     
-    setTimeout(() => {
-        successDiv.classList.add('translate-x-0');
-    }, 10);
-    
+    setTimeout(() => { successDiv.classList.add('translate-x-0'); }, 10);
     setTimeout(() => {
         successDiv.classList.add('translate-x-full');
-        setTimeout(() => {
-            document.body.removeChild(successDiv);
-        }, 300);
+        setTimeout(() => { document.body.removeChild(successDiv); }, 300);
     }, 3000);
 }
 
-// ==================== PAGINATION ====================
-const saRowsPerPage = 5;
-const saTableBody = document.getElementById('stockadjustment-table-body');
-const saRows = Array.from(saTableBody.querySelectorAll('tr'));
+// PAGINATION + FILTERS + EMPTY STATE
+const saRowsPerPage   = 5;
+const saTableBody     = document.getElementById('stockadjustment-table-body');
+const saAllRows       = Array.from(saTableBody.querySelectorAll('.sa-row'));
+const saEmptyRow      = document.getElementById('sa-empty-row');
 const saPaginationLinks = document.getElementById('stockadjustment-pagination-links');
-const saPaginationInfo = document.getElementById('stockadjustment-pagination-info');
+const saPaginationInfo  = document.getElementById('stockadjustment-pagination-info');
 
-let saCurrentPage = 1;
-const saTotalPages = Math.ceil(saRows.length / saRowsPerPage);
+const saSearchInput  = document.getElementById('stockadjustment-search');
+const saTypeFilter   = document.getElementById('sa-type-filter');
+const saStatusFilter = document.getElementById('sa-status-filter');
 
-function showSAPage(page) {
-    saCurrentPage = page;
-    saRows.forEach(row => row.style.display = 'none');
+let saCurrentPage  = 1;
+let saFilteredRows = [...saAllRows];
 
-    const start = (page - 1) * saRowsPerPage;
-    const end = start + saRowsPerPage;
-    saRows.slice(start, end).forEach(row => row.style.display = '');
+function applySAFilters() {
+    const q      = (saSearchInput.value || '').toLowerCase();
+    const type   = saTypeFilter ? saTypeFilter.value : 'all';
+    const status = saStatusFilter ? saStatusFilter.value : 'all';
 
-    renderSAPagination();
+    saFilteredRows = saAllRows.filter(row => {
+        const rowType   = (row.getAttribute('data-type') || '').trim();
+        const rowStatus = (row.getAttribute('data-status') || '').trim();
 
-    const startItem = saRows.length ? start + 1 : 0;
-    const endItem = end > saRows.length ? saRows.length : end;
-    saPaginationInfo.textContent = `Showing ${startItem} to ${endItem} of ${saRows.length} results`;
+        if (type !== 'all' && rowType !== type) return false;
+        if (status !== 'all' && rowStatus !== status) return false;
+
+        if (q) {
+            const text = row.textContent.toLowerCase();
+            if (!text.includes(q)) return false;
+        }
+        return true;
+    });
+
+    if (saFilteredRows.length === 0) {
+        saAllRows.forEach(r => r.style.display = 'none');
+        saEmptyRow.classList.remove('hidden');
+        saPaginationInfo.textContent = 'Showing 0 to 0 of 0 results';
+        saPaginationLinks.innerHTML = '';
+        return;
+    } else {
+        saEmptyRow.classList.add('hidden');
+    }
+
+    saCurrentPage = 1;
+    showSAPage(1);
 }
 
-function renderSAPagination() {
+function showSAPage(page) {
+    const saTotalPages = Math.ceil(saFilteredRows.length / saRowsPerPage) || 1;
+
+    if (page < 1) page = 1;
+    if (page > saTotalPages) page = saTotalPages;
+
+    saCurrentPage = page;
+
+    saAllRows.forEach(row => row.style.display = 'none');
+
+    const start = (page - 1) * saRowsPerPage;
+    const end   = start + saRowsPerPage;
+    saFilteredRows.slice(start, end).forEach(row => row.style.display = '');
+
+    renderSAPagination(saTotalPages);
+
+    const startItem = saFilteredRows.length ? start + 1 : 0;
+    const endItem   = end > saFilteredRows.length ? saFilteredRows.length : end;
+    saPaginationInfo.textContent = `Showing ${startItem} to ${endItem} of ${saFilteredRows.length} results`;
+}
+
+function renderSAPagination(saTotalPages) {
     saPaginationLinks.innerHTML = '';
 
     const prev = document.createElement('li');
     prev.className = 'border rounded px-2 py-1';
     prev.innerHTML = saCurrentPage === 1 ? '« Prev' : `<a href="#">« Prev</a>`;
-    if (saCurrentPage !== 1) prev.querySelector('a').addEventListener('click', e => { e.preventDefault(); showSAPage(saCurrentPage - 1); });
+    if (saCurrentPage !== 1) {
+        prev.querySelector('a').addEventListener('click', e => {
+            e.preventDefault();
+            showSAPage(saCurrentPage - 1);
+        });
+    }
     saPaginationLinks.appendChild(prev);
 
     for (let i = 1; i <= saTotalPages; i++) {
         const li = document.createElement('li');
-        li.className = 'border rounded px-2 py-1' + (i === saCurrentPage ? ' bg-sky-400 text-white' : '');
+        li.className = 'border rounded px-2 py-1' + (i === saCurrentPage ? ' bg-yellow-400 text-black' : '');
         li.innerHTML = i === saCurrentPage ? i : `<a href="#">${i}</a>`;
-        if (i !== saCurrentPage) li.querySelector('a').addEventListener('click', e => { e.preventDefault(); showSAPage(i); });
+        if (i !== saCurrentPage) {
+            li.querySelector('a').addEventListener('click', e => {
+                e.preventDefault();
+                showSAPage(i);
+            });
+        }
         saPaginationLinks.appendChild(li);
     }
 
     const next = document.createElement('li');
     next.className = 'border rounded px-2 py-1';
     next.innerHTML = saCurrentPage === saTotalPages ? 'Next »' : `<a href="#">Next »</a>`;
-    if (saCurrentPage !== saTotalPages) next.querySelector('a').addEventListener('click', e => { e.preventDefault(); showSAPage(saCurrentPage + 1); });
+    if (saCurrentPage !== saTotalPages) {
+        next.querySelector('a').addEventListener('click', e => {
+            e.preventDefault();
+            showSAPage(saCurrentPage + 1);
+        });
+    }
     saPaginationLinks.appendChild(next);
 }
 
-// Initialize
-showSAPage(1);
+saSearchInput.addEventListener('input', applySAFilters);
+if (saTypeFilter)   saTypeFilter.addEventListener('change', applySAFilters);
+if (saStatusFilter) saStatusFilter.addEventListener('change', applySAFilters);
 
-// ==================== SEARCH ====================
-document.getElementById('stockadjustment-search').addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    saRows.forEach(row => {
-        const cells = Array.from(row.querySelectorAll('td'));
-        const match = cells.some(cell => cell.textContent.toLowerCase().includes(query));
-        row.style.display = match ? '' : 'none';
-    });
-});
+applySAFilters();
 </script>
 @endsection

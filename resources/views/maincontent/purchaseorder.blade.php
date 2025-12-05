@@ -54,10 +54,10 @@
     </div>
 
     <!-- Right: History Buttons and Add New Order Button -->
-    <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2">
         <!-- Include Order History Modal -->
         @include('added.order_history')
-
+       
         <!-- Include Payment History Modal -->
         @include('added.payment_history')
 
@@ -347,7 +347,7 @@
         <!-- Close Button -->
         <div class="mt-6 flex justify-end">
             <button @click="showOrderDetails = false"
-                    class="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition">
+                    class="bg-yellow-500 text-black font-semibold px-6 py-2 rounded-lg hover:bg-yellow-600 transition">
                 Close
             </button>
         </div>
@@ -358,6 +358,13 @@
 </div>
 
 <script>
+const ORDER_STATUS_PRIORITY = {
+    'Released': 1,
+    'In Progress': 2,
+    'Pending': 3,
+    '': 99
+};
+
 function markAsCompleted(orderId) {
     fetch(`/orders/${orderId}/complete`, {
         method: 'POST',
@@ -403,45 +410,40 @@ function paymentComponent() {
         // Selected Order
         selectedOrderId: null,
 
-        // Filter orders
+        // Filter orders (set logical visibility only)
         filterOrders() {
             const rows = document.querySelectorAll('.order-row');
             let visibleCount = 0;
-            
+
             rows.forEach(row => {
                 const status = row.getAttribute('data-status');
                 const searchText = row.getAttribute('data-search').toLowerCase();
                 const query = this.searchQuery.toLowerCase();
-                
+
                 const matchesStatus = this.statusFilter === 'all' || status === this.statusFilter;
                 const matchesSearch = !query || searchText.includes(query);
-                
+
                 if (matchesStatus && matchesSearch) {
-                    row.style.display = '';
+                    row.dataset.visible = "true";
                     visibleCount++;
                 } else {
-                    row.style.display = 'none';
+                    row.dataset.visible = "false";
                 }
             });
-            
-            // Show/hide empty state
+
             const emptyStateFilter = document.querySelector('.empty-state-filter');
             if (emptyStateFilter) {
                 emptyStateFilter.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
             }
-            
-            // Reset pagination after filtering
+
+            // After filter, show first page
             if (window.showOrderPage) {
                 window.showOrderPage(1);
             }
         },
 
-        // --------------------------
-        // Assign Job Order Methods
-        // --------------------------
+        // Assign Job Order Methods (unchanged)
         async openAssignJobOrder(orderId) {
-            console.log('🔵 Opening assign modal for order:', orderId);
-            
             this.selectedOrderId = orderId;
             this.showAssignJobOrderModal = true;
             this.selectedEmployees = [];
@@ -450,41 +452,29 @@ function paymentComponent() {
             this.employeeSearch = '';
 
             try {
-                console.log('🔵 Fetching employees from /employees/active');
-                
-                const res = await fetch('/employees/active', { 
-                    headers: { 
+                const res = await fetch('/employees/active', {
+                    headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
-                
-                console.log('🔵 Response status:', res.status);
-                console.log('🔵 Response OK:', res.ok);
-                
+
                 if (!res.ok) {
                     const errorText = await res.text();
-                    console.error('❌ Failed to load employees:', res.statusText, errorText);
                     alert('Failed to load employees: ' + res.statusText);
                     this.employees = [];
                     return;
                 }
-                
+
                 const data = await res.json();
-                console.log('🔵 Raw API response:', data);
-                
                 if (data.employees && Array.isArray(data.employees)) {
                     this.employees = data.employees;
-                    console.log('✅ Loaded employees:', this.employees);
-                    console.log('✅ Total employees:', this.employees.length);
                 } else {
-                    console.error('❌ Invalid data format:', data);
                     this.employees = [];
                     alert('Invalid employee data format received');
                 }
-                
             } catch (err) {
-                console.error('❌ Error fetching employees:', err);
+                console.error('Error fetching employees:', err);
                 alert('Error loading employees: ' + err.message);
                 this.employees = [];
             }
@@ -498,20 +488,14 @@ function paymentComponent() {
                     const fullName = (e.fname + ' ' + e.lname).toLowerCase();
                     return fullName.includes(search);
                 });
-                
+
                 this.selectedEmployees = filteredEmployees.map(e => e.employee_id);
-                console.log('✅ Selected all employees:', this.selectedEmployees);
             } else {
                 this.selectedEmployees = [];
-                console.log('✅ Deselected all employees');
             }
         },
 
         submitAssignJobOrder() {
-            console.log('🔵 Submitting job order assignment');
-            console.log('🔵 Order ID:', this.selectedOrderId);
-            console.log('🔵 Selected employees:', this.selectedEmployees);
-            
             if (this.selectedEmployees.length === 0) {
                 alert('Please select at least one employee.');
                 return;
@@ -531,31 +515,24 @@ function paymentComponent() {
                     employees: this.selectedEmployees
                 })
             })
-            .then(res => {
-                console.log('🔵 Assign response status:', res.status);
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                console.log('🔵 Assign response data:', data);
-                
                 if (data.success) {
                     alert('Job order assigned successfully!');
                     this.showAssignJobOrderModal = false;
                     this.selectedEmployees = [];
-                    location.reload(); 
+                    location.reload();
                 } else {
                     alert(data.message || 'Failed to assign job order.');
                 }
             })
             .catch(err => {
-                console.error('❌ Assign job order error:', err);
+                console.error('Assign job order error:', err);
                 alert('An error occurred while assigning job order: ' + err.message);
             });
         },
 
-        // --------------------------
-        // Payment Methods
-        // --------------------------
+        // Payment Methods (unchanged)
         openPaymentModal(orderId, balance) {
             this.selectedOrderId = orderId;
             this.paymentBalance = balance;
@@ -567,7 +544,10 @@ function paymentComponent() {
 
         submitCompletePayment() {
             if (!this.paymentMethod) { alert('Please select a payment method.'); return; }
-            if (this.paymentMethod === 'GCash' && !this.paymentReference.trim()) { alert('Please enter a reference number for GCash.'); return; }
+            if (this.paymentMethod === 'GCash' && !this.paymentReference.trim()) {
+                alert('Please enter a reference number for GCash.');
+                return;
+            }
 
             let cashReceived = parseFloat(this.paymentCash) || 0;
             let currentBalance = parseFloat(this.paymentBalance) || 0;
@@ -611,74 +591,124 @@ function paymentComponent() {
     }
 }
 
-// ==================== PAGINATION - Initialize after DOM loads ====================
+// ==================== PAGINATION + INITIAL ORDER ====================
 document.addEventListener('DOMContentLoaded', function() {
-    const orderRowsPerPage = 5;
-    const orderTableBody = document.querySelector('table tbody');
-    
-    if (!orderTableBody) {
-        console.error('❌ Table body not found!');
+    const orderRowsPerPage   = 5;
+    const orderTableBody     = document.querySelector('#order-table tbody');
+    const orderPaginationLinks = document.getElementById('order-pagination-links');
+    const orderPaginationInfo  = document.getElementById('order-pagination-info');
+
+    if (!orderTableBody || !orderPaginationLinks || !orderPaginationInfo) {
         return;
     }
-    
-    const allOrderRows = Array.from(orderTableBody.querySelectorAll('tr.order-row'));
-    const orderPaginationLinks = document.getElementById('order-pagination-links');
-    const orderPaginationInfo = document.getElementById('order-pagination-info');
-
-    console.log('✅ Found', allOrderRows.length, 'order rows');
 
     let orderCurrentPage = 1;
 
+    // Sort rows once by status (Released → In Progress → Pending)
+    function orderInitialRows() {
+        const rows = Array.from(orderTableBody.querySelectorAll('.order-row'));
+        rows.forEach(r => { if (!r.dataset.visible) r.dataset.visible = "true"; });
+
+        rows.sort((a, b) => {
+            const sa = a.getAttribute('data-status') || '';
+            const sb = b.getAttribute('data-status') || '';
+            const pa = ORDER_STATUS_PRIORITY[sa] ?? 99;
+            const pb = ORDER_STATUS_PRIORITY[sb] ?? 99;
+
+            if (pa !== pb) return pa - pb;
+
+            const ca = a.getAttribute('data-created-at') || '';
+            const cb = b.getAttribute('data-created-at') || '';
+            return ca.localeCompare(cb);
+        });
+
+        rows.forEach(r => orderTableBody.appendChild(r));
+    }
+
+    // Get rows that are logically visible (for pagination)
     window.getVisibleOrderRows = function() {
-        return allOrderRows.filter(row => row.style.display !== 'none');
-    }
+        return Array.from(orderTableBody.querySelectorAll('.order-row'))
+            .filter(row => row.dataset.visible !== "false");
+    };
 
+    // Show a page
     window.showOrderPage = function(page) {
-        const visibleRows = window.getVisibleOrderRows();
-        const orderTotalPages = Math.ceil(visibleRows.length / orderRowsPerPage) || 1;
-        
-        console.log('📄 Showing page', page, 'with', visibleRows.length, 'visible rows');
-        
-        orderCurrentPage = page;
-        allOrderRows.forEach(row => row.style.display = 'none');
-        
-        const start = (page - 1) * orderRowsPerPage;
-        const end = start + orderRowsPerPage;
-        visibleRows.slice(start, end).forEach(row => row.style.display = '');
-        
-        window.renderOrderPagination(orderTotalPages, visibleRows.length);
-    }
+        const visibleRows   = window.getVisibleOrderRows();
+        const totalResults  = visibleRows.length;
+        const orderTotalPages = Math.ceil(totalResults / orderRowsPerPage) || 1;
 
+        if (page < 1) page = 1;
+        if (page > orderTotalPages) page = orderTotalPages;
+
+        orderCurrentPage = page;
+
+        // First hide all rows visually
+        Array.from(orderTableBody.querySelectorAll('.order-row')).forEach(row => {
+            row.style.display = 'none';
+        });
+
+        // Then show only current page of logically visible rows
+        const start = (page - 1) * orderRowsPerPage;
+        const end   = start + orderRowsPerPage;
+        visibleRows.slice(start, end).forEach(row => {
+            row.style.display = '';
+        });
+
+        window.renderOrderPagination(orderTotalPages, totalResults);
+    };
+
+    // Render pagination buttons + info
     window.renderOrderPagination = function(totalPages, totalResults) {
         orderPaginationLinks.innerHTML = '';
 
+        // Prev
         const prev = document.createElement('li');
         prev.className = 'border rounded px-2 py-1';
-        prev.innerHTML = orderCurrentPage === 1 ? '« Prev' : `<a href="#">« Prev</a>`;
-        if (orderCurrentPage !== 1) prev.querySelector('a')?.addEventListener('click', e => { e.preventDefault(); window.showOrderPage(orderCurrentPage - 1); });
+        prev.innerHTML = orderCurrentPage === 1 ? '« Prev' : '<a href="#">« Prev</a>';
+        if (orderCurrentPage !== 1) {
+            prev.querySelector('a').addEventListener('click', e => {
+                e.preventDefault();
+                window.showOrderPage(orderCurrentPage - 1);
+            });
+        }
         orderPaginationLinks.appendChild(prev);
 
+        // Page numbers
         for (let i = 1; i <= totalPages; i++) {
             const li = document.createElement('li');
-            li.className = 'border rounded px-2 py-1' + (i === orderCurrentPage ? ' bg-sky-400 text-white' : '');
+            li.className = 'border rounded px-2 py-1' + (i === orderCurrentPage ? ' bg-yellow-400 text-black' : '');
             li.innerHTML = i === orderCurrentPage ? i : `<a href="#">${i}</a>`;
-            if (i !== orderCurrentPage) li.querySelector('a')?.addEventListener('click', e => { e.preventDefault(); window.showOrderPage(i); });
+            if (i !== orderCurrentPage) {
+                li.querySelector('a').addEventListener('click', e => {
+                    e.preventDefault();
+                    window.showOrderPage(i);
+                });
+            }
             orderPaginationLinks.appendChild(li);
         }
 
+        // Next
         const next = document.createElement('li');
         next.className = 'border rounded px-2 py-1';
-        next.innerHTML = orderCurrentPage === totalPages ? 'Next »' : `<a href="#">Next »</a>`;
-        if (orderCurrentPage !== totalPages) next.querySelector('a')?.addEventListener('click', e => { e.preventDefault(); window.showOrderPage(orderCurrentPage + 1); });
+        next.innerHTML = orderCurrentPage === totalPages ? 'Next »' : '<a href="#">Next »</a>';
+        if (orderCurrentPage !== totalPages) {
+            next.querySelector('a').addEventListener('click', e => {
+                e.preventDefault();
+                window.showOrderPage(orderCurrentPage + 1);
+            });
+        }
         orderPaginationLinks.appendChild(next);
-        
-        const start = (orderCurrentPage - 1) * orderRowsPerPage + 1;
-        const end = Math.min(orderCurrentPage * orderRowsPerPage, totalResults);
-        orderPaginationInfo.textContent = `Showing ${totalResults ? start : 0} to ${end} of ${totalResults} results`;
-    }
 
+        const start = (orderCurrentPage - 1) * orderRowsPerPage + 1;
+        const end   = Math.min(orderCurrentPage * orderRowsPerPage, totalResults);
+        orderPaginationInfo.textContent =
+            `Showing ${totalResults ? start : 0} to ${end} of ${totalResults} results`;
+    };
+
+    // Initial: sort rows then show page 1
+    orderInitialRows();
     window.showOrderPage(1);
 });
 </script>
-
 @endsection
+

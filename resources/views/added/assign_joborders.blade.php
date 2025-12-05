@@ -146,12 +146,12 @@
             <!-- Action Buttons -->
             <div class="flex justify-end gap-3 pt-4 border-t">
                 <button type="button" @click="showAssignJobOrderModal = false"
-                        class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition font-medium">
+                     class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
                     Cancel
                 </button>
                 <button type="submit"
                         :disabled="selectedEmployees.length === 0"
-                        class="px-6 py-2 rounded-lg bg-yellow-400 text-white font-semibold hover:bg-yellow-500 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="px-6 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     Assign <span x-show="selectedEmployees.length > 0" x-text="'(' + selectedEmployees.length + ')'"></span>
                 </button>
             </div>

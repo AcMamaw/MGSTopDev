@@ -2,32 +2,56 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Customer;
+use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
+    /**
+     * Show customers page.
+     */
     public function index()
     {
-        $customers = Customer::all();
+        // You can change the view path if needed
+        $customers = Customer::orderBy('customer_id')->get();
+
         return view('management.customer', compact('customers'));
     }
 
+    /**
+     * Store new customer (AJAX).
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
-            'fname' => 'required|string|max:255',
-            'mname' => 'nullable|string|max:255',
-            'lname' => 'required|string|max:255',
+            'fname'      => 'required|string|max:255',
+            'mname'      => 'nullable|string|max:255',
+            'lname'      => 'required|string|max:255',
             'contact_no' => 'required|string|max:20',
-            'address' => 'nullable|string|max:255',
+            'address'    => 'nullable|string|max:255',
         ]);
 
         $customer = Customer::create($data);
 
-        return response()->json([
-            'success' => true,
-            'customer' => $customer
+        // front‑end expects plain customer object
+        return response()->json($customer);
+    }
+
+    /**
+     * Update existing customer (AJAX).
+     */
+    public function update(Request $request, Customer $customer)
+    {
+        $data = $request->validate([
+            'fname'      => 'required|string|max:255',
+            'mname'      => 'nullable|string|max:255',
+            'lname'      => 'required|string|max:255',
+            'contact_no' => 'required|string|max:20',
+            'address'    => 'nullable|string|max:255',
         ]);
+
+        $customer->update($data);
+
+        return response()->json($customer);
     }
 }

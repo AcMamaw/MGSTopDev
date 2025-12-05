@@ -307,26 +307,23 @@ button[onclick^="toggleDropdown"] {
             </ul>
         </li>
 
-                 <li>
-                    <a href="{{ route('instock') }}" 
-                      class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-                        {{ request()->routeIs('inventory.stockentry') 
-                            ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
-                            : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"
-                            viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-
-                            <!-- Box -->
-                            <path d="M3 7l9-4 9 4v10l-9 4-9-4z" />
-                            <path d="M3 7l9 4 9-4" />
-                            <path d="M12 21V11" />
-
-                            <!-- Check  (moved up) -->
+            <li>
+                <a href="{{ route('instock') }}"
+                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                {{ request()->routeIs('inventory.stockentry') 
+                    ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                    : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                   <!-- Icon always visible -->
+                    <svg class="w-6 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2"
+                        viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7l9-4 9 4v10l-9 4-9-4z" />
+                        <path d="M3 7l9 4 9-4" />
+                        <path d="M12 21V11" />
                         <path d="M14.5 13.6l1.65 1.65 2.85-3" />
-                        </svg>
-                        <span>In Stocks</span>
-                    </a>
-                </li>
+                    </svg>                   
+                    <span class="nav-text">In Stock</span>
+                </a>
+            </li> 
 
             <!-- 🚚 Delivery -->
             <li>
@@ -699,6 +696,30 @@ button[onclick^="toggleDropdown"] {
                     <span class="nav-text">Reports</span>
                 </a>
             </li>
+             <!-- Request -->
+                <li>
+                    <a href="{{ route('request') }}" 
+                    class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                    {{ request()->routeIs('request') 
+                        ? 'bg-sky-100 text-sky-700 shadow-md hover:bg-sky-200' 
+                        : 'text-gray-800 hover:bg-sky-100 hover:text-sky-700' }}">
+                    
+                        <!-- Request / Paper Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" 
+                            class="w-5 h-5 flex-shrink-0" 
+                            fill="none" viewBox="0 0 24 24" 
+                            stroke="currentColor" stroke-width="1.9">
+                            <!-- Message bubble -->
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4 4h16v12H6l-2 2V4z" />
+                            <!-- Lines inside the message -->
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6 7h12M6 11h8" />
+                        </svg>
+
+                        <span class="nav-text">Requests</span>
+                    </a>
+                </li>
         @endif
 
 
@@ -830,7 +851,7 @@ button[onclick^="toggleDropdown"] {
                         </path>
                     </svg>
                 </button>
-                <h1 class="text-xl font-semibold text-gray-800">Marviles Graphic Studio</h1>
+                <h1 class="text-xl font-semibold text-gray-800">Mariviles Graphic Studio</h1>
             </div>
             
             <!-- User Profile Section -->

@@ -87,9 +87,9 @@
                         required
                         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400">
                     <option value="">Select Product Type</option>
-                    <option value="Ready Made">Ready Made</option>
                     <option value="Customize Item">Customize Item</option>
-                </select>
+                     <option value="Ready Made">Ready Made (Optional)</option>
+               </select>
             </div>
 
             <!-- Date Requested -->
@@ -199,20 +199,24 @@
                                 </td>
 
                                 <!-- Action (Delete) -->
-                                <td class="px-2 py-2 border text-center">
-                                    <button type="button"
+                                <td class="px-2 py-2 border">
+                                    <div class="flex items-center justify-center">
+                                        <button
+                                            type="button"
                                             @click="products.splice(index, 1)"
                                             :disabled="products.length === 1"
-                                            class="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200"
-                                            :class="products.length === 1 ? 'opacity-50 cursor-not-allowed' : ''">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <line x1="3" y1="6" x2="21" y2="6" />
-                                            <rect x="6" y="6" width="12" height="14" rx="2" />
-                                            <line x1="10" y1="10" x2="10" y2="18" />
-                                            <line x1="14" y1="10" x2="14" y2="18" />
-                                        </svg>
-                                    </button>
+                                            class="w-8 h-8 flex items-center justify-center rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200"
+                                            :class="products.length === 1 ? 'opacity-50 cursor-not-allowed' : ''"
+                                        >
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="3" y1="6" x2="21" y2="6" />
+                                                <rect x="6" y="6" width="12" height="14" rx="2" />
+                                                <line x1="10" y1="10" x2="10" y2="18" />
+                                                <line x1="14" y1="10" x2="14" y2="18" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         </template>
@@ -223,11 +227,14 @@
                 <button type="button"
                         @click="products.push({product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0, size:'', product_type:'Ready Made'})"
                         :disabled="!selectedSupplier"
-                        class="mt-2 px-6 py-2 rounded transition-colors"
-                        :class="selectedSupplier ? 'bg-yellow-500 text-white hover:bg-yellow-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'">
+                        class="mt-2 rounded-lg text-lg font-semibold transition"
+                        :class="selectedSupplier
+                            ? 'bg-yellow-500 text-black px-5 py-2 hover:bg-yellow-600'
+                            : 'bg-gray-300 text-gray-500 px-5 py-2 cursor-not-allowed'">
                     + Add Product
                 </button>
             </div>
+
 
             <!-- Footer -->
             <div class="mt-auto pt-4 border-t flex justify-between items-center text-gray-800">
@@ -243,11 +250,11 @@
             <!-- Buttons -->
             <div class="flex flex-wrap justify-end gap-2 mt-4">
                 <button type="button" @click="showAddDelivery = false"
-                        class="bg-gray-300 text-gray-800 px-6 py-2 rounded hover:bg-gray-400 transition">
+                     class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
                     Cancel
                 </button>
                 <button type="submit"
-                        class="bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-600 transition">
+                     class="bg-yellow-500 text-black px-5 py-2 rounded-lg text-lg font-semibold hover:bg-yellow-600 transition">
                     Save Delivery
                 </button>
             </div>

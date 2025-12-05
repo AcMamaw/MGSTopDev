@@ -87,7 +87,7 @@ Route::middleware('auth')->group(function () {
         // Stock Adjustment
         Route::get('/stockadjustment', [StockAdjustmentController::class, 'index'])->name('stockadjustment');
         Route::post('/stockadjustment/store', [StockAdjustmentController::class, 'store'])->name('stockadjustment.store');
-        Route::patch('/stockadjustment/{id}/approve', [StockAdjustmentController::class, 'approve'])->name('stockadjustment.approve');
+        Route::post('/stock-adjustments/{id}/approve', [StockAdjustmentController::class, 'approveStockAdjustment'])->name('stockadjustments.approve');
         Route::patch('/stockadjustment/{id}/reject', [StockAdjustmentController::class, 'reject'])->name('stockadjustment.reject');
     });
 
@@ -110,6 +110,13 @@ Route::middleware('auth')->group(function () {
         // Optional fetch route
      
         Route::get('/roles/fetch', [RoleController::class, 'fetch'])->name('roles.fetch');
+        Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
+        Route::post('/employees', [EmployeeController::class, 'store'])->name('employees.store');
+        Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');  
+        Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+        Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+        Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     });
 
     // --------------------------

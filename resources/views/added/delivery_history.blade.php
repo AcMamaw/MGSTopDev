@@ -59,15 +59,15 @@
     </button>
 
     <!-- Delivery History Modal -->
-  <div x-show="showHistoryModal" x-cloak x-transition
-     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+    <div x-show="showHistoryModal" x-cloak x-transition
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
 
-    <div @click.outside.stop="showHistoryModal = false"
-         class="bg-white w-full max-w-6xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto flex flex-col">
+        <div @click.outside.stop="showHistoryModal = false"
+            class="bg-white w-full max-w-[95vw] rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto flex flex-col">
+            
             <!-- Header -->
             <div class="flex justify-between items-center p-2 border-b border-gray-200 flex-shrink-0">
                 <h2 class="text-2xl font-bold text-gray-800">Delivery History</h2>
-                <button @click="showHistoryModal = false" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
             </div>
 
           <!-- Search + Filter Icon -->
@@ -97,17 +97,18 @@
                         <tr>
                             <th class="px-4 py-2 text-center">ID</th>
                             <th class="px-4 py-2 text-center">Supplier</th>
-                            <th class="px-4 py-2 text-center">Requested By</th>
-                            <th class="px-4 py-2 text-center">Product Type</th>
-                            <th class="px-4 py-2 text-center">Received By</th>
-                            <th class="px-4 py-2 text-center">Request Date</th>
-                            <th class="px-4 py-2 text-center">Received Date</th>
+                            <th class="px-4 py-2 text-center">Requested by</th>
+                            <th class="px-4 py-2 text-center">Product type</th>
+                            <th class="px-4 py-2 text-center">Received by</th>
+                            <th class="px-4 py-2 text-center">Requested</th>
+                            <th class="px-4 py-2 text-center">Received</th>
                             <th class="px-4 py-2 text-center">Status</th>
                         </tr>
                     </thead>
                   <tbody id="deliveriesTableBody" class="divide-y divide-gray-100">
                         @php
-                            $deliveredDeliveries = $deliveries->where('status', 'Delivered');
+                            // Get delivered deliveries and reverse the order (latest first)
+                            $deliveredDeliveries = $deliveries->where('status', 'Delivered')->sortByDesc('delivery_id');
                         @endphp
 
                         @forelse ($deliveredDeliveries as $delivery)
@@ -209,8 +210,18 @@
                     </tbody>
                 </table>
             </div>
+
+             <!-- Footer with Close -->
+        <div class="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+            <button @click="showHistoryModal = false"
+                    class="bg-yellow-500 text-black font-semibold px-6 py-2 rounded-lg hover:bg-yellow-600 transition">
+                Close
+            </button>
+        </div>
         </div>
     </div>
+
+    
 
     <!-- Self-contained Delivery Details Modal -->
     <div x-show="showDetails2" x-cloak x-transition
@@ -257,11 +268,10 @@
                     @endforeach
                 </tbody>
             </table>
-
             <!-- Close Button -->
             <div class="mt-6 flex justify-end">
                 <button @click="showDetails2 = false; showHistoryModal = true"
-                        class="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition">
+                        class="bg-yellow-500 text-black font-semibold px-6 py-2 rounded-lg hover:bg-yellow-600 transition">
                     Close
                 </button>
             </div>

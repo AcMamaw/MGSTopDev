@@ -44,7 +44,7 @@
         <div class="mt-6 flex justify-end gap-3">
             <button type="button"
                     @click="closeCustomerModal()"
-                    class="px-6 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+                 class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
                 Cancel
             </button>
 
@@ -109,7 +109,7 @@
                         })
                         .catch(err => console.error(err));
                     "
-                    class="px-6 py-2 rounded-lg bg-yellow-400 font-semibold hover:bg-yellow-500 transition">
+                    class="px-6 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
                 Confirm
             </button>
         </div>

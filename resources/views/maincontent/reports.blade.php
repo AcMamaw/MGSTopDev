@@ -126,7 +126,7 @@
                            <div class="flex items-center justify-center space-x-2">
                                 <!-- Edit -->
                                 <button title="Edit"
-                                    class="p-2 rounded-full text-gray-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200">
+                                    class="p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor"
                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 20h9" />
@@ -136,7 +136,7 @@
 
                                 <!-- Delete Button -->
                                 <button title="Delete"
-                                    class="p-2 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200"
+                                    class="p-2 rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200"
                                     onclick="deleteRow(this)">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="25" fill="none" stroke="currentColor"
                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -236,7 +236,7 @@ function renderReportPagination() {
 
     for (let i = 1; i <= reportTotalPages; i++) {
         const li = document.createElement('li');
-        li.className = 'border rounded px-2 py-1' + (i === reportCurrentPage ? ' bg-sky-400 text-white' : '');
+        li.className = 'border rounded px-2 py-1' + (i === reportCurrentPage ? ' bg-yellow-400 text-black' : '');
         li.innerHTML = i === reportCurrentPage ? i : `<a href="#">${i}</a>`;
         if (i !== reportCurrentPage) li.querySelector('a').addEventListener('click', e => { e.preventDefault(); showReportPage(i); });
         reportPaginationLinks.appendChild(li);

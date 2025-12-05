@@ -33,7 +33,7 @@
             <input type="text" 
                    x-model="searchQuery"
                    @input="filteredOrders"
-                   placeholder="Search by Order ID, Customer..."
+                   placeholder="Search by Order"
                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none w-full md:w-80"
                    style="min-width:250px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -59,7 +59,7 @@
 
     <!-- Right: History Button -->
     <div class="flex items-center gap-2">
-        @include('added.joborder_history')
+        @include('added.order_history2')
     </div>
 
 </div>
@@ -152,7 +152,7 @@
                         <button type="button"
                             class="flex-1 flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
                             @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                            <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">View Details</span>
+                            <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
                         </button>
 
                         <!-- Action Button - PRIORITY: Always show Pick Job Order first if not picked -->
@@ -256,7 +256,7 @@
 
         <div class="mt-6 flex justify-end">
             <button @click="showOrderDetails = false"
-                    class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
+                    class="bg-yellow-500 text-black font-semibold px-6 py-2 rounded-lg hover:bg-gray-600 transition">
                 Close
             </button>
         </div>
@@ -547,7 +547,7 @@ function jobOrderComponent() {
 
         // Pick Job Order
         pickJobOrder(orderId) {
-            if (!confirm('Pick this job order? This will:\n- Create stockout entries for all items\n- Reduce inventory stock\n- Change status to "In Progress"')) {
+            if (!confirm('Pick this job order?')) {
                 return;
             }
 
@@ -660,7 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         for (let i = 1; i <= totalPages; i++) {
             const li = document.createElement('li');
-            li.className = 'border rounded px-2 py-1' + (i === jobOrderCurrentPage ? ' bg-sky-400 text-white' : '');
+            li.className = 'border rounded px-2 py-1' + (i === jobOrderCurrentPage ? ' bg-yellow-400 text-black' : '');
             li.innerHTML = i === jobOrderCurrentPage ? i : `<a href="#">${i}</a>`;
             if (i !== jobOrderCurrentPage) li.querySelector('a')?.addEventListener('click', e => { e.preventDefault(); window.showJobOrderPage(i); });
             jobOrderPaginationLinks.appendChild(li);
