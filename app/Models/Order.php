@@ -43,13 +43,7 @@ class Order extends Model
  
     public function orderdetails()
     {
-        return $this->items();
-    }
-
-  
-    public function customer()
-    {
-        return $this->belongsTo(Customer::class, 'customer_id', 'customer_id');
+        return $this->hasMany(OrderDetail::class, 'order_id', 'order_id');
     }
 
 
@@ -71,9 +65,24 @@ class Order extends Model
         return $this->belongsTo(Employee::class, 'ordered_by', 'employee_id');
     }
 
- 
+        public function delivery()
+    {
+        return $this->hasOne(Delivery::class, 'order_id', 'order_id');
+    }
+
+        public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id', 'customer_id');
+    }
+
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id', 'category_id');
     }
+
+        public function employees()
+    {
+        return $this->belongsToMany(Employee::class, 'employee_order', 'order_id', 'employee_id');
+    }
+
 }

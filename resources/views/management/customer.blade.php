@@ -3,33 +3,47 @@
 @section('title', 'Customers')
 
 @section('content')
-<style>[x-cloak]{display:none !important;}</style>
+<style>[x-cloak] { display: none !important; }</style>
 
-<div x-data="customerPage()">
+<div x-data="customerPage()" class="px-4 sm:px-6 lg:px-8">
 
-    <!-- Success toast -->
     <div x-show="showToast"
-         x-transition
-         class="fixed top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded shadow-lg text-sm z-[9999]">
-        <span x-text="toastMessage"></span>
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="opacity-0 translate-y-2"
+          x-transition:enter-end="opacity-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-300"
+          x-transition:leave-start="opacity-100 translate-y-0"
+          x-transition:leave-end="opacity-0 translate-y-2"
+          class="fixed top-6 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-xl text-md z-[9999]"
+          x-cloak>
+        <span x-text="toastMessage" class="font-semibold"></span>
     </div>
 
     <header class="mb-8 max-w-7xl mx-auto">
-        <div class="flex items-center justify-between border-b pb-3 border-gray-200">
-            <h1 class="text-3xl font-bold text-gray-900">Customers</h1>
+        <div class="flex items-center justify-between border-b pb-3 border-yellow-400">
+            <h1 class="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M19 12h1a2 2 0 0 1 0 4h-1"/>
+                    <path d="M15 17h1a2 2 0 0 0 0-4h-1"/>
+                </svg>
+                Customers
+            </h1>
         </div>
-        <p class="text-gray-600 mt-2">Manage customer records including contact information and addresses.</p>
+        <p class="text-gray-600 mt-2 text-md">Manage customer records including contact information and addresses.</p>
     </header>
 
     @if(session('success'))
-        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            {{ session('success') }}
+        <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700 rounded-lg shadow-sm max-w-7xl mx-auto">
+            <p>{{ session('success') }}</p>
         </div>
     @endif
 
     @if($errors->any())
-        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <ul>
+        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-lg shadow-sm max-w-7xl mx-auto">
+            <p class="font-bold mb-1">Validation Errors:</p>
+            <ul class="list-disc list-inside ml-2 text-sm">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -37,24 +51,21 @@
         </div>
     @endif
 
-    <!-- Controls -->
-    <div class="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row items-stretch justify-between gap-4">
-        <!-- Search -->
-        <div class="relative w-full md:w-1/4">
+    <div class="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="relative w-full md:w-80">
             <input type="text" id="customer-search" placeholder="Search customers"
-                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:outline-none">
+                class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-full text-sm focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                 class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
             </svg>
         </div>
 
-        <!-- Add Customer -->
         <button @click="openAddModal()"
-                class="w-full md:w-auto bg-yellow-400 text-black px-6 py-2 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="lucide lucide-plus">
+            class="w-full md:w-auto bg-yellow-400 text-gray-900 px-6 py-2 rounded-full font-bold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-lg shadow-yellow-200/50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 5v14" />
                 <path d="M5 12h14" />
             </svg>
@@ -62,56 +73,57 @@
         </button>
     </div>
 
-    <!-- Customers Table -->
-    <div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto">
+    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
         <div class="overflow-x-auto">
-            <table id="customer-table" class="min-w-full table-auto">
+            <table id="customer-table" class="min-w-full table-auto divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Customer ID</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">First Name</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Middle Name</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Last Name</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Contact No</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Address</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Action</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Customer ID</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">First Name</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Middle Name</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Last Name</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Contact No</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Address</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Action</th>
                 </tr>
                 </thead>
                 <tbody id="customer-table-body" class="divide-y divide-gray-100">
                 @forelse($customers as $customer)
-                    <tr class="hover:bg-gray-50"
+                    <tr class="hover:bg-yellow-50/50 transition-colors"
                         data-id="{{ $customer->customer_id }}"
                         data-fname="{{ $customer->fname }}"
                         data-mname="{{ $customer->mname }}"
                         data-lname="{{ $customer->lname }}"
                         data-contact_no="{{ $customer->contact_no }}"
                         data-address="{{ $customer->address }}">
-                        <td class="px-4 py-3 text-center text-gray-800 font-medium">
+                        <td class="px-4 py-3 text-center text-gray-800 font-semibold">
                             C{{ str_pad($customer->customer_id,3,'0',STR_PAD_LEFT) }}
                         </td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ $customer->fname }}</td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ $customer->mname }}</td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ $customer->lname }}</td>
                         <td class="px-4 py-3 text-center text-gray-600">{{ $customer->contact_no }}</td>
-                        <td class="px-4 py-3 text-center text-gray-600">{{ $customer->address }}</td>
+                        <td class="px-4 py-3 text-center text-gray-600 max-w-xs truncate">{{ $customer->address }}</td>
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center space-x-2">
                                 <button title="Edit"
                                         @click="openEditModal($event)"
-                                        class="p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 20h9" />
-                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                                    </svg>
+                                        class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200 flex items-center justify-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen">
+                                            <path d="M12 20h9" />
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                        </svg>
                                 </button>
                                 <button title="Archive"
                                         onclick="deleteCustomerRow(this)"
-                                        class="p-2 rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 4h18v4H3z" />
-                                        <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
-                                        <path d="M10 12h4" />
-                                    </svg>
+                                        class="p-2 rounded-full text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors duration-200 flex items-center justify-center">
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
+                                            <path d="M3 4h18v4H3z" />
+                                            <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+                                            <path d="M10 12h4" />
+                                        </svg>
                                 </button>
                             </div>
                         </td>
@@ -119,12 +131,21 @@
                 @empty
                     <tr id="customer-empty-initial">
                         <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                            No customers found. Add a new customer to get started.
+                             <div class="flex flex-col items-center justify-center space-y-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M22 17v-4a2 2 0 0 0-2-2h-1"/>
+                                    <path d="M17 21v-2a4 4 0 0 0-3-3.87"/>
+                                    <path d="M15 7h.01"/>
+                                </svg>
+                                <p class="text-gray-700 font-semibold mt-2">No customers found</p>
+                                <p class="text-gray-500 text-sm">Use the button above to add your first customer record.</p>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
 
-                <!-- Empty state for search -->
                 <tr id="customer-empty-search" style="display:none;">
                     <td colspan="7" class="px-4 py-10 text-center text-gray-500 text-sm">
                         <div class="flex flex-col items-center justify-center space-y-2">
@@ -132,14 +153,13 @@
                                  class="h-16 w-16 text-gray-300"
                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-                                <path d="M14 3v5h5" />
-                                <path d="M9 13h6" />
-                                <path d="M9 17h3" />
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.3-4.3"/>
+                                <line x1="10" y1="11" x2="12" y2="11"/>
                             </svg>
                             <p class="text-gray-700 font-semibold">No customers found</p>
                             <p class="text-gray-400 text-xs">
-                                There are currently no customers matching these filters.
+                                There are currently no customers matching your search query.
                             </p>
                         </div>
                     </td>
@@ -149,73 +169,76 @@
         </div>
     </div>
 
-    <!-- Add / Edit Customer Modal -->
     <div x-show="showCustomerModal" x-cloak x-transition
-         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
         <div @click.away="closeModal()"
-             class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-3xl relative">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800"
-                x-text="isEdit ? 'Edit Customer' : 'Add New Customer'"></h2>
+             class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl relative">
+            <h2 class="text-3xl font-extrabold mb-7 text-center text-gray-800"
+                x-text="isEdit ? 'Edit Customer Record' : 'Add New Customer'"></h2>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-gray-700 font-medium mb-1">First Name</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">First Name</label>
                         <input type="text" x-model="fname"
                                @focus="if(isEdit){ $el.select(); }"
-                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-500 focus:text-gray-900">
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+                               placeholder="Enter first name">
                     </div>
                     <div>
-                        <label class="block text-gray-700 font-medium mb-1">Middle Name</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Middle Name</label>
                         <input type="text" x-model="mname"
                                @focus="if(isEdit){ $el.select(); }"
-                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-500 focus:text-gray-900">
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+                               placeholder="Optional middle name">
                     </div>
                     <div>
-                        <label class="block text-gray-700 font-medium mb-1">Last Name</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Last Name</label>
                         <input type="text" x-model="lname"
                                @focus="if(isEdit){ $el.select(); }"
-                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-500 focus:text-gray-900">
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+                               placeholder="Enter last name">
                     </div>
                 </div>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-gray-700 font-medium mb-1">Contact No</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Contact No</label>
                         <input type="text" x-model="contact_no"
                                @focus="if(isEdit){ $el.select(); }"
-                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-500 focus:text-gray-900">
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+                               placeholder="Enter contact number (e.g., 09xxxxxxxxx)">
                     </div>
                     <div>
-                        <label class="block text-gray-700 font-medium mb-1">Address</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Address</label>
                         <input type="text" x-model="address"
                                @focus="if(isEdit){ $el.select(); }"
-                               class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-500 focus:text-gray-900">
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+                               placeholder="Enter full residential address">
                     </div>
                 </div>
             </div>
 
-            <div class="mt-6 flex justify-end gap-3">
+            <div class="mt-8 flex justify-end gap-3">
                 <button @click="closeModal()"
-                        class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Cancel
                 </button>
 
                 <button x-show="!isEdit" @click="addCustomer()"
-                        class="px-6 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
+                        class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
                     Confirm
                 </button>
 
                 <button x-show="isEdit" @click="updateCustomer()"
-                        class="px-6 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
+                        class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
                     Update
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Pagination -->
     <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto">
-        <div id="customer-pagination-info"></div>
+        <div id="customer-pagination-info">Showing 1 to 1 of 1 results</div>
         <ul id="customer-pagination-links" class="pagination-links flex gap-2"></ul>
     </div>
 </div>

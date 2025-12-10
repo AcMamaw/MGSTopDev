@@ -8,50 +8,55 @@
 
 <div x-data="rolePage()">
 
-    <header class="mb-8 max-w-7xl mx-auto">
-        <div class="flex items-center justify-between border-b pb-3 border-gray-200">
-            <h1 class="text-3xl font-bold text-gray-900">Roles</h1>
+    <header class="mb-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between border-b pb-3 border-yellow-400">
+            <h1 class="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5L12 2z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                Roles
+            </h1>
         </div>
-        <p class="text-gray-600 mt-2">Manage role records and their descriptions.</p>
+        <p class="text-gray-600 mt-2 text-md">Define and manage user roles and their associated descriptions within the system.</p>
     </header>
 
-    @if(session('success'))
-        <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-            {{ session('success') }}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        @if(session('success'))
+        <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700 rounded-lg shadow-sm">
+            <p>{{ session('success') }}</p>
         </div>
-    @endif
+        @endif
 
-    @if($errors->any())
-        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            <ul>
+        @if($errors->any())
+        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-lg shadow-sm">
+            <p class="font-bold mb-1">Error Submitting Form:</p>
+            <ul class="list-disc list-inside ml-2 text-sm">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
         </div>
-    @endif
+        @endif
 
-    <!-- Controls -->
-    <div class="max-w-7xl mx-auto mb-6">
-        <div class="flex flex-col md:flex-row items-stretch justify-between gap-4">
-            <!-- Search -->
-            <div class="relative w-full md:w-1/4">
-                <input type="text" id="role-search" placeholder="Search roles"
-                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:outline-none">
+        <div class="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="relative w-full md:w-80">
+                <input type="text" id="role-search" placeholder="Search roles by name or ID..."
+                    class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-full text-sm focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                     class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                     <circle cx="11" cy="11" r="8" />
                     <path d="m21 21-4.3-4.3" />
                 </svg>
             </div>
 
-            <!-- Add Role -->
             <button @click="openAddModal()"
-                    class="w-full md:w-auto bg-yellow-400 text-black px-6 py-2 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-md">
+                class="w-full md:w-auto bg-yellow-400 text-gray-900 px-6 py-2 rounded-full font-bold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-lg shadow-yellow-200/50">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                     fill="none" stroke="currentColor" stroke-width="2"
-                     class="lucide lucide-plus">
+                    fill="none" stroke="currentColor" stroke-width="2"
+                    class="lucide lucide-plus">
                     <path d="M12 5v14" />
                     <path d="M5 12h14" />
                 </svg>
@@ -60,68 +65,67 @@
         </div>
     </div>
 
-    <!-- Roles Table -->
-    <div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto">
+    {{-- TABLE OUTSIDE PADDED WRAPPER FOR FULL STRETCH --}}
+    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
         <div class="overflow-x-auto">
-            <table id="role-table" class="min-w-full table-auto">
+            <table id="role-table" class="min-w-full table-auto divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Role ID</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Role Name</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Description</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Action</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Role ID</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Role Name</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Description</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Action</th>
                     </tr>
                 </thead>
                 <tbody id="role-table-body" class="divide-y divide-gray-100">
                     @forelse ($roles as $role)
-                        <tr class="hover:bg-gray-50"
+                        <tr class="hover:bg-yellow-50/50 transition-colors"
                             data-id="{{ $role->role_id }}"
                             data-name="{{ $role->role_name }}"
                             data-description="{{ $role->description }}">
-                            <td class="px-4 py-3 text-center text-gray-800 font-medium">
+                            <td class="px-4 py-3 text-center text-gray-800 font-semibold">
                                 R{{ str_pad($role->role_id, 3, '0', STR_PAD_LEFT) }}
                             </td>
                             <td class="px-4 py-3 text-center text-gray-600">{{ $role->role_name }}</td>
-                            <td class="px-4 py-3 text-center text-gray-600">{{ $role->description }}</td>
+                            <td class="px-4 py-3 text-center text-gray-600 max-w-xs truncate">{{ $role->description }}</td>
                             <td class="px-4 py-3 text-center">
                                 <div class="flex items-center justify-center space-x-2">
                                     <button title="Edit"
-                                            @click="openEditModal($event)"
-                                            class="p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200">
+                                        @click="openEditModal($event)"
+                                        class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200 flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor"
-                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen">
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen">
                                             <path d="M12 20h9" />
                                             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
                                         </svg>
                                     </button>
                                     <button title="Archive" onclick="deleteRoleRow(this)"
-                                            class="p-2 rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor"
-                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
-                                            <path d="M3 4h18v4H3z" />
-                                            <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
-                                            <path d="M10 12h4" />
-                                        </svg>
+                                        class="p-2 rounded-full text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors duration-200 flex items-center justify-center">
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
+                                        <path d="M3 4h18v4H3z" />
+                                        <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+                                        <path d="M10 12h4" />
+                                       </svg>
                                     </button>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr id="role-empty-initial">
-                            <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="4" class="px-4 py-12 text-center text-gray-500 italic">
                                 No roles found. Add a new role to get started.
                             </td>
                         </tr>
                     @endforelse
 
-                    <!-- Empty state for search -->
                     <tr id="role-empty-search" style="display:none;">
                         <td colspan="4" class="px-4 py-10 text-center text-gray-500 text-sm">
                             <div class="flex flex-col items-center justify-center space-y-2">
                                 <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-16 w-16 text-gray-300"
-                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    class="h-16 w-16 text-gray-300"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
                                     <path d="M14 3v5h5" />
                                     <path d="M9 13h6" />
@@ -139,59 +143,62 @@
         </div>
     </div>
 
-    <!-- Add / Edit Role Modal -->
+    {{-- PAGINATION BACK INSIDE PADDED WRAPPER --}}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600">
+            <div id="role-pagination-info"></div>
+            <ul id="role-pagination-links" class="pagination-links flex gap-2"></ul>
+        </div>
+    </div>
+
+    {{-- MODAL --}}
     <div x-show="showRoleModal" x-cloak x-transition
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
         <div @click.away="closeModal()"
-            class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md relative">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800"
-                x-text="isEdit ? 'Edit Role' : 'Creating a Role'"></h2>
+            class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
+            <h2 class="text-3xl font-extrabold mb-7 text-center text-gray-800"
+                x-text="isEdit ? 'Edit Role Record' : 'Create New Role'"></h2>
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Role Name</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Role Name</label>
                     <input type="text"
                         x-model="roleName"
-                        @focus="if(isEdit){ roleName=''; }"
-                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-500 focus:text-gray-900"
+                        @focus="$event.target.select()"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
                         placeholder="Enter role name">
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Description</label>
-                    <textarea
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+                    <textarea rows="3"
                         x-model="roleDescription"
-                        @focus="if(isEdit){ roleDescription=''; }"
-                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 text-gray-500 focus:text-gray-900"
+                        @focus="$event.target.select()"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
                         placeholder="Enter description"></textarea>
                 </div>
             </div>
 
-            <div class="mt-6 flex justify-end gap-3">
+            <div class="mt-8 flex justify-end gap-3">
                 <button @click="closeModal()"
-                        class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Cancel
                 </button>
 
                 <button x-show="!isEdit"
                         @click="addRole()"
-                        class="px-6 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
+                        class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
                     Confirm
                 </button>
 
                 <button x-show="isEdit"
                         @click="updateRole()"
-                        class="px-6 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
+                        class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
                     Update
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Pagination -->
-    <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600">
-        <div id="role-pagination-info"></div>
-        <ul id="role-pagination-links" class="pagination-links flex gap-2"></ul>
-    </div>
 </div>
 
 <script>
@@ -249,22 +256,22 @@ function rolePage() {
                 if (emptyInitial) emptyInitial.style.display = 'none';
 
                 const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50';
+                row.className = 'hover:bg-yellow-50/50 transition-colors';
                 row.dataset.id = data.role_id;
                 row.dataset.name = data.role_name;
                 row.dataset.description = data.description ?? '';
 
                 row.innerHTML = `
-                    <td class="px-4 py-3 text-center font-medium text-gray-800">
+                    <td class="px-4 py-3 text-center text-gray-800 font-semibold">
                         R${String(data.role_id).padStart(3,'0')}
                     </td>
                     <td class="px-4 py-3 text-center text-gray-600">${data.role_name}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">${data.description ?? ''}</td>
+                    <td class="px-4 py-3 text-center text-gray-600 max-w-xs truncate">${data.description ?? ''}</td>
                     <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center space-x-2">
                             <button title="Edit"
                                 onclick="window.__roleOpenEditFromRow(event)"
-                                class="p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200">
+                                class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor"
                                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen">
                                     <path d="M12 20h9"/>
@@ -273,7 +280,7 @@ function rolePage() {
                             </button>
                             <button title="Archive"
                                 onclick="deleteRoleRow(this)"
-                                class="p-2 rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200">
+                                class="p-2 rounded-full text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors duration-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor"
                                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
                                     <path d="M3 4h18v4H3z"/>

@@ -30,12 +30,32 @@
         }
     }"
 >
+
 <header class="mb-8 max-w-7xl mx-auto">
-    <div class="flex items-center justify-between border-b pb-3 border-gray-200">
-        <h1 class="text-3xl font-bold text-gray-900">Stocks</h1>
-    </div>
-    <p class="text-gray-600 mt-2">Manage inventory records, stock levels, and product details.</p>
-</header>
+        <div class="flex items-center justify-between border-b pb-3 border-yellow-400">
+            <h1 class="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    class="h-8 w-8 text-yellow-500"> <path d="M22 12V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"/>
+                    
+                    <path d="M5.45 16.51L2 18v3a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-3l-3.45-1.49"/>
+                    
+                    <path d="M9 8h6"/>
+                    <path d="M12 5v6"/>
+                    <path d="m14 9-2 2-2-2"/> 
+
+                </svg>
+                Stocks
+            </h1>
+        </div>
+        <p class="text-gray-600 mt-2 text-md">Manage inventory records, stock levels, and product details.</p>
+    </header>
+
 
 <!-- Success message -->
 <div x-show="successMessage"
@@ -45,57 +65,54 @@
 </div>
 
 <!-- Controls -->
-<div class="max-w-7xl mx-auto mb-6">
-    <div class="flex flex-col md:flex-row items-stretch justify-between gap-4">
+<div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 max-w-7xl mx-auto">
+    <div class="flex flex-col sm:flex-row items-stretch gap-4 w-full md:w-auto">
+        
+        <!-- Search -->
+        <div class="relative w-full sm:w-64">
+            <input type="text" 
+                id="inventory-search" 
+                placeholder="Search inventory"
+                class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-full text-sm placeholder-gray-500 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 focus:outline-none transition">
 
-        <!-- Left: search + filters -->
-        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
-
-            <!-- Search -->
-            <div class="relative">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                     class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                </svg>
-
-                <input type="text" id="inventory-search" placeholder="Search inventory"
-                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm
-                              focus:ring-2 focus:ring-black focus:outline-none">
-            </div>
-
-            <!-- Product Type Filter -->
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-700">Product Type:</label>
-                <select id="inventory-type-filter"
-                        class="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black">
-                    <option value="all">All Types</option>
-                    @foreach($groupedStocks->pluck('product_type')->unique() as $type)
-                        <option value="{{ $type }}">{{ $type }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Stock Level Filter -->
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-700">Stock Level:</label>
-                <select id="inventory-level-filter"
-                        class="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black">
-                    <option value="all">All Levels</option>
-                    <option value="out">Out of Stock</option>
-                    <option value="low">Low Stock</option>
-                    <option value="medium">Medium Stock</option>
-                    <option value="high">High Stock</option>
-                </select>
-            </div>
-
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
+            </svg>
         </div>
+
+        <!-- Product Type Filter -->
+        <div class="flex items-center gap-2">
+            <label for="inventory-type-filter" class="text-sm font-semibold text-gray-700 hidden sm:block">Product Type:</label>
+            <select id="inventory-type-filter"
+                    class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-yellow-400 focus:outline-none appearance-none cursor-pointer">
+                <option value="all">All Types</option>
+                @foreach($groupedStocks->pluck('product_type')->unique() as $type)
+                    <option value="{{ $type }}">{{ $type }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <!-- Stock Level Filter -->
+        <div class="flex items-center gap-2">
+            <label for="inventory-level-filter" class="text-sm font-semibold text-gray-700 hidden sm:block">Stock Level:</label>
+            <select id="inventory-level-filter"
+                    class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-yellow-400 focus:outline-none appearance-none cursor-pointer">
+                <option value="all">All Levels</option>
+                <option value="out">Out of Stock</option>
+                <option value="low">Low Stock</option>
+                <option value="medium">Medium Stock</option>
+                <option value="high">High Stock</option>
+            </select>
+        </div>
+
     </div>
 </div>
 
 <!-- Inventory Table -->
-<div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto">
+<div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
     <div class="overflow-x-auto">
         <table id="inventory-table" class="min-w-full table-auto">
             <thead class="bg-gray-50">
@@ -134,10 +151,10 @@
                     <tr class="hover:bg-gray-50 inventory-row"
                         data-product-type="{{ $item->product_type }}"
                         data-stock-level="{{ $stockLevel }}"
-                        data-supplier-name="{{ $item->product->supplier->supplier_name ?? '' }}"
-                        data-product-name="{{ $item->product->product_name }}">
+                        data-supplier-name="{{ optional(optional($item->product)->supplier)->supplier_name ?? '' }}"
+                        data-product-name="{{ $item->product->product_name ?? '' }}">
                         <td class="px-4 py-3 text-center text-gray-800 font-medium">
-                            {{ $item->product->product_name }}
+                            {{ $item->product->product_name ?? 'No product' }}
                         </td>
                         <td class="px-4 py-3 text-center text-gray-800 font-medium">
                             {{ $item->product_type }}
@@ -212,7 +229,7 @@
 </div>
 
 <!-- Pagination -->
-<div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600">
+<div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto pb-8">
     <div id="inventory-pagination-info"></div>
     <ul id="inventory-pagination-links" class="pagination-links flex gap-2"></ul>
 </div>
@@ -515,5 +532,4 @@ if (levelFilter) levelFilter.addEventListener('change', applyFilters);
 
 applyFilters();
 </script>
-</div>
 @endsection

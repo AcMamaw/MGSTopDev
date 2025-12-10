@@ -23,13 +23,14 @@ return new class extends Migration
                 ->constrained('employees', 'employee_id')
                 ->onDelete('cascade');
 
-            $table->date('payment_date'); // Payment date
-            $table->decimal('amount', 12, 2); // Total payment amount
-            $table->decimal('cash', 12, 2); // Cash given
-            $table->decimal('change_amount', 12, 2); // Change returned
-            $table->string('payment_method', 50); // e.g., Cash, Credit, GCash
-            $table->string('reference_number', 100)->nullable(); // Optional reference
-            $table->timestamps(); // created_at & updated_at
+            $table->date('payment_date'); 
+            $table->decimal('amount', 12, 2); 
+            $table->decimal('profit', 12, 2)->default(0); 
+            $table->decimal('cash', 12, 2);
+            $table->decimal('change_amount', 12, 2); 
+            $table->string('payment_method', 50);
+            $table->string('reference_number', 100)->nullable(); 
+            $table->timestamps(); 
         });
     }
 

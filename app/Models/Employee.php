@@ -21,6 +21,7 @@ class Employee extends Model
         'contact_no',
         'status',
         'pictures',
+        'archive',
     ];
 
     // Relationship to Role

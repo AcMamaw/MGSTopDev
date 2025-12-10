@@ -47,4 +47,31 @@ class CategoryController extends Controller
         ]);
     }
 
+    public function archive(Category $category)
+    {
+        $category->archive = 'Archived';
+        $category->save();
+
+        return response()->json($category);
+    }
+
+    
+    public function unarchive(Category $category)
+    {
+        // remove whatever value is in the "archive" column
+        $category->archive = null;
+
+        $category->save();
+
+        return response()->json($category);
+    }
+
+
+    public function destroy(Category $category)
+    {
+        $category->delete();
+
+        return response()->json(['status' => 'deleted']);
+    }
+
 }

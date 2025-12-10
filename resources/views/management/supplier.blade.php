@@ -7,225 +7,236 @@
 
 <div x-data="supplierPage()">
 
-<header class="mb-8 max-w-7xl mx-auto">
-    <div class="flex items-center justify-between border-b pb-3 border-gray-200">
-        <h1 class="text-3xl font-bold text-gray-900">Suppliers</h1>
+    <header class="mb-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between border-b pb-3 border-yellow-400">
+            <h1 class="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5L12 2z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                Suppliers
+            </h1>
+        </div>
+        <p class="text-gray-600 mt-2 text-md">Efficiently manage all supplier records, including contact information and addresses.</p>
+    </header>
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        @if(session('success'))
+        <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 text-green-700 rounded-lg shadow-sm">
+            <p>{{ session('success') }}</p>
+        </div>
+        @endif
+
+        @if($errors->any())
+        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-lg shadow-sm">
+            <p class="font-bold mb-1">Error Submitting Form:</p>
+            <ul class="list-disc list-inside ml-2 text-sm">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <div class="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="relative w-full md:w-80">
+                <input type="text" id="supplier-search" placeholder="Search suppliers by name or ID..."
+                    class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-full text-sm focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                </svg>
+            </div>
+
+            <button @click="openAddModal()"
+                class="w-full md:w-auto bg-yellow-400 text-gray-900 px-6 py-2 rounded-full font-bold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-lg shadow-yellow-200/50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
+                    <path d="M12 5v14"/>
+                    <path d="M5 12h14"/>
+                </svg>
+                <span>Add New Supplier</span>
+            </button>
+        </div>
     </div>
-    <p class="text-gray-600 mt-2">Manage supplier records including contact details and addresses.</p>
-</header>
 
-    <!-- Success Message -->
-    @if(session('success'))
-    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-        {{ session('success') }}
-    </div>
-    @endif
-
-    <!-- Error Messages -->
-    @if($errors->any())
-    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        <ul>
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
-<!-- Controls -->
-<div class="max-w-7xl mx-auto mb-6 flex flex-col md:flex-row items-stretch justify-between gap-4">
-    <!-- Search -->
-    <div class="relative w-full md:w-1/4">
-        <input type="text" id="supplier-search" placeholder="Search suppliers"
-            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-black">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-        </svg>
-    </div>
-
-    <!-- Add Supplier -->
-    <button @click="openAddModal()"
-        class="w-full md:w-auto bg-yellow-400 text-black px-6 py-2 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-md">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-            <path d="M12 5v14"/>
-            <path d="M5 12h14"/>
-        </svg>
-        <span>Add New Supplier</span>
-    </button>
-</div>
-
-<!-- Supplier Table -->
-<div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto overflow-x-auto">
-    <table id="supplier-table" class="min-w-full table-auto">
-        <thead class="bg-gray-50">
-            <tr>
-                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Supplier ID</th>
-                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Supplier Name</th>
-                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Contact Person</th>
-                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Contact No</th>
-                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Email</th>
-                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Address</th>
-                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Action</th>
-            </tr>
-        </thead>
-        <tbody id="supplier-table-body" class="divide-y divide-gray-100">
-            @forelse($suppliers as $supplier)
-            <tr class="hover:bg-gray-50"
-                data-id="{{ $supplier->supplier_id }}"
-                data-name="{{ $supplier->supplier_name }}"
-                data-contact_person="{{ $supplier->contact_person }}"
-                data-contact_no="{{ $supplier->contact_no }}"
-                data-email="{{ $supplier->email }}"
-                data-address="{{ $supplier->address }}">
-                <td class="px-4 py-3 text-center text-gray-800 font-medium">
-                    SUP{{ str_pad($supplier->supplier_id,3,'0',STR_PAD_LEFT) }}
-                </td>
-                <td class="px-4 py-3 text-center text-gray-600">{{ $supplier->supplier_name }}</td>
-                <td class="px-4 py-3 text-center text-gray-600">{{ $supplier->contact_person }}</td>
-                <td class="px-4 py-3 text-center text-gray-600">{{ $supplier->contact_no }}</td>
-                <td class="px-4 py-3 text-center text-gray-600">{{ $supplier->email }}</td>
-                <td class="px-4 py-3 text-center text-gray-600">{{ $supplier->address }}</td>
-                <td class="px-4 py-3 text-center">
-                    <div class="flex items-center justify-center space-x-2">
-                        <button title="Edit"
-                                @click="openEditModal($event)"
-                                class="p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200">
-                             <svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor'
-                                        stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-square-pen'>
-                                        <path d='M12 20h9'/>
-                                        <path d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z'/>
+    {{-- TABLE OUTSIDE PADDED WRAPPER FOR FULL STRETCH --}}
+    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
+        <div class="overflow-x-auto">
+            <table id="supplier-table" class="min-w-full table-auto divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Supplier ID</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Supplier Name</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Contact Person</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Contact No</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Email</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Address</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="supplier-table-body" class="divide-y divide-gray-100">
+                    @forelse($suppliers as $supplier)
+                    <tr class="hover:bg-yellow-50/50 transition-colors"
+                        data-id="{{ $supplier->supplier_id }}"
+                        data-name="{{ $supplier->supplier_name }}"
+                        data-contact_person="{{ $supplier->contact_person }}"
+                        data-contact_no="{{ $supplier->contact_no }}"
+                        data-email="{{ $supplier->email }}"
+                        data-address="{{ $supplier->address }}">
+                        <td class="px-4 py-3 text-center text-gray-800 font-semibold">
+                            SUP{{ str_pad($supplier->supplier_id,3,'0',STR_PAD_LEFT) }}
+                        </td>
+                        <td class="px-4 py-3 text-center text-gray-600">{{ $supplier->supplier_name }}</td>
+                        <td class="px-4 py-3 text-center text-gray-600">{{ $supplier->contact_person }}</td>
+                        <td class="px-4 py-3 text-center text-gray-600">{{ $supplier->contact_no }}</td>
+                        <td class="px-4 py-3 text-center text-gray-600">{{ $supplier->email }}</td>
+                        <td class="px-4 py-3 text-center text-gray-600 max-w-xs truncate">{{ $supplier->address }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <button title="Edit"
+                                        @click="openEditModal($event)"
+                                        class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen">
+                                        <path d="M12 20h9" />
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
                                     </svg>
-                        </button>
-                        <button title="Archive" onclick="deleteRow(this)" class="p-2 rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 4h18v4H3z"/>
-                                <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>
-                                <path d="M10 12h4"/>
-                            </svg>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            @empty
-            <tr id="supplier-empty-initial">
-                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                    No suppliers found. Add a new supplier to get started.
-                </td>
-            </tr>
-            @endforelse
+                                </button>
+                                
+                                <button title="Archive" onclick="deleteRow(this)" 
+                                        class="p-2 rounded-full text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors duration-200 flex items-center justify-center">
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
+                                        <path d="M3 4h18v4H3z" />
+                                        <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+                                        <path d="M10 12h4" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr id="supplier-empty-initial">
+                        <td colspan="7" class="px-4 py-12 text-center text-gray-500 italic">
+                            No suppliers found. Click "Add New Supplier" to get started.
+                        </td>
+                    </tr>
+                    @endforelse
 
-          <!-- empty state for search -->
-            <tr id="supplier-empty-search" style="display:none;">
-                <td colspan="7" class="px-4 py-10 text-center text-gray-500 text-sm">
-                    <div class="flex flex-col items-center justify-center space-y-2">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                            class="h-16 w-16 text-gray-300"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-                            <path d="M14 3v5h5" />
-                            <path d="M9 13h6" />
-                            <path d="M9 17h3" />
-                        </svg>
-                        <p class="text-gray-700 font-semibold">
-                            No suppliers found
-                        </p>
-                        <p class="text-gray-400 text-xs">
-                            There are currently no suppliers matching these filters.
-                        </p>
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-
-<!-- Add / Edit Supplier Modal (shared) -->
-<div x-show="showSupplierModal" x-cloak x-transition
-     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-
-    <div @click.away="closeModal()"
-         class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md relative text-center">
-
-        <h2 class="text-2xl font-bold mb-6 text-gray-800"
-            x-text="isEdit ? 'Edit Supplier' : 'Add New Supplier'"></h2>
-
-        <div class="space-y-4 flex flex-col items-center">
-            <div class="w-full">
-                <label class="block text-gray-700 font-medium mb-1">Supplier Name</label>
-                <input type="text"
-                       x-model="supplierName"
-                       @focus="supplierName = ''"
-                       class="w-full px-4 py-2 border rounded-lg text-center text-gray-500
-                              focus:outline-none focus:ring-2 focus:ring-yellow-400">
-            </div>
-
-            <div class="w-full">
-                <label class="block text-gray-700 font-medium mb-1">Contact Person</label>
-                <input type="text"
-                       x-model="contactPerson"
-                       @focus="contactPerson = ''"
-                       class="w-full px-4 py-2 border rounded-lg text-center text-gray-500
-                              focus:outline-none focus:ring-2 focus:ring-yellow-400">
-            </div>
-
-            <div class="w-full">
-                <label class="block text-gray-700 font-medium mb-1">Contact No</label>
-                <input type="text"
-                       x-model="contactNo"
-                       @focus="contactNo = ''"
-                       class="w-full px-4 py-2 border rounded-lg text-center text-gray-500
-                              focus:outline-none focus:ring-2 focus:ring-yellow-400">
-            </div>
-
-            <div class="w-full">
-                <label class="block text-gray-700 font-medium mb-1">Email</label>
-                <input type="email"
-                       x-model="email"
-                       @focus="email = ''"
-                       class="w-full px-4 py-2 border rounded-lg text-center text-gray-500
-                              focus:outline-none focus:ring-2 focus:ring-yellow-400">
-            </div>
-
-            <div class="w-full">
-                <label class="block text-gray-700 font-medium mb-1">Address</label>
-                <input type="text"
-                       x-model="address"
-                       @focus="address = ''"
-                       class="w-full px-4 py-2 border rounded-lg text-center text-gray-500
-                              focus:outline-none focus:ring-2 focus:ring-yellow-400">
-            </div>
-        </div>
-
-        <div class="mt-6 flex justify-center gap-3">
-            <button @click="closeModal()"
-                    class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold
-                           bg-transparent hover:bg-yellow-100 transition">
-                Cancel
-            </button>
-
-            <button x-show="!isEdit" @click="addSupplier()"
-                    class="px-6 py-2 rounded-lg bg-yellow-400 font-semibold hover:bg-yellow-500 transition">
-                Confirm
-            </button>
-
-            <button x-show="isEdit" @click="updateSupplier()"
-                    class="px-6 py-2 rounded-lg bg-yellow-400 font-semibold hover:bg-yellow-500 transition">
-                Update
-            </button>
+                    <tr id="supplier-empty-search" style="display:none;">
+                        <td colspan="7" class="px-4 py-10 text-center text-gray-500 text-sm">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="h-16 w-16 text-gray-300"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+                                    <path d="M14 3v5h5" />
+                                    <path d="M9 13h6" />
+                                    <path d="M9 17h3" />
+                                </svg>
+                                <p class="text-gray-700 font-semibold">
+                                    No suppliers found
+                                </p>
+                                <p class="text-gray-400 text-xs">
+                                    There are currently no suppliers matching your search.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
+
+    {{-- PAGINATION BACK INSIDE PADDED WRAPPER --}}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600">
+            <div id="supplier-pagination-info"></div>
+            <ul id="supplier-pagination-links" class="pagination-links flex gap-2"></ul>
+        </div>
+    </div>
+
+    {{-- MODAL --}}
+    <div x-show="showSupplierModal" x-cloak x-transition
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
+
+        <div @click.away="closeModal()"
+            class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
+
+            <h2 class="text-3xl font-extrabold mb-7 text-center text-gray-800"
+                x-text="isEdit ? 'Edit Supplier Record' : 'Add New Supplier'"></h2>
+
+            <form :action="isEdit ? `/suppliers/${supplierId}` : '/suppliers'" method="POST" @submit.prevent="isEdit ? updateSupplier($event) : addSupplier($event)">
+                @csrf
+                <input x-show="isEdit" type="hidden" name="_method" value="PUT">
+                <input x-show="isEdit" type="hidden" name="supplier_id" :value="supplierId">
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Supplier Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="supplier_name"
+                            x-model="supplierName"
+                            placeholder="e.g. ABC Distribution Co."
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Contact Person</label>
+                        <input type="text" name="contact_person"
+                            x-model="contactPerson"
+                            placeholder="e.g. John Doe"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Contact No <span class="text-red-500">*</span></label>
+                        <input type="text" name="contact_no"
+                            x-model="contactNo"
+                            placeholder="e.g. +63 987 654 3210"
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                        <input type="email" name="email"
+                            x-model="email"
+                            placeholder="e.g. info@supplier.com"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Address <span class="text-red-500">*</span></label>
+                        <textarea name="address" rows="2"
+                            x-model="address"
+                            placeholder="e.g. 123 Business St, Metro Manila, PH 1000"
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 placeholder-opacity-50 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end gap-3">
+                    <button type="button" @click="closeModal()"
+                            class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+
+                    <button type="submit" 
+                            class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
+                        <span x-text="isEdit ? 'Save Changes' : 'Confirm Add'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
-<!-- Pagination -->
-<div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto">
-    <div id="supplier-pagination-info"></div>
-    <ul id="supplier-pagination-links" class="pagination-links flex gap-2"></ul>
 </div>
 
 <script>
@@ -295,7 +306,7 @@ function supplierPage() {
                 if (emptyInitial) emptyInitial.style.display = 'none';
 
                 const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50';
+                row.className = 'hover:bg-yellow-50/50 transition-colors';
                 row.dataset.id = s.supplier_id;
                 row.dataset.name = s.supplier_name;
                 row.dataset.contact_person = s.contact_person ?? '';
@@ -304,17 +315,17 @@ function supplierPage() {
                 row.dataset.address = s.address ?? '';
 
                 row.innerHTML = `
-                    <td class="px-4 py-3 text-center text-gray-800 font-medium">SUP${String(s.supplier_id).padStart(3,'0')}</td>
+                    <td class="px-4 py-3 text-center text-gray-800 font-semibold">SUP${String(s.supplier_id).padStart(3,'0')}</td>
                     <td class="px-4 py-3 text-center text-gray-600">${s.supplier_name}</td>
                     <td class="px-4 py-3 text-center text-gray-600">${s.contact_person ?? ''}</td>
                     <td class="px-4 py-3 text-center text-gray-600">${s.contact_no ?? ''}</td>
                     <td class="px-4 py-3 text-center text-gray-600">${s.email ?? ''}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">${s.address ?? ''}</td>
+                    <td class="px-4 py-3 text-center text-gray-600 max-w-xs truncate">${s.address ?? ''}</td>
                     <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center space-x-2">
                             <button title="Edit"
                                 onclick="window.__supplierOpenEditFromRow(event)"
-                                class="p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200">
+                                class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 20h9"/>
                                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
@@ -322,7 +333,7 @@ function supplierPage() {
                             </button>
                             <button title="Archive"
                                 onclick="deleteRow(this)"
-                                class="p-2 rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200">
+                                class="p-2 rounded-full text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors duration-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M3 4h18v4H3z"/>
                                     <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>

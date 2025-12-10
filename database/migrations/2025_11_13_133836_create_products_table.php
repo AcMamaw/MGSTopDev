@@ -13,13 +13,22 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id('product_id'); // Primary key
+
             $table->foreignId('supplier_id')
-                ->nullable() 
+                ->nullable()
                 ->constrained('suppliers', 'supplier_id')
-                ->nullOnDelete(); 
+                ->nullOnDelete();
+
             $table->string('product_name');
             $table->text('description')->nullable();
             $table->string('unit');
+
+            // Markup rule (e.g. 0.30 = 30% markup over cost)
+            $table->decimal('markup_rule', 5, 2)->default(0.00);
+
+            // Image path or URL for product picture
+            $table->string('image_path')->nullable();
+
             $table->timestamps();
         });
     }

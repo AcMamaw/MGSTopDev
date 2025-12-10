@@ -11,7 +11,9 @@ class InventoryController extends Controller
 {
     public function index()
     {
-        $stocks = Inventory::with(['product.supplier', 'employee', 'stockin', 'deliveryDetail'])->get();
+        $stocks = Inventory::with(['product.supplier', 'employee', 'stockin', 'deliveryDetail'])
+            ->whereHas('product')   
+            ->get();
 
         $groupedStocks = $stocks
             ->groupBy(function ($row) {

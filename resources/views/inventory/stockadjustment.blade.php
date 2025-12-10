@@ -3,53 +3,71 @@
 @section('title', 'Stock Adjustment')
 
 @section('content')
-<header class="mb-8 max-w-7xl mx-auto">
-    <div class="flex items-center justify-between border-b pb-3 border-gray-200">
-        <h1 class="text-3xl font-bold text-gray-900">Stock Adjustments</h1>
+<div x-data="adjustmentManager()" x-cloak>
+
+    <header class="mb-8 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between border-b pb-3 border-yellow-400">
+            <h1 class="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+               <svg xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    stroke-width="2" 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    class="h-8 w-8 text-yellow-500">
+                    <line x1="4" x2="20" y1="6" y2="6" />
+                    <circle cx="12" cy="6" r="2" />
+                    
+                    <line x1="4" x2="20" y1="12" y2="12" />
+                    <circle cx="17" cy="12" r="2" />
+                    
+                    <line x1="4" x2="20" y1="18" y2="18" />
+                    <circle cx="7" cy="18" r="2" />
+                </svg>
+                Stock Adjustments
+            </h1>
+        </div>
+        <p class="text-gray-600 mt-2 text-md">Manage stock adjustment records including quantity changes, reasons, and approval status.</p>
+    </header>
+
+    @if(session('success'))
+    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded max-w-7xl mx-auto" x-data="{ show: true }" x-show="show" x-transition.duration.500ms x-init="setTimeout(() => show = false, 5000)">
+        {{ session('success') }}
     </div>
-    <p class="text-gray-600 mt-2">Manage stock adjustment records including quantity changes, reasons, and approval status.</p>
-</header>
+    @endif
 
-@if(session('success'))
-<div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded max-w-7xl mx-auto">
-    {{ session('success') }}
-</div>
-@endif
+    @if($errors->any())
+    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-7xl mx-auto" x-data="{ show: true }" x-show="show" x-transition.duration.500ms x-init="setTimeout(() => show = false, 10000)">
+        <ul class="list-disc list-inside">
+            @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
 
-@if($errors->any())
-<div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-7xl mx-auto">
-    <ul>
-        @foreach($errors->all() as $error)
-        <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 max-w-7xl mx-auto">
+        <div class="flex flex-col sm:flex-row items-stretch gap-4 w-full">
 
-<!-- Controls -->
-<div class="max-w-7xl mx-auto mb-6">
-    <div class="flex flex-col md:flex-row items-stretch justify-between gap-4">
+            <div class="relative w-full sm:w-64">
+                <input type="text" 
+                    id="stockadjustment-search" 
+                    placeholder="Search adjustments"
+                    class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-full text-sm placeholder-gray-500 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 focus:outline-none transition">
 
-        <!-- Left: Search + Filters -->
-        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
-
-            <!-- Search -->
-            <div class="relative w-full md:w-1/3">
-                <input type="text" id="stockadjustment-search" placeholder="Search stock adjustments"
-                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:outline-none">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                     class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.3-4.3"/>
                 </svg>
             </div>
 
-            <!-- Adjustment Type Filter -->
             <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-700">Type:</label>
+                <label for="sa-type-filter" class="text-sm font-semibold text-gray-700 hidden sm:block">Type:</label>
                 <select id="sa-type-filter"
-                        class="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black">
+                        class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-yellow-400 focus:outline-none appearance-none cursor-pointer">
                     <option value="all">All Types</option>
                     <option value="Addition">Addition</option>
                     <option value="Deduction">Deduction</option>
@@ -57,331 +75,351 @@
                 </select>
             </div>
 
-            <!-- Status Filter -->
             <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-700">Status:</label>
+                <label for="sa-status-filter" class="text-sm font-semibold text-gray-700 hidden sm:block">Status:</label>
                 <select id="sa-status-filter"
-                        class="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black">
+                        class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-yellow-400 focus:outline-none appearance-none cursor-pointer">
                     <option value="all">All Status</option>
                     <option value="Pending">Pending</option>
                     <option value="Approved">Approved</option>
                     <option value="Rejected">Rejected</option>
                 </select>
             </div>
+            
         </div>
 
-        <!-- Right: Add StockAdjustment button -->
-       <div class="flex items-center justify-end">
-           <button onclick="openAdjustmentModal()"
-              class="w-60 bg-yellow-400 text-black px-6 py-2 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-md">
+        <div class="flex items-center gap-3">
+            <button type="button" @click="openModal()"
+                class="px-5 py-2 bg-yellow-400 text-black rounded-full hover:bg-yellow-500 font-semibold text-base transition shadow-md inline-flex items-center gap-2 whitespace-nowrap">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                     class="lucide lucide-plus">
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="lucide lucide-plus flex-shrink-0">
                     <path d="M12 5v14" />
                     <path d="M5 12h14" />
                 </svg>
-                <span>Adjust Stocks</span>
+                <span>Adjust Stock</span>
             </button>
         </div>
     </div>
-</div>
 
-<!-- Stock Adjustment Table -->
-<div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto">
-    <div class="overflow-x-auto">
-        <table id="stockadjustment-table" class="min-w-full table-auto">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Adjustment ID</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Product</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Adjustment Type</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Quantity Adjusted</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Request Date</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Reason</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Adjusted By</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Approved By</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Status</th>
-                </tr>
-            </thead>
-            <tbody id="stockadjustment-table-body" class="divide-y divide-gray-100">
-               @foreach($adjustments as $sa)
-                <tr class="hover:bg-gray-50 sa-row"
-                    data-type="{{ $sa->adjustment_type }}"
-                    data-status="{{ $sa->status }}">
-                    <td class="px-4 py-3 text-center text-gray-800 font-medium">
-                        SA{{ str_pad($sa->stockadjustment_id,3,'0',STR_PAD_LEFT) }}
-                    </td>
-                    <td class="px-4 py-3 text-center text-gray-600">
-                        {{ $sa->stock->product->product_name ?? '—' }}
-                    </td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $sa->adjustment_type }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $sa->quantity_adjusted }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $sa->request_date }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $sa->reason }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">
-                        {{ $sa->employee->fname ?? '' }} {{ $sa->employee->lname ?? '' }}
-                    </td>
-                    <td class="px-4 py-3 text-center text-gray-600">
-                        {{ $sa->status === 'Approved' ? ($sa->approvedBy->fname ?? '') . ' ' . ($sa->approvedBy->lname ?? '') : '—' }}
-                    </td>
-                    <td class="px-4 py-3">
-                        @php
-                            switch($sa->status) {
-                                case 'Pending':
-                                    $statusColor = 'bg-gray-500';
-                                    $statusText  = 'Pending';
-                                    break;
-                                case 'Approved':
-                                    $statusColor = 'bg-green-500';
-                                    $statusText  = 'Approved';
-                                    break;
-                                case 'Rejected':
-                                    $statusColor = 'bg-red-500';
-                                    $statusText  = 'Rejected';
-                                    break;
-                                default:
-                                    $statusColor = 'bg-gray-500';
-                                    $statusText  = $sa->status;
-                            }
-                        @endphp
-                        <div class="flex justify-center items-center space-x-2">
-                            <span class="w-3 h-3 rounded-full {{ $statusColor }}"></span>
-                            <span class="text-gray-800 text-xs font-semibold">{{ $statusText }}</span>
-                        </div>
-                    </td>
-                </tr>
-               @endforeach
+    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
+        <div class="overflow-x-auto">
+            <table id="stockadjustment-table" class="min-w-full table-auto">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Adjustment ID</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Product</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Type</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Quantity Adjusted</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Request Date</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Reason</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Adjusted By</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="stockadjustment-table-body" class="divide-y divide-gray-100">
+                   @foreach($adjustments as $sa)
+                    <tr class="hover:bg-gray-50 sa-row"
+                        data-type="{{ $sa->adjustment_type }}"
+                        data-status="{{ $sa->status }}">
+                        <td class="px-4 py-3 text-center text-black-800 font-medium">
+                            SA{{ str_pad($sa->stockadjustment_id,3,'0',STR_PAD_LEFT) }}
+                        </td>
+                        <td class="px-4 py-3 text-center text-gray-600 font-medium">
+                            {{ $sa->stock->product->product_name ?? '—' }} ({{ $sa->stock->size ?? 'N/A' }})
+                        </td>
+                        <td class="px-4 py-3 text-center text-gray-600 font-medium">
+                            <span class="font-bold {{ $sa->adjustment_type === 'Addition' ? 'text-black-600' : ($sa->adjustment_type === 'Deduction' ? 'text-black-600' : 'text-black-600') }}">
+                                {{ $sa->adjustment_type }}
+                            </span>
+                        </td>
+                       <td class="px-4 py-3 text-center text-gray-600 font-bold">
+                            @if($sa->adjustment_type === 'Addition')
+                                +{{ $sa->quantity_adjusted }}
+                            @elseif($sa->adjustment_type === 'Deduction')
+                                −{{ $sa->quantity_adjusted }}
+                            @else
+                                {{ $sa->quantity_adjusted }}
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-center text-gray-600">{{ $sa->request_date }}</td>
+                        <td class="px-4 py-3 text-center text-gray-600 max-w-xs truncate" title="{{ $sa->reason }}">{{ Str::limit($sa->reason, 30) }}</td>
+                        <td class="px-4 py-3 text-center text-gray-600">
+                            {{ $sa->employee->fname ?? '' }} {{ $sa->employee->lname ?? '' }}
+                        </td>
+                        <td class="px-4 py-3">
+                            @php
+                                switch($sa->status) {
+                                    case 'Pending':
+                                        $statusColor = 'bg-yellow-500';
+                                        $statusText  = 'Pending';
+                                        break;
+                                    case 'Approved':
+                                        $statusColor = 'bg-green-500';
+                                        $statusText  = 'Approved';
+                                        break;
+                                    case 'Rejected':
+                                        $statusColor = 'bg-red-500';
+                                        $statusText  = 'Rejected';
+                                        break;
+                                    default:
+                                        $statusColor = 'bg-gray-500';
+                                        $statusText  = $sa->status;
+                                }
+                            @endphp
+                            <div class="flex justify-center items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full {{ $statusColor }}"></span>
+                                <span class="text-gray-800 text-xs font-semibold">{{ $statusText }}</span>
+                            </div>
+                        </td>
+                    </tr>
+                   @endforeach
 
-             {{-- Empty state row --}}
-                <tr id="sa-empty-row" class="{{ $adjustments->count() ? 'hidden' : '' }}">
-                    <td colspan="9" class="px-4 py-10 text-center text-gray-500 text-sm">
-                        <div class="flex flex-col items-center justify-center space-y-2">
-                            <!-- Icon -->
-                           <svg xmlns="http://www.w3.org/2000/svg"
-                                class="h-16 w-16 text-gray-300"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-                                <path d="M14 3v5h5" />
-                                <path d="M9 13h6" />
-                                <path d="M9 17h3" />
-                            </svg>
+                  {{-- Empty state row --}}
+                    <tr id="sa-empty-row" class="{{ $adjustments->count() ? 'hidden' : '' }}">
+                        <td colspan="9" class="px-4 py-10 text-center text-gray-500 text-sm">
+                            <div class="flex flex-col items-center justify-center space-y-2">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-16 w-16 text-gray-300"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                     <path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+                                     <path d="M14 3v5h5" />
+                                     <path d="M9 13h6" />
+                                     <path d="M9 17h3" />
+                                </svg>
 
-                            <!-- Title -->
-                            <p class="text-gray-700 font-semibold">
-                                No stock adjustments found
-                            </p>
-
-                            <!-- Subtitle -->
-                            <p class="text-gray-400 text-xs">
-                                There are currently no adjustments matching these filters.
-                            </p>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                                <p class="text-gray-700 font-semibold">
+                                    No stock adjustments found
+                                </p>
+                                <p class="text-gray-400 text-xs">
+                                    There are currently no adjustments matching these filters.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 
-<!-- Pagination -->
-<div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto">
-    <div id="stockadjustment-pagination-info"></div>
-    <ul id="stockadjustment-pagination-links" class="pagination-links flex gap-2"></ul>
-</div>
+    <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto pb-8">
+        <div id="stockadjustment-pagination-info"></div>
+        <ul id="stockadjustment-pagination-links" class="pagination-links flex gap-2"></ul>
+    </div>
 
-<!-- ADD STOCK ADJUSTMENT MODAL -->
-<div id="adjustmentModal" 
-    class="fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-0 invisible transition-all duration-300">
-    <div id="adjustmentModalBox"
-        class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl transform scale-90 opacity-0 transition-all duration-300">
-        <h2 class="text-2xl font-bold mb-4 text-gray-800">Adjust Stock</h2>
+    {{-- MODAL --}}
+    <div x-show="showModal" 
+         x-cloak
+         @click.self="closeModal()"
+         @keydown.escape.window="closeModal()"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl transform transition-all duration-300"
+             x-show="showModal"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-90"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-90"
+             @click.stop>
+            
+            <h2 class="text-2xl font-extrabold mb-4 text-gray-800 border-b pb-2 border-gray-100">Adjust Stock Quantity</h2>
 
-        <form id="adjustmentForm" method="POST" action="{{ route('stockadjustment.store') }}">
-            @csrf
-            <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Select Product Stock</label>
-               <select name="stock_group_key" id="stockSelect" required
-                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
-                        onchange="updateCurrentStock()">
-                    <option value="">Select Stock</option>
-                    @foreach($stocks as $stock)
-                        <option value="{{ $stock->stock_id }}" 
-                                data-current="{{ $stock->current_stock }}"
-                                data-product="{{ $stock->product->product_name ?? 'Unknown' }}"
-                                data-type="{{ $stock->product_type ?? 'N/A' }}"
-                                data-size="{{ $stock->size ?? 'N/A' }}"
-                                data-stock-ids='@json($stock->stock_ids)'>
-                            {{ $stock->product->product_name ?? 'Unknown' }} 
-                            (Type: {{ $stock->product_type ?? 'N/A' }}) 
-                            (Size: {{ $stock->size ?? 'N/A' }}) - 
-                            Current: {{ $stock->current_stock }}
-                        </option>
-                    @endforeach
-                </select>
+            <form id="adjustmentForm" method="POST" action="{{ route('stockadjustment.store') }}">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-1">Select Product Stock</label>
+                   <select name="stock_group_key" 
+                           id="stockSelect" 
+                           required
+                           @change="updateCurrentStock($event)"
+                           class="w-full px-4 py-2 border rounded-full text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                        <option value="">Select Stock</option>
+                        @foreach($stocks as $stock)
+                            <option value="{{ $stock->stock_id }}" 
+                                    data-current="{{ $stock->current_stock }}"
+                                    data-product="{{ $stock->product->product_name ?? 'Unknown' }}"
+                                    data-type="{{ $stock->product_type ?? 'N/A' }}"
+                                    data-size="{{ $stock->size ?? 'N/A' }}"
+                                    data-stock-ids='@json($stock->stock_ids)'>
+                                {{ $stock->product->product_name ?? 'Unknown' }} 
+                                (Type: {{ $stock->product_type ?? 'N/A' }}) 
+                                (Size: {{ $stock->size ?? 'N/A' }}) - 
+                                Current: {{ $stock->current_stock }}
+                            </option>
+                        @endforeach
+                    </select>
 
-                <input type="hidden" name="stock_ids" id="stockIds">
-            </div>
+                    <input type="hidden" name="stock_ids" id="stockIds">
+                </div>
 
-            <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase font-semibold">Product</p>
-                        <p id="productDisplay" class="text-sm text-gray-800 font-medium">-</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase font-semibold">Product Type</p>
-                        <p id="productTypeDisplay" class="text-sm text-gray-800 font-medium">-</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase font-semibold">Size</p>
-                        <p id="sizeDisplay" class="text-sm text-gray-800 font-medium">-</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 uppercase font-semibold">Current Stock</p>
-                        <p id="currentStockDisplay" class="text-sm text-blue-600 font-bold">0</p>
+                <div class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <p class="text-xs text-gray-600 uppercase font-bold">Product</p>
+                            <p id="productDisplay" class="text-sm text-gray-800 font-medium" x-text="productName">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 uppercase font-bold">Product Type</p>
+                            <p id="productTypeDisplay" class="text-sm text-gray-800 font-medium" x-text="productType">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 uppercase font-bold">Size</p>
+                            <p id="sizeDisplay" class="text-sm text-gray-800 font-medium" x-text="size">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 uppercase font-bold">Current Stock</p>
+                            <p id="currentStockDisplay" class="text-lg text-yellow-600 font-bold" x-text="currentStock">0</p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Adjustment Type</label>
-                <select name="adjustment_type" required 
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none">
-                    <option value="">Select Type</option>
-                    <option value="Addition">Addition (+)</option>
-                    <option value="Deduction">Deduction (-)</option>
-                    <option value="Correction">Correction</option>
-                </select>
-            </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-1">Adjustment Type</label>
+                        <select name="adjustment_type" required 
+                            class="w-full px-4 py-2 border rounded-full text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                            <option value="">Select Type</option>
+                            <option value="Addition">Addition (Stock Count Up)</option>
+                            <option value="Deduction">Deduction (Stock Count Down)</option>
+                            <option value="Correction">Correction (Inventory Error)</option>
+                        </select>
+                    </div>
 
-            <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Quantity to Adjust</label>
-                <input type="number" name="quantity_adjusted" min="1" required 
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
-                    placeholder="Enter quantity">
-            </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-1">Quantity to Adjust</label>
+                        <input type="number" name="quantity_adjusted" min="1" required 
+                            class="w-full px-4 py-2 border rounded-full text-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                            placeholder="Enter quantity">
+                    </div>
+                </div>
+                
 
-            <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Reason</label>
-                <textarea name="reason" rows="3" required
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
-                    placeholder="Explain the reason for this adjustment"></textarea>
-            </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-1">Reason</label>
+                    <textarea name="reason" rows="3" required
+                        class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                        placeholder="Explain the reason for this adjustment (e.g., Damaged goods, inventory count error)"></textarea>
+                </div>
 
-            <input type="hidden" name="request_date" value="{{ date('Y-m-d') }}">
+                <input type="hidden" name="request_date" value="{{ date('Y-m-d') }}">
 
-            <div class="flex justify-end gap-2 mt-6">
-                <button type="button" onclick="closeAdjustmentModal()"
-                        class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
-                    Cancel
-                </button>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" 
+                            @click="closeModal()"
+                            class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
 
-                <button type="submit"
-                    class="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 font-semibold">
-                    Submit Adjustment
-                </button>
-            </div>
-        </form>
+                    <button type="submit"
+                        class="px-6 py-2 bg-yellow-400 text-black rounded-full hover:bg-yellow-500 font-semibold transition shadow-md">
+                        Submit Adjustment
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <script>
-// MODAL
-function openAdjustmentModal() {
-    const modal = document.getElementById('adjustmentModal');
-    const box = document.getElementById('adjustmentModalBox');
+function adjustmentManager() {
+    return {
+        showModal: false,
+        productName: '-',
+        productType: '-',
+        size: '-',
+        currentStock: '0',
 
-    modal.classList.remove('invisible');
-    modal.classList.add('flex');
-    
-    setTimeout(() => {
-        modal.classList.remove('bg-opacity-0');
-        modal.classList.add('bg-opacity-50');
-        box.classList.remove('scale-90', 'opacity-0');
-        box.classList.add('scale-100', 'opacity-100');
-    }, 10);
-}
+        openModal() {
+            this.showModal = true;
+            document.body.style.overflow = 'hidden';
+        },
 
-function closeAdjustmentModal() {
-    const modal = document.getElementById('adjustmentModal');
-    const box = document.getElementById('adjustmentModalBox');
+        closeModal() {
+            this.showModal = false;
+            document.body.style.overflow = 'auto';
+            this.resetModalData();
+        },
 
-    modal.classList.add('bg-opacity-0');
-    modal.classList.remove('bg-opacity-50');
-    box.classList.remove('scale-100', 'opacity-100');
-    box.classList.add('scale-90', 'opacity-0');
-    
-    setTimeout(() => {
-        modal.classList.add('invisible');
-        modal.classList.remove('flex');
-    }, 300);
-}
+        resetModalData() {
+            this.productName = '-';
+            this.productType = '-';
+            this.size = '-';
+            this.currentStock = '0';
+            
+            const form = document.getElementById('adjustmentForm');
+            if (form) form.reset();
+            
+            document.getElementById('stockIds').value = '';
+        },
 
-function updateCurrentStock() {
-    const select = document.getElementById('stockSelect');
-    const selectedOption = select.options[select.selectedIndex];
+        updateCurrentStock(event) {
+            const select = event.target;
+            const selectedOption = select.options[select.selectedIndex];
 
-    const currentStock = selectedOption.getAttribute('data-current') || '0';
-    const productName = selectedOption.getAttribute('data-product') || '-';
-    const productType = selectedOption.getAttribute('data-type') || '-';
-    const size = selectedOption.getAttribute('data-size') || '-';
-    const stockIds = selectedOption.getAttribute('data-stock-ids') || '[]';
+            this.currentStock = selectedOption.getAttribute('data-current') || '0';
+            this.productName = selectedOption.getAttribute('data-product') || '-';
+            this.productType = selectedOption.getAttribute('data-type') || '-';
+            this.size = selectedOption.getAttribute('data-size') || '-';
+            const stockIds = selectedOption.getAttribute('data-stock-ids') || '[]';
 
-    document.getElementById('currentStockDisplay').textContent = currentStock;
-    document.getElementById('productDisplay').textContent = productName;
-    document.getElementById('productTypeDisplay').textContent = productType;
-    document.getElementById('sizeDisplay').textContent = size;
-
-    document.getElementById('stockIds').value = stockIds;
+            document.getElementById('stockIds').value = stockIds;
+        }
+    }
 }
 
 
-// AJAX submit (same as yours)
 document.addEventListener('DOMContentLoaded', function() {
     const adjustmentForm = document.getElementById('adjustmentForm');
     
-    adjustmentForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+    if (adjustmentForm) {
+        adjustmentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-        const formData = new FormData(this);
-        const submitButton = this.querySelector('button[type="submit"]');
-        const originalText = submitButton.textContent;
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
 
-        submitButton.disabled = true;
-        submitButton.textContent = 'Submitting...';
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
 
-        fetch('{{ route("stockadjustment.store") }}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                closeAdjustmentModal();
-                adjustmentForm.reset();
-                document.getElementById('currentStockDisplay').textContent = '0';
-                showSuccessMessage(data.message || 'Stock adjustment submitted successfully!');
-                setTimeout(() => { window.location.reload(); }, 1000);
-            }
-        })
-        .catch(error => {
-            console.error(error);
-            alert('Error submitting adjustment. Please try again.');
-        })
-        .finally(() => {
-            submitButton.disabled = false;
-            submitButton.textContent = originalText;
+            fetch('{{ route("stockadjustment.store") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showSuccessMessage(data.message || 'Stock adjustment submitted successfully!');
+                    setTimeout(() => { window.location.reload(); }, 1000);
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Error submitting adjustment. Please try again.');
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            });
         });
-    });
+    }
 });
 
 function showSuccessMessage(message) {
@@ -398,7 +436,7 @@ function showSuccessMessage(message) {
     }, 3000);
 }
 
-// PAGINATION + FILTERS + EMPTY STATE
+// PAGINATION + FILTERS
 const saRowsPerPage   = 5;
 const saTableBody     = document.getElementById('stockadjustment-table-body');
 const saAllRows       = Array.from(saTableBody.querySelectorAll('.sa-row'));
@@ -512,4 +550,5 @@ if (saStatusFilter) saStatusFilter.addEventListener('change', applySAFilters);
 
 applySAFilters();
 </script>
+
 @endsection

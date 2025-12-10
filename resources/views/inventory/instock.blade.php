@@ -4,27 +4,36 @@
 
 @section('content')
 
-<div class="w-full px-4 md:px-0" x-data="stockInComponent()" x-cloak>
+<div class="w-full px-4 md:px-6 lg:px-8" x-data="stockInComponent()" x-cloak>
 
-    <!-- Header -->
-    <header class="mb-8">
-        <div class="flex items-center justify-between border-b pb-3 border-gray-200">
-            <h1 class="text-3xl font-bold text-gray-900">In Stocks</h1>
+    <header class="mb-8 max-w-full mx-auto">
+        <div class="flex items-center justify-between border-b pb-3 border-yellow-400">
+            <h1 class="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="h-7 w-7 text-yellow-500">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                </svg>
+                Stock In 
+            </h1>
         </div>
-        <p class="text-gray-600 mt-2">Manage stock-in records</p>
+        <p class="text-gray-600 mt-2 text-md">Manage records of incoming inventory and goods received.</p>
     </header>
 
-    <!-- Success Message -->
     @if(session('success'))
-    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-        {{ session('success') }}
+    <div class="mb-6 bg-green-50 border border-green-300 text-green-800 px-5 py-3 rounded-xl shadow-sm transition-opacity duration-300 max-w-full mx-auto">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span class="font-medium">{{ session('success') }}</span>
+        </div>
     </div>
     @endif
 
-    <!-- Validation Errors -->
     @if($errors->any())
-    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        <ul>
+    <div class="mb-6 bg-red-50 border border-red-300 text-red-800 px-5 py-3 rounded-xl shadow-sm transition-opacity duration-300 max-w-full mx-auto">
+        <ul class="list-disc list-inside">
             @foreach($errors->all() as $error)
             <li>{{ $error }}</li>
             @endforeach
@@ -32,46 +41,49 @@
     </div>
     @endif
 
-    <!-- Controls -->
-    <div class="max-w-7xl mx-auto mb-6 flex items-center justify-between gap-4">
-
-        <!-- Left: search and filter -->
-        <div class="flex items-center gap-3">
-
-            <!-- Search Input with Icon -->
-            <div class="relative">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                </svg>
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 max-w-full mx-auto">
+        {{-- Left: search + filter --}}
+        <div class="flex flex-col sm:flex-row items-stretch gap-4 w-full md:w-auto">
+            {{-- Search --}}
+            <div class="relative w-full sm:w-80">
                 <input type="text"
                     x-model="searchQuery"
                     @input="filterStockins()"
-                    placeholder="Search by Stock"
-                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:outline-none w-full md:w-80"
-                    style="min-width:200px;" />
+                    placeholder="Search by stock"
+                    class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-full text-sm placeholder-gray-500 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 focus:outline-none transition">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.3-4.3"/>
+                </svg>
             </div>
 
-            <!-- Product Type Filter -->
+            {{-- Type filter --}}
             <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-700">Filter:</label>
-                <select x-model="typeFilter" @change="filterStockins()"
-                        class="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black">
+                <label class="text-sm font-semibold text-gray-700 hidden sm:block">
+                    Filter by Type:
+                </label>
+                <select x-model="typeFilter"
+                        @change="filterStockins()"
+                        class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-yellow-400 focus:outline-none appearance-none cursor-pointer">
                     <option value="all">All Types</option>
                     <option value="Ready Made">Ready Made</option>
                     <option value="Customize Item">Customize Item</option>
                 </select>
             </div>
-
         </div>
 
-        <!-- Right: Add button -->
-        <div>
-            <button onclick="openStockModal()"
-                class="bg-yellow-400 text-black px-6 py-2 rounded-xl font-semibold hover:bg-yellow-500 flex items-center justify-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        {{-- Right: Add New Stock button --}}
+        <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+            <button type="button"
+                    onclick="openStockModal()"
+                    class="px-5 py-2 bg-yellow-400 text-black rounded-full hover:bg-yellow-500 font-semibold text-base transition shadow-md inline-flex items-center gap-2 whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="flex-shrink-0">
                     <path d="M12 5v14" />
                     <path d="M5 12h14" />
                 </svg>
@@ -80,67 +92,69 @@
         </div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto overflow-x-auto">
-        <table class="min-w-full table-auto" id="stockInTable">
-            <thead class="bg-gray-50">
+
+    <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-full mx-auto overflow-x-auto border-t-4 border-yellow-400">
+        <table class="min-w-full table-auto divide-y divide-gray-200" id="stockInTable">
+            <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Stock In ID</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Product</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Product Type</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Size</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Quantity</th>
-                    <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-500">Unit Cost</th>
-                    <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-500">Total</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Inputed By</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Stocked Date</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Stock In ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Product</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Product Type</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Size</th>
+                    <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Quantity</th>
+                    <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Unit Cost</th>
+                    <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Total</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Inputed By</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Stocked Date</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 relative" id="stockInTableBody">
                 @forelse($stockins as $si)
-                <tr class="hover:bg-gray-50 stock-row"
+                <tr class="hover:bg-yellow-50/50 stock-row transition-colors"
                     data-type="{{ $si->product_type ?? '' }}"
                     data-search="SI{{ str_pad($si->stockin_id, 3, '0', STR_PAD_LEFT) }} {{ $si->product->product_name ?? '' }} {{ $si->product_type ?? '' }} {{ $si->employee->fname ?? '' }} {{ $si->employee->lname ?? '' }} {{ $si->created_at->format('Y-m-d') }}">
-                    <td class="px-4 py-3 text-center text-gray-600 font-medium">
+                    <td class="px-4 py-3 text-center text-sm font-semibold text-black-700">
                         SI{{ str_pad($si->stockin_id, 3, '0', STR_PAD_LEFT) }}
                     </td>
-                    <td class="px-4 py-2 text-center text-gray-600">
-                        {{ $si->product->product_name ?? '' }}
+                    <td class="px-4 py-2 text-left text-sm text-gray-800">
+                        {{ $si->product->product_name ?? '-' }}
                     </td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $si->product_type ?? '-' }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $si->size ?? '-' }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $si->quantity_product }}</td>
-                    <td class="px-4 py-3 text-right text-gray-600">₱{{ number_format($si->unit_cost, 2) }}</td>
-                    <td class="px-4 py-3 text-right text-gray-600">₱{{ number_format($si->total, 2) }}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">
-                        {{ $si->employee->fname ?? '' }} {{ $si->employee->lname ?? '' }}
+                    <td class="px-4 py-3 text-center text-sm text-gray-700">
+                        <span class="inline-block px-3 py-1 text-xs font-medium rounded-full {{ $si->product_type == 'Ready Made' ? 'bg-black-100 text-black-800' : 'bg-purple-100 text-black-800' }}">
+                            {{ $si->product_type ?? '-' }}
+                        </span>
                     </td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ $si->created_at->format('Y-m-d') }}</td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-700">{{ $si->size ?? '-' }}</td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-700 font-medium">{{ $si->quantity_product }}</td>
+                    <td class="px-4 py-3 text-right text-sm text-gray-700">₱{{ number_format($si->unit_cost, 2) }}</td>
+                    <td class="px-4 py-3 text-right text-sm font-semibold text-gray-900">₱{{ number_format($si->total, 2) }}</td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-700">
+                        {{ $si->employee->fname ?? '-' }} {{ $si->employee->lname ?? '' }}
+                    </td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-700">{{ $si->created_at->format('Y-m-d') }}</td>
                 </tr>
                 @empty
-                <!-- Static empty state when no stock-ins at all -->
                 <tr class="empty-state-stock-none">
-                    <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="9" class="px-4 py-12 text-center text-gray-500">
                         <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
-                        <p class="text-lg font-medium">No stock-in records available</p>
-                        <p class="text-sm mt-1">Create a new stock-in to get started</p>
+                        <p class="text-lg font-bold text-gray-700">No Stock-In Records Available</p>
+                        <p class="text-sm mt-1 text-gray-500">Click "Add New Stock" to create your first record.</p>
                     </td>
                 </tr>
                 @endforelse
 
                 @if($stockins->isNotEmpty())
-                <!-- Dynamic empty state when search/filter hides all rows -->
                 <tr class="empty-state-stock-filter" style="display:none;">
-                    <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="9" class="px-4 py-12 text-center text-gray-500">
                         <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <p class="text-lg font-medium">No stock-in records match your filter</p>
-                        <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                        <p class="text-lg font-bold text-gray-700">No Results Match Your Criteria</p>
+                        <p class="text-sm mt-1 text-gray-500">Try adjusting your search or filter settings.</p>
                     </td>
                 </tr>
                 @endif
@@ -150,29 +164,28 @@
 
 </div>
 
-<!-- Pagination -->
-<div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto">
-    <div id="stockin-pagination-info"></div>
+<div class="custom-pagination mt-6 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600 max-w-full mx-auto px-4 md:px-6 lg:px-8">
+    <div id="stockin-pagination-info" class="mb-2 sm:mb-0"></div>
     <ul id="stockin-pagination-links" class="pagination-links flex gap-2"></ul>
 </div>
 
-<!-- ADD STOCK IN MODAL -->
 <div id="addStockModal" 
-    class="fixed inset-0 z-50 items-center justify-center bg-black bg-opacity-0 invisible transition-all duration-300">
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 invisible transition-all duration-300 p-4">
     <div id="stockModalBox"
-        class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-90 opacity-0 transition-all duration-300">
+        class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg transform scale-90 opacity-0 transition-all duration-300">
 
-        <h2 class="text-2xl font-bold mb-4 text-gray-800">Add Stock In</h2>
+        <h2 class="text-2xl font-extrabold mb-6 text-gray-800 border-b pb-3 flex items-center gap-2">
+             Log New Stock In
+        </h2>
 
         <form id="addStockForm" method="POST" action="{{ route('instock.store') }}">
             @csrf
 
-            <!-- Product with Add Button -->
             <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Product</label>
-                <div class="flex gap-2">
+                <label class="block text-gray-700 font-semibold mb-1">Product</label>
+                <div class="flex gap-3">
                     <select id="productSelect" name="product_id" required 
-                        class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm">
                         <option value="">Select Product</option>
                         @foreach($products as $product)
                         <option value="{{ $product->product_id }}">{{ $product->product_name }}</option>
@@ -181,28 +194,26 @@
 
                     <button type="button"
                         onclick="openAddProductModal()"
-                        class="px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 font-semibold flex-shrink-0">
-                        Add
+                            class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
+                        New Product
                     </button>
                 </div>
             </div>
 
-            <!-- Product Type -->
             <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Product Type</label>
+                <label class="block text-gray-700 font-semibold mb-1">Product Type</label>
                 <select name="product_type" required
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm">
                     <option value="">Select Type</option>
                     <option value="Ready Made">Ready Made</option>
-                    <option value="Customize Item">Customize Item (Optional)</option>
+                    <option value="Customize Item">Customize Item</option>
                 </select>
             </div>
 
-            <!-- Size -->
             <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Size</label>
+                <label class="block text-gray-700 font-semibold mb-1">Size</label>
                 <select name="size" required
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm">
                     <option value="">Select Size</option>
                     <option value="Extra Small">Extra Small</option>
                     <option value="Small">Small</option>
@@ -223,31 +234,28 @@
                 </select>
             </div>
 
-            <!-- Quantity -->
             <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Quantity</label>
+                <label class="block text-gray-700 font-semibold mb-1">Quantity</label>
                 <input type="number" name="quantity_product" min="1" required 
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm"
                     value="1">
             </div>
 
-            <!-- Unit Cost -->
             <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Unit Cost</label>
+                <label class="block text-gray-700 font-semibold mb-1">Unit Cost (₱)</label>
                 <input type="number" name="unit_cost" min="0" step="0.01" required 
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm"
                     value="0.00">
             </div>
 
-            <!-- Buttons -->
-            <div class="flex justify-end gap-2 mt-6">
+            <div class="flex justify-end gap-3 mt-6">
                 <button type="button" onclick="closeStockModal()"
-                        class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition shadow-sm">
                     Cancel
                 </button>
 
                 <button type="submit"
-                    class="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 font-semibold">
+                    class="px-6 py-2 bg-yellow-400 text-gray-900 rounded-full hover:bg-yellow-500 font-bold transition shadow-md">
                     Save
                 </button>
             </div>
@@ -255,53 +263,71 @@
     </div>
 </div>
 
-<!-- ADD PRODUCT MODAL -->
 <div id="addProductModal" 
-    class="fixed inset-0 z-[60] items-center justify-center bg-black bg-opacity-0 invisible transition-all duration-300">
+    class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-70 invisible transition-all duration-300 p-4">
     <div id="addProductModalBox"
-        class="bg-white p-8 rounded-xl w-full max-w-md shadow-2xl transform scale-90 opacity-0 transition-all duration-300">
+        class="bg-white p-6 rounded-2xl w-full max-w-lg shadow-2xl transform scale-90 opacity-0 transition-all duration-300">
 
-        <h2 class="text-2xl font-bold mb-4 text-gray-800">Add Product</h2>
+        <h2 class="text-2xl font-extrabold mb-6 text-gray-800 border-b pb-3 flex items-center gap-2">
+             Add New Product
+        </h2>
 
         <form id="addProductForm">
             @csrf
 
-            <!-- Product Name -->
             <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Product Name</label>
+                <label class="block text-gray-700 font-semibold mb-1">Product Name</label>
                 <input type="text" name="product_name" required
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm">
             </div>
 
-            <!-- Description -->
             <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Description</label>
+                <label class="block text-gray-700 font-semibold mb-1">Description</label>
                 <textarea name="description" rows="3"
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"></textarea>
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm"></textarea>
             </div>
 
-            <!-- Unit -->
             <div class="mb-4">
-                <label class="block text-gray-700 font-medium mb-1">Unit</label>
+                <label class="block text-gray-700 font-semibold mb-1">Unit</label>
                 <input type="text" name="unit" placeholder="e.g., pcs, kg, box, liter" required
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm">
             </div>
 
-            <!-- Buttons -->
-            <div class="flex justify-end gap-2 mt-6">
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-1">Category</label>
+                <select name="category_id" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm">
+                    <option value="">Select Category</option>
+                    @foreach($categories as $cat)
+                        <option value="{{ $cat->category_id }}">{{ $cat->category_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-1">
+                    Markup Rule (%) 
+                    <span class="text-xs font-normal text-gray-500">(e.g. 30 = 30% above cost)</span>
+                </label>
+                <input type="number" name="markup_rule" step="0.01" min="0" value="0"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 focus:outline-none text-sm">
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
                 <button type="button" onclick="closeAddProductModal()"
-                        class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition shadow-sm">
                     Cancel
                 </button>
 
                 <button type="submit"
-                    class="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 font-semibold">
+                    class="px-6 py-2 bg-yellow-400 text-gray-900 rounded-full hover:bg-yellow-500 font-bold transition shadow-md">
                     Add Product
                 </button>
             </div>
         </form>
     </div>
 </div>
+
 
 <!-- Scripts -->
 <script>

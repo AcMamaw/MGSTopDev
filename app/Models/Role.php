@@ -9,6 +9,6 @@ class Role extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'role_id'; // match your migration
-    protected $fillable = ['role_name', 'description']; // allow mass assignment
+    protected $primaryKey = 'role_id'; 
+    protected $fillable = ['role_name', 'description', 'archive']; 
 }

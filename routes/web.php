@@ -71,7 +71,17 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/stock-adjustments/{id}/approve', [RequestController::class, 'approveStockAdjustment'])
             ->name('stock-adjustments.approve');
+       
+        Route::get('/reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
 
+        Route::post('/payments/update', [OrderController::class, 'updatePayment'])->name('payments.update');
+
+        Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+
+        Route::post('/reports/generate', [ReportController::class, 'generate'])
+            ->name('reports.generate');
+
+        Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
     // --------------------------
     // Inventory 
     // --------------------------
@@ -117,7 +127,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
         Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
-    });
+        Route::post('/products/{product}/image', [ProductController::class, 'updateImage'])->name('products.updateImage');
+   });
 
     // --------------------------
     // Store Management
@@ -152,6 +163,25 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/auth/users/store', [AuthController::class, 'createEmployeeUser'])
         ->middleware('role:Admin')->name('auth.users.store');
+
+    
+    // --------------------------
+    // Archive 
+    // --------------------------
+    Route::put('/categories/{category}/archive', [CategoryController::class, 'archive'])
+    ->name('categories.archive');
+    Route::put('/categories/{category}/unarchive', [CategoryController::class, 'unarchive'])
+        ->name('categories.unarchive');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])
+        ->name('categories.destroy');
+
+    Route::put('/products/{product}/archive', [ProductController::class, 'archive'])
+        ->name('products.archive');
+    Route::put('/products/{product}/unarchive', [ProductController::class, 'unarchive'])
+        ->name('products.unarchive');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])
+        ->name('products.destroy');
+
 
     // --------------------------
     // Logout

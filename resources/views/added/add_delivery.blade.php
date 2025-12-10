@@ -6,7 +6,15 @@
          x-data="{
             selectedSupplier: '',
             deliveryType: '',
-            products: [{ product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0, size:'', product_type:'Ready Made' }],
+            products: [
+                { product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0, size:'', product_type:'Ready Made' }
+            ],
+
+            sizesList: [
+                'Extra Small','Small','Medium','Large','Extra Large',
+                'Double XL','Triple XL',
+                '28','30','32','34','36','38','40','42','One Size'
+            ],
 
             supplierProducts: {
                 @foreach($suppliers as $supplier)
@@ -19,24 +27,34 @@
             },
 
             getAvailableProducts() {
-                // Return empty array if no supplier selected
                 if (!this.selectedSupplier) {
                     return [];
                 }
-                // Return products for selected supplier
                 return this.supplierProducts[this.selectedSupplier] || [];
+            },
+
+            getAvailableSizesForRow(item, rowIndex) {
+                if (!item.product_id) {
+                    return this.sizesList;
+                }
+                const usedSizes = this.products
+                    .filter((p, i) => i !== rowIndex && p.product_id === item.product_id && p.size)
+                    .map(p => p.size);
+                return this.sizesList.filter(size => !usedSizes.includes(size));
             },
 
             updateUnit(item) {
                 if (item.product_id) {
                     const product = (this.supplierProducts[this.selectedSupplier] || []).find(p => p.id == item.product_id);
                     item.unit = product?.unit || 'pcs';
-                    item.unit_cost = 0;
+                    // keep existing quantity and cost if already set
                     item.total = (item.quantity_product * item.unit_cost).toFixed(2);
+                    item.size = '';
                 } else {
                     item.unit = '';
                     item.unit_cost = 0;
                     item.total = 0;
+                    item.size = '';
                 }
             },
 
@@ -45,11 +63,24 @@
             },
 
             resetProducts() {
-                this.products = [{ product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0, size:'', product_type:'Ready Made' }];
+                this.products = [
+                    { product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0, size:'', product_type:'Ready Made' }
+                ];
             },
 
             grandTotal() {
-                return this.products.reduce((sum, item) => sum + Number(item.total || 0), 0).toFixed(2);
+                return this.products
+                    .reduce((sum, item) => sum + Number(item.total || 0), 0)
+                    .toFixed(2);
+            },
+
+            duplicateRow(index) {
+                const original = this.products[index];
+                const clone = JSON.parse(JSON.stringify(original));
+                // keep product_id, quantity_product, unit, unit_cost, total, product_type
+                // clear size so a different size must be chosen
+                clone.size = '';
+                this.products.splice(index + 1, 0, clone);
             }
          }"
     >
@@ -73,23 +104,24 @@
                     @foreach($suppliers as $supplier)
                         <option value="{{ $supplier->supplier_id }}">
                             {{ $supplier->supplier_name }}
+                            {{ $supplier->supplier_name === 'MGS Team' ? '(Owned Company)' : '' }}
                         </option>
                     @endforeach
                 </select>
             </div>
 
-            <!-- Product Type (Global - applies to all products) -->
+            <!-- Product Type (Global) -->
             <div class="mb-4">
                 <label class="block text-gray-700 font-medium mb-1">Product Type</label>
-                <select name="product_type" 
+                <select name="product_type"
                         x-model="deliveryType"
                         @change="products.forEach(p => p.product_type = deliveryType)"
                         required
                         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400">
                     <option value="">Select Product Type</option>
                     <option value="Customize Item">Customize Item</option>
-                     <option value="Ready Made">Ready Made (Optional)</option>
-               </select>
+                    <option value="Ready Made">Ready Made (Optional)</option>
+                </select>
             </div>
 
             <!-- Date Requested -->
@@ -120,7 +152,7 @@
                             <tr>
                                 <!-- Product -->
                                 <td class="px-2 py-2 border">
-                                    <select 
+                                    <select
                                         :name="'products['+index+'][product_id]'"
                                         x-model="item.product_id"
                                         @change="updateUnit(item)"
@@ -133,36 +165,23 @@
                                             <option :value="p.id" x-text="p.name"></option>
                                         </template>
                                     </select>
-                                    <!-- Hidden input to store product_type for each item -->
                                     <input type="hidden" :name="'products['+index+'][product_type]'" x-model="item.product_type">
                                 </td>
 
                                 <!-- Size -->
                                 <td class="px-2 py-2 border">
-                                    <select :name="'products['+index+'][size]'" 
-                                            x-model="item.size"
-                                            class="w-full px-2 py-1 border rounded text-sm bg-white">
+                                    <select
+                                        :name="'products['+index+'][size]'"
+                                        x-model="item.size"
+                                        class="w-full px-2 py-1 border rounded text-sm bg-white">
                                         <option value="">Select Size</option>
-                                        <option value="Extra Small">Extra Small</option>
-                                        <option value="Small">Small</option>
-                                        <option value="Medium">Medium</option>
-                                        <option value="Large">Large</option>
-                                        <option value="Extra Large">Extra Large</option>
-                                        <option value="Double XL">Double XL</option>
-                                        <option value="Triple XL">Triple XL</option>
-                                        <option value="28">28</option>
-                                        <option value="30">30</option>
-                                        <option value="32">32</option>
-                                        <option value="34">34</option>
-                                        <option value="36">36</option>
-                                        <option value="38">38</option>
-                                        <option value="40">40</option>
-                                        <option value="42">42</option>
-                                        <option value="One Size">One Size</option>
+                                        <template x-for="size in getAvailableSizesForRow(item, index)" :key="size">
+                                            <option :value="size" x-text="size"></option>
+                                        </template>
                                     </select>
                                 </td>
 
-                                <!-- Quantity -->
+                                <!-- Qty -->
                                 <td class="px-2 py-2 border">
                                     <input type="number" min="1"
                                         :name="'products['+index+'][quantity_product]'"
@@ -182,7 +201,7 @@
                                         class="w-full px-2 py-1 border rounded text-right">
                                 </td>
 
-                                <!-- Unit (readonly) -->
+                                <!-- Unit -->
                                 <td class="px-2 py-2 border">
                                     <input type="text" readonly
                                         :name="'products['+index+'][unit]'"
@@ -190,7 +209,7 @@
                                         class="w-full px-2 py-1 border rounded bg-gray-100 text-center text-sm">
                                 </td>
 
-                                <!-- Total (readonly) -->
+                                <!-- Total -->
                                 <td class="px-2 py-2 border">
                                     <input type="number" readonly
                                         :name="'products['+index+'][total]'"
@@ -198,18 +217,30 @@
                                         class="w-full px-2 py-1 border rounded bg-gray-100 text-right">
                                 </td>
 
-                                <!-- Action (Delete) -->
+                                <!-- Actions -->
                                 <td class="px-2 py-2 border">
-                                    <div class="flex items-center justify-center">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <!-- Duplicate -->
+                                        <button
+                                            type="button"
+                                            @click="duplicateRow(index)"
+                                            class="w-8 h-8 flex items-center justify-center rounded-full text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors duration-200">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
+                                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="9" y="9" width="10" height="10" rx="2" />
+                                                <rect x="5" y="5" width="10" height="10" rx="2" />
+                                            </svg>
+                                        </button>
+
+                                        <!-- Delete -->
                                         <button
                                             type="button"
                                             @click="products.splice(index, 1)"
                                             :disabled="products.length === 1"
                                             class="w-8 h-8 flex items-center justify-center rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors duration-200"
-                                            :class="products.length === 1 ? 'opacity-50 cursor-not-allowed' : ''"
-                                        >
-                                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
-                                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            :class="products.length === 1 ? 'opacity-50 cursor-not-allowed' : ''">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <line x1="3" y1="6" x2="21" y2="6" />
                                                 <rect x="6" y="6" width="12" height="14" rx="2" />
                                                 <line x1="10" y1="10" x2="10" y2="18" />
@@ -224,17 +255,17 @@
                 </table>
 
                 <!-- Add Product Button -->
-                <button type="button"
-                        @click="products.push({product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0, size:'', product_type:'Ready Made'})"
-                        :disabled="!selectedSupplier"
-                        class="mt-2 rounded-lg text-lg font-semibold transition"
-                        :class="selectedSupplier
-                            ? 'bg-yellow-500 text-black px-5 py-2 hover:bg-yellow-600'
-                            : 'bg-gray-300 text-gray-500 px-5 py-2 cursor-not-allowed'">
+               <button
+                    type="button"
+                    @click="products.push({product_id:'', quantity_product:1, unit:'pcs', unit_cost:0, total:0, size:'', product_type: deliveryType || 'Ready Made'})"
+                    :disabled="!selectedSupplier"
+                    class="mt-2 rounded-full text-lg font-semibold transition"
+                    :class="selectedSupplier
+                        ? 'bg-yellow-500 text-black px-5 py-2 hover:bg-yellow-600 rounded-full'
+                        : 'bg-gray-300 text-gray-500 px-5 py-2 cursor-not-allowed rounded-full'">
                     + Add Product
                 </button>
             </div>
-
 
             <!-- Footer -->
             <div class="mt-auto pt-4 border-t flex justify-between items-center text-gray-800">
@@ -250,11 +281,11 @@
             <!-- Buttons -->
             <div class="flex flex-wrap justify-end gap-2 mt-4">
                 <button type="button" @click="showAddDelivery = false"
-                     class="px-6 py-2 rounded-lg border border-yellow-400 text-black font-semibold bg-transparent hover:bg-yellow-100 transition">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Cancel
                 </button>
                 <button type="submit"
-                     class="bg-yellow-500 text-black px-5 py-2 rounded-lg text-lg font-semibold hover:bg-yellow-600 transition">
+                            class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
                     Save Delivery
                 </button>
             </div>

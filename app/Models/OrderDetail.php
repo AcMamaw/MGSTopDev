@@ -21,7 +21,6 @@ class OrderDetail extends Model
         'quantity',
         'price',
         'total',
-        'vat',
         'color',
         'size'
     ];
@@ -41,4 +40,16 @@ class OrderDetail extends Model
     {
         return $this->hasMany(Joborder::class, 'orderdetails_id', 'orderdetails_id');
     }
+
+      public function product()
+    {
+        // adjust foreign/local keys if your columns differ
+        return $this->belongsTo(Product::class, 'product_id', 'product_id');
+    }
+
+    public function inventory()
+    {
+        return $this->belongsTo(Inventory::class, 'stock_id', 'stock_id')->with('product');
+    }
+
 }

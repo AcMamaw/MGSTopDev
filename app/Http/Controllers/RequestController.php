@@ -45,7 +45,6 @@ class RequestController extends Controller
         ]);
     }
 
-    // NEW: approve stock adjustment and update inventory
     public function approveStockAdjustment(Request $request, $id)
     {
         $request->validate([

@@ -78,4 +78,36 @@ class PaymentController extends Controller
             ], 500);
         }
     }
+
+     public function show(Payment $payment)
+    {
+        $order = $payment->order()->with(['customer', 'items.inventory.product'])->first();
+
+        $items = $order->items->map(function ($od) {
+            $name = $od->product_name ?? optional(optional($od->inventory)->product)->product_name;
+            $unit = (float) $od->price;
+            $custom = (float) ($od->custom_amount ?? 0);
+            $qty = (int) $od->quantity;
+            return [
+                'quantity'      => $qty,
+                'product_name'  => $name,
+                'size'          => $od->size,
+                'color'         => $od->color,
+                'unit_price'    => $unit,
+                'custom_amount' => $custom,
+                'amount'        => $unit * $qty + $custom,
+            ];
+        });
+
+        return response()->json([
+            'payment' => $payment,
+            'order'   => [
+                'amount'           => (float) $order->total_amount,
+                'customer_name'    => $order->customer ? $order->customer->fname.' '.$order->customer->lname : '',
+                'customer_address' => $order->customer->address ?? '',
+                'items'            => $items,
+            ],
+        ]);
+    }
+
 }

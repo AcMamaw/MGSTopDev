@@ -9,13 +9,17 @@
 </style>
 
 <div x-data="paymentComponent()">
-
-<header class="mb-8 max-w-7xl mx-auto">
-    <div class="flex items-center justify-between border-b pb-3 border-gray-200">
-        <h1 class="text-3xl font-bold text-gray-900">Sales Transaction</h1>
-    </div>
-    <p class="text-gray-600 mt-2">Manage purchase orders and their details for each transaction.</p>
-</header>
+  <header class="mb-8 max-w-7xl mx-auto">
+        <div class="flex items-center justify-between border-b pb-3 border-yellow-400">
+            <h1 class="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+                Sales Transaction 
+            </h1>
+        </div>
+        <p class="text-gray-600 mt-2 text-md">Manage purchase orders and their details for each transaction.</p>
+    </header>
 
 <!-- Controls -->
 <div class="max-w-7xl mx-auto mb-6 flex items-center justify-between gap-4">
@@ -25,25 +29,24 @@
         
         <!-- Search Input -->
         <div class="relative">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                 class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-            </svg>
+             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.3-4.3"/>
+                </svg>
             <input type="text"
                    x-model="searchQuery"
                    @input="filterOrders()"
                    placeholder="Search by Order ID"
-                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black focus:outline-none w-full md:w-80"
-                   style="min-width:250px;" />
+                   class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-full text-sm placeholder-gray-500 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 focus:outline-none transition">
         </div>
 
         <!-- Status Filter -->
         <div class="flex items-center gap-2 whitespace-nowrap">
             <label class="text-sm font-medium text-gray-700">Filter:</label>
             <select x-model="statusFilter" @change="filterOrders()"
-                    class="px-4 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black">
+                    class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 bg-white focus:ring-2 focus:ring-yellow-400 focus:outline-none appearance-none cursor-pointer">
                 <option value="all">All Status</option>
                 <option value="Released">Released</option>
                 <option value="In Progress">In Progress</option>
@@ -61,18 +64,19 @@
         <!-- Include Payment History Modal -->
         @include('added.payment_history')
 
-        <!-- Add New Order Button -->
+       <!-- Add New Order Button -->
         <button type="button"
                 @click="showAddOrder = true"
-                class="bg-yellow-400 text-black px-6 py-2 rounded-xl font-semibold flex items-center justify-center gap-2
-                       hover:bg-yellow-500 transition shadow-md whitespace-nowrap">
+                class="bg-yellow-400 text-black px-6 py-2 rounded-full font-semibold flex items-center justify-center gap-2
+                    hover:bg-yellow-500 transition shadow-md whitespace-nowrap">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 5v14" />
                 <path d="M5 12h14" />
             </svg>
             <span>Add New Order</span>
         </button>
+
 
         <!-- Include Add Order Modal -->
         @include('added.add_order')
@@ -83,7 +87,7 @@
 </div>
 
 <!-- Purchase Orders Table -->
-<div class="bg-white p-6 rounded-xl shadow max-w-full mx-auto overflow-x-auto">
+<div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
     <table id="order-table" class="min-w-full table-auto">
         <thead class="bg-gray-50">
             <tr>
@@ -167,10 +171,9 @@
                             <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
                         </td>
 
-                         <!-- Hover overlay for whole row -->
+                        <!-- Hover overlay for whole row -->
                         <td colspan="9" class="absolute inset-0 flex items-center justify-center opacity-0 
-                            group-hover:opacity-100 transition-opacity duration-200 bg-sky-100">
-
+                                                group-hover:opacity-100 transition-opacity duration-300 bg-gray-50/70 z-10 rounded-xl border border-gray-300">
                             @php 
                                 $payStatus = $order->payment->status ?? 'Not Paid';
                                 $orderStatus = $order->status;
@@ -178,21 +181,21 @@
                                 $isFullyPaid = ($payStatus === 'Fully Paid');
                             @endphp
 
-                            <div class="w-full h-full flex">
+                            <div class="w-full h-full flex divide-x divide-sky-300 rounded-lg overflow-hidden">
 
                                 <!-- Details Button always -->
                                 <button type="button"
-                                    class="flex-1 flex items-center justify-center bg-sky-200 hover:bg-sky-300 transition-colors"
+                                    class="flex-1 flex items-center justify-center bg-sky-100 hover:bg-sky-200 transition-colors"
                                     @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                                    <span class="text-sky-700 font-semibold text-sm hover:font-bold transition-all duration-200">Details</span>
+                                    <span class="text-sky-700 font-bold text-sm">Details</span>
                                 </button>
 
                                 @if ($orderStatus === 'Pending')
                                     <!-- Assign Job Order -->
-                                  <button type="button"
-                                        class="flex-1 flex items-center justify-center bg-purple-200 hover:bg-purple-300 transition-colors"
+                                    <button type="button"
+                                        class="flex-1 flex items-center justify-center bg-purple-100 hover:bg-purple-200 transition-colors"
                                         @click.stop="openAssignJobOrder({{ $order->order_id }})">
-                                        <span class="text-purple-700 font-semibold text-sm hover:font-bold transition-all duration-200">
+                                        <span class="text-purple-700 font-bold text-sm">
                                             Assign Job Order
                                         </span>
                                     </button>
@@ -200,9 +203,9 @@
                                     <!-- Complete Payment (only if partial) -->
                                     @if ($isPartialPayment)
                                         <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-yellow-200 hover:bg-yellow-300 transition-colors"
+                                            class="flex-1 flex items-center justify-center bg-yellow-100 hover:bg-yellow-200 transition-colors"
                                             @click="openPaymentModal({{ $order->order_id }}, {{ $order->payment->balance ?? $order->total_amount }})">
-                                            <span class="text-yellow-700 font-semibold text-sm hover:font-bold transition-all duration-200">Complete Payment</span>
+                                            <span class="text-yellow-700 font-bold text-sm">Complete Payment</span>
                                         </button>
                                     @endif
 
@@ -210,20 +213,20 @@
                                     <!-- Complete Payment (only if partial) -->
                                     @if ($isPartialPayment)
                                         <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-yellow-200 hover:bg-yellow-300 transition-colors"
+                                            class="flex-1 flex items-center justify-center bg-yellow-100 hover:bg-yellow-200 transition-colors"
                                             @click="openPaymentModal({{ $order->order_id }}, {{ $order->payment->balance ?? $order->total_amount }})">
-                                            <span class="text-yellow-700 font-semibold text-sm hover:font-bold transition-all duration-200">Complete Payment</span>
+                                            <span class="text-yellow-700 font-bold text-sm">Complete Payment</span>
                                         </button>
                                     @elseif ($isFullyPaid && $orderStatus === 'Released')
                                         <!-- Ready to Claim (only if fully paid and released) -->
                                         <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-green-200 hover:bg-green-300 transition-colors"
+                                            class="flex-1 flex items-center justify-center bg-green-100 hover:bg-green-200 transition-colors"
                                             @click="markAsCompleted({{ $order->order_id }})">
-                                            <span class="text-green-700 font-semibold text-sm hover:font-bold transition-all duration-200">Ready to Claim</span>
+                                            <span class="text-green-700 font-bold text-sm">Ready to Claim</span>
                                         </button>
                                     @endif
                                 @endif
-                        </div>
+                            </div>
                         </td>
                     </tr>
                 @endif
@@ -263,99 +266,93 @@
     <ul id="order-pagination-links" class="pagination-links flex gap-2"></ul>
 </div>
 
-<!-- Order Details Modal -->
-<div x-show="showOrderDetails" x-transition x-cloak
-    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div x-show="showOrderDetails" x-transition x-cloak
+            class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
 
-    <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative">
+            <div @click.away="showOrderDetails = false"
+                class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
 
-        <!-- Modal Header -->
-        <h2 class="text-2xl font-bold mb-4 text-gray-800">
-            Order Details - ID: <span x-text="selectedOrderId"></span>
-        </h2>
+                <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-3">
+                    Order Details - ID: <span class="text-yellow-600" x-text="'O' + selectedOrderId.toString().padStart(3, '0')"></span>
+                </h2>
 
-        <!-- Order Items Table -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full border border-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Detail ID</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Product</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Size</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Color</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Quantity</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Unit</th>
-                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Price</th>
-                        <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
-                    </tr>
-                </thead>
-
-               <tbody class="divide-y divide-gray-100">
-                    @foreach ($orders as $order)
-                        @php
-                            $grandTotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
-                        @endphp
-
-                        @foreach ($order->items ?? [] as $item)
-                            <tr x-show="selectedOrderId === {{ $order->order_id }}">
-                                <td class="px-4 py-2 text-center">
-                                    OD{{ str_pad($item->orderdetails_id, 3, '0', STR_PAD_LEFT) }}
-                                </td>
-                                <td class="px-4 py-2 text-center">
-                                    {{ $item->stock->product->product_name ?? '-' }}
-                                </td>
-                                <td class="px-4 py-2 text-center">
-                                    {{ $item->size ?? '-' }}
-                                </td>
-                                <td class="px-4 py-2 text-center">
-                                    <div class="flex items-center justify-center space-x-1">
-                                        <span class="w-4 h-4 rounded-full" 
-                                            style="background-color: {{ $item->color ?? '#ffffff' }};">
-                                        </span>
-                                        <span>{{ $item->color ?? '-' }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-2 text-center">
-                                    {{ $item->quantity }}
-                                </td>
-                                <td class="px-4 py-2 text-center">
-                                    {{ $item->stock->product->unit ?? '-' }}
-                                </td>
-                                <td class="px-4 py-2 text-right">
-                                    ₱{{ number_format($item->price, 2) }}
-                                </td>
-                                <td class="px-4 py-2 text-right font-semibold">
-                                    ₱{{ number_format($item->quantity * $item->price, 2) }}
-                                </td>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 border border-gray-100">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Detail ID</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Product</th>
+                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Size</th>
+                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Color</th>
+                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Quantity</th>
+                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Unit</th>
+                                <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Price</th>
+                                <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Total</th>
                             </tr>
-                        @endforeach
+                        </thead>
 
-                        <!-- GRAND TOTAL -->
-                        <tr x-show="selectedOrderId === {{ $order->order_id }}">
-                            <td colspan="7" class="px-4 py-3 text-right font-bold text-gray-700">
-                                GRAND TOTAL:
-                            </td>
-                            <td class="px-4 py-3 text-right font-bold text-gray-900">
-                                ₱{{ number_format($grandTotal, 2) }}
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    <tbody class="divide-y divide-gray-100">
+                            @foreach ($orders as $order)
+                                @php
+                                    $grandTotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
+                                @endphp
+
+                                @foreach ($order->items ?? [] as $item)
+                                    <tr x-show="selectedOrderId === {{ $order->order_id }}" class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-4 py-2 text-center text-sm font-semibold text-yellow-700">
+                                            OD{{ str_pad($item->orderdetails_id, 3, '0', STR_PAD_LEFT) }}
+                                        </td>
+                                        <td class="px-4 py-2 text-left text-sm text-gray-800">
+                                            {{ $item->stock->product->product_name ?? '-' }}
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-700">
+                                            {{ $item->size ?? '-' }}
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-700">
+                                            <div class="flex items-center justify-center space-x-1">
+                                                <span class="w-4 h-4 rounded-full border border-gray-300"
+                                                    style="background-color: {{ $item->color ?? '#ffffff' }};">
+                                                </span>
+                                                <span>{{ $item->color ?? '-' }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-700 font-medium">
+                                            {{ $item->quantity }}
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-700">
+                                            {{ $item->stock->product->unit ?? '-' }}
+                                        </td>
+                                        <td class="px-4 py-2 text-right text-sm text-gray-700">
+                                            ₱{{ number_format($item->price, 2) }}
+                                        </td>
+                                        <td class="px-4 py-2 text-right text-sm font-semibold text-gray-900">
+                                            ₱{{ number_format($item->quantity * $item->price, 2) }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+
+                                <tr x-show="selectedOrderId === {{ $order->order_id }}" class="bg-gray-100">
+                                    <td colspan="7" class="px-4 py-3 text-right font-bold text-base text-gray-700">
+                                        GRAND TOTAL:
+                                    </td>
+                                    <td class="px-4 py-3 text-right font-semibold text-base text-gray-900">
+                                        ₱{{ number_format($grandTotal, 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-8 flex justify-end">
+                    <button @click="showOrderDetails = false"
+                            class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md">
+                        Close
+                    </button>
+                </div>
+            </div>
         </div>
-
-        <!-- Close Button -->
-        <div class="mt-6 flex justify-end">
-            <button @click="showOrderDetails = false"
-                    class="bg-yellow-500 text-black font-semibold px-6 py-2 rounded-lg hover:bg-yellow-600 transition">
-                Close
-            </button>
-        </div>
-
     </div>
-
-</div>
-</div>
 
 <script>
 const ORDER_STATUS_PRIORITY = {
@@ -410,6 +407,32 @@ function paymentComponent() {
         // Selected Order
         selectedOrderId: null,
 
+        // ===== RECEIPT STATE (NEW) =====
+        showReceipt: false,
+        showSuccess: false,
+        receipt: {
+            receipt_number: null,
+            items: [],
+            status: '',
+            customer_name: '',
+            customer_address: '',
+            payment_method: '',
+            reference_number: null,
+            payment_date: '',
+            amount: 0,
+            cash: 0,
+            change_amount: 0,
+            balance: 0,
+        },
+
+        printReceipt() {
+            window.print();
+        },
+
+        colorNameFromHex(hex) {
+            return hex || '';
+        },
+
         // Filter orders (set logical visibility only)
         filterOrders() {
             const rows = document.querySelectorAll('.order-row');
@@ -436,7 +459,6 @@ function paymentComponent() {
                 emptyStateFilter.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
             }
 
-            // After filter, show first page
             if (window.showOrderPage) {
                 window.showOrderPage(1);
             }
@@ -532,7 +554,7 @@ function paymentComponent() {
             });
         },
 
-        // Payment Methods (unchanged)
+        // Payment Methods
         openPaymentModal(orderId, balance) {
             this.selectedOrderId = orderId;
             this.paymentBalance = balance;
@@ -543,17 +565,20 @@ function paymentComponent() {
         },
 
         submitCompletePayment() {
-            if (!this.paymentMethod) { alert('Please select a payment method.'); return; }
+            if (!this.paymentMethod) {
+                alert('Please select a payment method.');
+                return;
+            }
             if (this.paymentMethod === 'GCash' && !this.paymentReference.trim()) {
                 alert('Please enter a reference number for GCash.');
                 return;
             }
 
-            let cashReceived = parseFloat(this.paymentCash) || 0;
-            let currentBalance = parseFloat(this.paymentBalance) || 0;
-            let newBalance = Math.max(currentBalance - cashReceived, 0);
-            let changeAmount = Math.max(cashReceived - currentBalance, 0);
-            let paymentStatus = newBalance === 0 ? 'Fully Paid' : 'Partial';
+            const cashReceived   = Number(this.paymentCash) || 0;
+            const currentBalance = Number(this.paymentBalance) || 0;
+            const newBalance     = Math.max(currentBalance - cashReceived, 0);
+            const changeAmount   = Math.max(cashReceived - currentBalance, 0);
+            const paymentStatus  = newBalance === 0 ? 'Fully Paid' : 'Partial';
 
             const paymentData = {
                 order_id: this.selectedOrderId,
@@ -578,15 +603,36 @@ function paymentComponent() {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    this.showCompletePaymentModal = false;
-                    location.reload();
-                } else {
+                if (!data.success) {
                     alert(data.message || 'Failed to update payment.');
+                    return;
                 }
+
+                const pay   = data.payment || {};
+                const order = data.order   || {};
+
+                // Fill minimal receipt info
+                this.receipt.receipt_number   = pay.payment_id || pay.id || null;
+                this.receipt.status           = pay.status || paymentStatus;
+                this.receipt.payment_method   = pay.payment_method || this.paymentMethod;
+                this.receipt.reference_number = pay.reference_number || this.paymentReference || null;
+                this.receipt.payment_date     = pay.payment_date || new Date().toISOString().slice(0, 10);
+                this.receipt.amount           = Number(pay.amount ?? currentBalance);
+                this.receipt.cash             = Number(pay.cash ?? cashReceived);
+                this.receipt.change_amount    = Number(pay.change_amount ?? changeAmount);
+                this.receipt.balance          = Number(pay.balance ?? newBalance);
+
+                this.receipt.customer_name    = order.customer_name || '';
+                this.receipt.customer_address = order.customer_address || '';
+                this.receipt.items            = Array.isArray(order.items) ? order.items : [];
+
+                this.showCompletePaymentModal = false;
+                this.showReceipt = true;
             })
-            .catch(err => { console.error(err); alert('An error occurred: ' + err.message); });
+            .catch(err => {
+                console.error(err);
+                alert('An error occurred: ' + err.message);
+            });
         }
     }
 }
@@ -633,8 +679,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show a page
     window.showOrderPage = function(page) {
-        const visibleRows   = window.getVisibleOrderRows();
-        const totalResults  = visibleRows.length;
+        const visibleRows    = window.getVisibleOrderRows();
+        const totalResults   = visibleRows.length;
         const orderTotalPages = Math.ceil(totalResults / orderRowsPerPage) || 1;
 
         if (page < 1) page = 1;
@@ -642,12 +688,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         orderCurrentPage = page;
 
-        // First hide all rows visually
         Array.from(orderTableBody.querySelectorAll('.order-row')).forEach(row => {
             row.style.display = 'none';
         });
 
-        // Then show only current page of logically visible rows
         const start = (page - 1) * orderRowsPerPage;
         const end   = start + orderRowsPerPage;
         visibleRows.slice(start, end).forEach(row => {
@@ -661,7 +705,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.renderOrderPagination = function(totalPages, totalResults) {
         orderPaginationLinks.innerHTML = '';
 
-        // Prev
         const prev = document.createElement('li');
         prev.className = 'border rounded px-2 py-1';
         prev.innerHTML = orderCurrentPage === 1 ? '« Prev' : '<a href="#">« Prev</a>';
@@ -673,7 +716,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         orderPaginationLinks.appendChild(prev);
 
-        // Page numbers
         for (let i = 1; i <= totalPages; i++) {
             const li = document.createElement('li');
             li.className = 'border rounded px-2 py-1' + (i === orderCurrentPage ? ' bg-yellow-400 text-black' : '');
@@ -687,7 +729,6 @@ document.addEventListener('DOMContentLoaded', function() {
             orderPaginationLinks.appendChild(li);
         }
 
-        // Next
         const next = document.createElement('li');
         next.className = 'border rounded px-2 py-1';
         next.innerHTML = orderCurrentPage === totalPages ? 'Next »' : '<a href="#">Next »</a>';
@@ -705,7 +746,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `Showing ${totalResults ? start : 0} to ${end} of ${totalResults} results`;
     };
 
-    // Initial: sort rows then show page 1
     orderInitialRows();
     window.showOrderPage(1);
 });

@@ -73,8 +73,7 @@ class JoborderController extends Controller
         ]);
     }
 
-    
-    public function pickJobOrder(Request $request, $orderId)
+        public function pickJobOrder(Request $request, $orderId)
     {
         try {
             DB::beginTransaction();
@@ -104,17 +103,17 @@ class JoborderController extends Controller
             // Process each order item
             foreach ($order->items as $item) {
                 $originalStock = Inventory::find($item->stock_id);
-                
+
                 if (!$originalStock) {
                     throw new \Exception("Original stock item not found: {$item->stock_id}");
                 }
 
                 // Get product_id and size from the original stock
-                $productId = $originalStock->product_id;
-                $requiredSize = $item->size ?? $originalStock->size;
+                $productId        = $originalStock->product_id;
+                $requiredSize     = $item->size ?? $originalStock->size;
                 $remainingQuantity = $item->quantity;
 
-                // Find ALL available stocks with same product_id and size, ordered by stock level (FIFO - First In First Out)
+                // Find ALL available stocks with same product_id and size, ordered by stock level (FIFO)
                 $availableStocks = Inventory::where('product_id', $productId)
                     ->where('size', $requiredSize)
                     ->where('current_stock', '>', 0)
@@ -141,19 +140,21 @@ class JoborderController extends Controller
 
                     // Reduce inventory
                     $stock->current_stock -= $pickQuantity;
-                    $stock->last_updated = now();
+                    $stock->last_updated  = now();
                     $stock->save();
 
                     // Create stockout entry for this specific stock
                     Stockout::create([
-                        'stock_id' => $stock->stock_id,
-                        'employee_id' => $employeeId,
-                        'quantity_out' => $pickQuantity,
-                        'date_out' => now(),
-                        'reason' => 'Job Order Picked - Order #' . $order->order_id . ' - Customer: ' . ($order->customer->fname ?? '') . ' ' . ($order->customer->lname ?? ''),
-                        'size' => $requiredSize,
-                        'status' => 'Picked',
-                        'approved_by' => null,
+                        'stock_id'      => $stock->stock_id,
+                        'employee_id'   => $employeeId,
+                        'quantity_out'  => $pickQuantity,
+                        'date_out'      => now(),
+                        'reason'        => 'Job Order Picked - Order #' . $order->order_id .
+                                        ' - Customer: ' . ($order->customer->fname ?? '') . ' ' . ($order->customer->lname ?? ''),
+                        'size'          => $requiredSize,
+                        'product_type'  => $stock->product_type ?? null,  // store product type from inventory
+                        'status'        => 'Picked',
+                        'approved_by'   => null,
                     ]);
 
                     // Reduce remaining quantity
@@ -164,13 +165,15 @@ class JoborderController extends Controller
 
                 // Create ONE job order entry per order item (not per stock)
                 Joborder::create([
-                    'orderdetails_id' => $item->orderdetails_id,
+                    'orderdetails_id'  => $item->orderdetails_id,
                     'joborder_created' => now(),
-                    'joborder_end' => null,
-                    'estimated_time' => 24, // Default 24 hours
-                    'status' => 'In Progress',
-                    'made_by' => $employeeId,
-                    'description' => 'Job order picked for Order #' . $order->order_id . ' - Product: ' . ($originalStock->product->product_name ?? 'N/A') . ' (Size: ' . $requiredSize . ')'
+                    'joborder_end'     => null,
+                    'estimated_time'   => 24, // Default 24 hours
+                    'status'           => 'In Progress',
+                    'made_by'          => $employeeId,
+                    'description'      => 'Job order picked for Order #' . $order->order_id .
+                                        ' - Product: ' . ($originalStock->product->product_name ?? 'N/A') .
+                                        ' (Size: ' . $requiredSize . ')',
                 ]);
             }
 
@@ -184,19 +187,20 @@ class JoborderController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Job order picked successfully! Inventory reduced across available stocks and job order created.'
+                'message' => 'Job order picked successfully! Inventory reduced across available stocks and job order created.',
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Pick Job Order Error: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to pick job order: ' . $e->getMessage()
+                'message' => 'Failed to pick job order: ' . $e->getMessage(),
             ], 500);
         }
     }
+
 
     public function doneJobOrder(Request $request, $orderId)
     {

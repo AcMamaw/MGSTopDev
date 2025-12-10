@@ -18,6 +18,7 @@ class Payment extends Model
         'amount',
         'cash',
         'change_amount', 
+        'profit',
         'payment_method',
         'reference_number',
         'balance', 

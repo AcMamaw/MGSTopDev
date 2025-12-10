@@ -19,5 +19,6 @@ class Customer extends Model
         'lname',
         'contact_no',
         'address',
+        'archive',
     ];
 }

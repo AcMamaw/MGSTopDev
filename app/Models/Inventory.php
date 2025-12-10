@@ -58,9 +58,18 @@ class Inventory extends Model
         return $this->belongsTo(StockIn::class, 'stockin_id', 'stockin_id');
     }
 
-    // ✅ Add this relationship
     public function deliveryDetail()
     {
         return $this->belongsTo(DeliveryDetail::class, 'deliverydetails_id', 'deliverydetails_id');
     }
+      public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id', 'supplier_id');
+    }
+
+    public function receiver()
+{
+    return $this->belongsTo(Employee::class, 'received_by', 'employee_id');
+}
+
 }
