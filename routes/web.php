@@ -183,6 +183,38 @@ Route::middleware('auth')->group(function () {
         ->name('products.destroy');
 
 
+    Route::put('/employees/{id}/archive', [EmployeeController::class, 'archive'])
+        ->name('employees.archive');
+    Route::put('/employees/{id}/unarchive', [EmployeeController::class, 'unarchive'])
+        ->name('employees.unarchive');
+    Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])
+        ->name('employees.destroy');
+
+
+    Route::put('/suppliers/{id}/archive', [SupplierController::class, 'archive'])
+        ->name('suppliers.archive');
+    Route::put('/suppliers/{id}/unarchive', [SupplierController::class, 'unarchive'])
+        ->name('suppliers.unarchive');
+    Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])
+        ->name('suppliers.destroy');
+    
+
+    Route::put('/roles/{id}/archive', [RoleController::class, 'archive'])
+        ->name('roles.archive');
+    Route::put('/roles/{id}/unarchive', [RoleController::class, 'unarchive'])
+        ->name('roles.unarchive');
+    Route::delete('/roles/{id}', [RoleController::class, 'destroy'])
+        ->name('roles.destroy');
+      
+    Route::put('/customers/{id}/archive', [CustomerController::class, 'archive'])
+        ->name('customers.archive');
+
+    Route::put('/customers/{id}/unarchive', [CustomerController::class, 'unarchive'])
+        ->name('customers.unarchive');
+
+    Route::delete('/customers/{id}', [CustomerController::class, 'destroy'])
+        ->name('customers.destroy');
+    
     // --------------------------
     // Logout
     // --------------------------

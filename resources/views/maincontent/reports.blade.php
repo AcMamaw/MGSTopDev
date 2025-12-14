@@ -119,6 +119,7 @@
             showPrintable: false,
             generatedByName: '{{ auth()->user()->employee->fname ?? "" }} {{ auth()->user()->employee->lname ?? "" }}' || 'System',
 
+            // ---------- helpers for headers / fields ----------
             getTableHeaders() {
                 const headers = {
                     'Order': ['Order ID', 'Customer', 'Category', 'Product Type', 'Total Amount', 'Order Date', 'Status'],
@@ -145,6 +146,17 @@
                 return fields[this.category] || fields['Order'];
             },
 
+            // ---------- stock level helper (used by Inventory table) ----------
+            stockLevel(qtyRaw) {
+                const qty = Number(qtyRaw ?? 0);
+
+                if (qty <= 0)   return { cls: 'bg-gray-400',  text: 'Out of Stock' };
+                if (qty <= 30)  return { cls: 'bg-red-500',   text: 'Low Stock' };
+                if (qty <= 60)  return { cls: 'bg-yellow-500',text: 'Medium Stock' };
+                return { cls: 'bg-green-500', text: 'High Stock' };
+            },
+
+            // ---------- date / type / coverage ----------
             computeTypeAndCoverage() {
                 if (!this.dateFrom || !this.dateTo) {
                     this.reportType = '';
@@ -183,6 +195,7 @@
                 this.coverageText = `${this.dateFrom} to ${this.dateTo}`;
             },
 
+            // ---------- history table row helper ----------
             addReportRowToTable(report) {
                 const tableBody = document.getElementById('report-table-body');
                 const emptyRow  = document.getElementById('report-empty-row');
@@ -216,6 +229,7 @@
                 tableBody.insertBefore(tr, tableBody.firstChild);
             },
 
+            // ---------- generate report (POST -> controller) ----------
             generate() {
                 this.computeTypeAndCoverage();
 
@@ -282,6 +296,7 @@
                 .finally(() => this.submitting = false);
             },
 
+            // ---------- actions ----------
             printReport() {
                 window.print();
             },
@@ -311,6 +326,7 @@
                 document.body.removeChild(link);
             },
 
+            // ---------- misc helpers ----------
             getStatusColor(status) {
                 const colors = {
                     'Pending': 'bg-gray-500',
@@ -513,7 +529,7 @@
             </div>
 
            {{-- ORDER TABLE --}}
-            <div class="overflow-x-auto" x-show="category === 'Order'">
+            <div class="overflow-x-auto" x-show="category === 'Order' && showPrintable">
                 <table class="min-w-full table-auto">
                     <thead>
                         {{-- common logo + info --}}
@@ -557,72 +573,69 @@
                     </thead>
 
                     <tbody id="transactions-orders-body" class="divide-y divide-gray-100">
-                        @forelse($orderReports as $order)
-                            @php
-                                $oStatus  = $order->status ?? 'Pending';
-                                $dotColor = match ($oStatus) {
-                                    'Pending'      => 'bg-gray-500',
-                                    'In Progress'  => 'bg-yellow-500',
-                                    'Released'     => 'bg-blue-500',
-                                    'Completed'    => 'bg-green-500',
-                                    'Cancelled'    => 'bg-red-500',
-                                    default        => 'bg-gray-400',
-                                };
-                            @endphp
-                            <tr class="hover:bg-gray-50" data-report
-                                data-type="order"
-                                data-status="{{ $oStatus }}"
-                                data-search="O{{ str_pad($order->order_id,3,'0',STR_PAD_LEFT) }}
-                                            {{ $order->customer?->fname }} {{ $order->customer?->lname }}
-                                            {{ $order->category?->category_name ?? '' }}
-                                            {{ $order->product_type }}">
-                                <td class="px-3 py-2 text-center text-gray-800 text-xs">
-                                    {{ $order->order_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ (($order->customer->fname ?? '') . ' ' . ($order->customer->lname ?? ''))
-                                        ?: ($order->customer_id ?? '—') }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $order->category->category_name ?? $order->category_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $order->product_type }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    ₱{{ number_format($order->total_amount ?? 0, 2) }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $order->order_date }}
-                                </td>
-                                <td class="px-3 py-2 text-center">
-                                    <div class="flex justify-center items-center space-x-2">
-                                        <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                                        <span class="text-gray-800 text-xs font-semibold">{{ $oStatus }}</span>
+                        {{-- empty state when no records in the selected coverage --}}
+                        <template x-if="currentOrders.length === 0">
+                            <tr>
+                                <td colspan="7" class="px-4 py-16 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                                            class="text-gray-300 mb-4">
+                                            <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
+                                            <path d="M3 10h18"/>
+                                        </svg>
+                                        <p class="text-lg font-medium text-gray-500">No orders found</p>
+                                        <p class="text-sm text-gray-400 mt-1">
+                                            There are currently no orders to display for this coverage.
+                                        </p>
                                     </div>
                                 </td>
                             </tr>
-                        @empty
-                        @endforelse
+                        </template>
 
-                        <tr id="transactions-orders-empty"
-                            style="display: {{ $orderReports->count() > 0 ? 'none' : '' }};">
-                            <td colspan="7" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                        class="text-gray-300 mb-4">
-                                        <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
-                                        <path d="M3 10h18"/>
-                                    </svg>
-                                    <p class="text-lg font-medium text-gray-500">No orders found</p>
-                                    <p class="text-sm text-gray-400 mt-1">
-                                        There are currently no orders to display
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
+                        {{-- rows from date‑filtered currentOrders coming from the controller --}}
+                        <template x-for="order in currentOrders" :key="order.order_id">
+                            <tr class="hover:bg-gray-50 text-xs"
+                                :data-status="order.status">
+                                <td class="px-3 py-2 text-center text-gray-800"
+                                    x-text="order.order_id"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="order.customer_name"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="order.category_name"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="order.product_type"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600">
+                                    <span
+                                        x-text="Number(order.total_amount || 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })">
+                                    </span>
+                                </td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="order.order_date"></td>
+
+                                <td class="px-3 py-2 text-center">
+                                    <div class="flex justify-center items-center space-x-2">
+                                        <span class="w-3 h-3 rounded-full"
+                                            :class="{
+                                                'bg-gray-500':  order.status === 'Pending',
+                                                'bg-yellow-500': order.status === 'In Progress',
+                                                'bg-blue-500':  order.status === 'Released',
+                                                'bg-green-500': order.status === 'Completed',
+                                                'bg-red-500':   order.status === 'Cancelled',
+                                                'bg-gray-400':  !['Pending','In Progress','Released','Completed','Cancelled'].includes(order.status)
+                                            }"></span>
+                                        <span class="text-gray-800 text-xs font-semibold"
+                                            x-text="order.status || 'Pending'"></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
 
                     <tfoot>
@@ -638,8 +651,8 @@
                 </table>
             </div>
 
-           {{-- DELIVERIES TABLE --}}
-            <div class="overflow-x-auto" x-show="category === 'Deliveries'">
+          {{-- DELIVERIES TABLE --}}
+            <div class="overflow-x-auto" x-show="category === 'Deliveries' && showPrintable">
                 <table class="min-w-full table-auto">
                     <thead>
                         {{-- Logo + info header --}}
@@ -679,7 +692,6 @@
                         <tr class="bg-gray-50">
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Delivery ID</th>
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Supplier</th>
-                            <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Employee</th>
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Request Date</th>
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Date Received</th>
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Received By</th>
@@ -688,71 +700,62 @@
                     </thead>
 
                     <tbody id="transactions-deliveries-body" class="divide-y divide-gray-100">
-                        @forelse($deliveryReports as $delivery)
-                            @php
-                                $dStatus = $delivery->status ?? 'Pending';
-                                $dotColor = match($dStatus) {
-                                    'Pending'          => 'bg-gray-500',
-                                    'Out for Delivery' => 'bg-yellow-500',
-                                    'For Stock In'     => 'bg-blue-500',
-                                    'Delivered'        => 'bg-green-500',
-                                    default            => 'bg-gray-400',
-                                };
-                            @endphp
-                            <tr class="hover:bg-gray-50" data-report
-                                data-type="delivery"
-                                data-status="{{ $dStatus }}"
-                                data-search="D{{ str_pad($delivery->delivery_id,3,'0',STR_PAD_LEFT) }}
-                                            {{ $delivery->supplier->supplier_name ?? '' }}
-                                            {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }}
-                                            {{ $delivery->received_by }}">
-                                <td class="px-3 py-2 text-center text-gray-800 text-xs">
-                                    {{ $delivery->delivery_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $delivery->supplier->supplier_name ?? $delivery->supplier_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ ($delivery->employee->fname ?? '') . ' ' . ($delivery->employee->lname ?? '') ?: $delivery->employee_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $delivery->delivery_date_request }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $delivery->delivery_date_received ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ (($delivery->receiver->fname ?? '') . ' ' . ($delivery->receiver->lname ?? ''))
-                                        ?: ($delivery->received_by ?? '—') }}
-                                </td>
-                                <td class="px-3 py-2 text-center">
-                                    <div class="flex justify-center items-center space-x-2">
-                                        <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                                        <span class="text-gray-800 text-xs font-semibold">{{ $dStatus }}</span>
+                        {{-- Empty state --}}
+                        <template x-if="currentOrders.length === 0">
+                            <tr>
+                                <td colspan="7" class="px-4 py-16 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                                            class="text-gray-300 mb-4">
+                                            <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
+                                            <path d="M3 10h18"/>
+                                        </svg>
+                                        <p class="text-lg font-medium text-gray-500">No deliveries found</p>
+                                        <p class="text-sm text-gray-400 mt-1">
+                                            There are currently no deliveries to display for this coverage.
+                                        </p>
                                     </div>
                                 </td>
                             </tr>
-                        @empty
-                        @endforelse
+                        </template>
 
-                        <tr id="transactions-deliveries-empty"
-                            style="display: {{ $deliveryReports->count() > 0 ? 'none' : '' }};">
-                            <td colspan="7" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                        class="text-gray-300 mb-4">
-                                        <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
-                                        <path d="M3 10h18"/>
-                                    </svg>
-                                    <p class="text-lg font-medium text-gray-500">No deliveries found</p>
-                                    <p class="text-sm text-gray-400 mt-1">
-                                        There are currently no deliveries to display
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
+                        {{-- Rows from date‑filtered currentOrders (Deliveries) --}}
+                        <template x-for="delivery in currentOrders" :key="delivery.order_id">
+                            <tr class="hover:bg-gray-50 text-xs"
+                                :data-status="delivery.status">
+                                <td class="px-3 py-2 text-center text-gray-800"
+                                    x-text="delivery.order_id"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="delivery.customer_name"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="delivery.request_date ?? delivery.order_date"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="delivery.date_received ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="delivery.received_by_name ?? delivery.received_by ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center">
+                                    <div class="flex justify-center items-center space-x-2">
+                                        <span class="w-3 h-3 rounded-full"
+                                            :class="{
+                                                'bg-gray-500':  delivery.status === 'Pending',
+                                                'bg-yellow-500': delivery.status === 'Out for Delivery',
+                                                'bg-blue-500':  delivery.status === 'For Stock In',
+                                                'bg-green-500': delivery.status === 'Delivered',
+                                                'bg-gray-400':  !['Pending','Out for Delivery','For Stock In','Delivered'].includes(delivery.status)
+                                            }"></span>
+                                        <span class="text-gray-800 text-xs font-semibold"
+                                            x-text="delivery.status || 'Pending'"></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
 
                     <tfoot>
@@ -768,8 +771,9 @@
                 </table>
             </div>
 
+
           {{-- JOB ORDER TABLE --}}
-            <div class="overflow-x-auto" x-show="category === 'Job Order'">
+            <div class="overflow-x-auto" x-show="category === 'Job Order' && showPrintable">
                 <table class="min-w-full table-auto">
                     <thead>
                         {{-- Logo + info header --}}
@@ -818,71 +822,65 @@
                     </thead>
 
                     <tbody id="transactions-jobs-body" class="divide-y divide-gray-100">
-                        @forelse($jobOrderReports as $job)
-                            @php
-                                $jStatus  = $job->status ?? 'Pending';
-                                $dotColor = match($jStatus) {
-                                    'Pending'     => 'bg-gray-500',
-                                    'In Progress' => 'bg-yellow-500',
-                                    'Completed'   => 'bg-green-500',
-                                    'Cancelled'   => 'bg-red-500',
-                                    default       => 'bg-gray-400',
-                                };
-                            @endphp
-                            <tr class="hover:bg-gray-50" data-report
-                                data-type="job"
-                                data-status="{{ $jStatus }}"
-                                data-search="J{{ str_pad($job->joborder_id,3,'0',STR_PAD_LEFT) }}
-                                            {{ $job->orderdetails_id }}
-                                            {{ $job->orderdetail->stock->product->product_name ?? '' }}
-                                            {{ $job->employee->fname ?? '' }} {{ $job->employee->lname ?? '' }}
-                                            {{ $jStatus }}">
-                                <td class="px-3 py-2 text-center text-gray-800 text-xs">
-                                    {{ $job->joborder_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $job->orderdetail->stock->product->product_name ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ ($job->employee->fname ?? '') . ' ' . ($job->employee->lname ?? '') ?: '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $job->estimated_time ?? 0 }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $job->joborder_created ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $job->joborder_end ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center">
-                                    <div class="flex justify-center items-center space-x-2">
-                                        <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                                        <span class="text-gray-800 text-xs font-semibold">{{ $jStatus }}</span>
+                        {{-- Empty state --}}
+                        <template x-if="currentOrders.length === 0">
+                            <tr>
+                                <td colspan="7" class="px-4 py-16 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                                            class="text-gray-300 mb-4">
+                                            <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
+                                            <path d="M3 10h18"/>
+                                        </svg>
+                                        <p class="text-lg font-medium text-gray-500">No job orders found</p>
+                                        <p class="text-sm text-gray-400 mt-1">
+                                            There are currently no job orders to display for this coverage.
+                                        </p>
                                     </div>
                                 </td>
                             </tr>
-                        @empty
-                        @endforelse
+                        </template>
 
-                        <tr id="transactions-jobs-empty"
-                            style="display: {{ $jobOrderReports->count() > 0 ? 'none' : '' }};">
-                            <td colspan="7" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                        class="text-gray-300 mb-4">
-                                        <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
-                                        <path d="M3 10h18"/>
-                                    </svg>
-                                    <p class="text-lg font-medium text-gray-500">No job orders found</p>
-                                    <p class="text-sm text-gray-400 mt-1">
-                                        There are currently no job orders to display
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
+                        {{-- Rows from date‑filtered currentOrders (Job Orders) --}}
+                        <template x-for="job in currentOrders" :key="job.order_id">
+                            <tr class="hover:bg-gray-50 text-xs"
+                                :data-status="job.status">
+                                <td class="px-3 py-2 text-center text-gray-800"
+                                    x-text="job.order_id"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="job.product_type"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="job.customer_name"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="job.estimated_time ?? 0"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="job.order_date"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="job.end_date ?? job.joborder_end ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center">
+                                    <div class="flex justify-center items-center space-x-2">
+                                        <span class="w-3 h-3 rounded-full"
+                                            :class="{
+                                                'bg-gray-500':  job.status === 'Pending',
+                                                'bg-yellow-500': job.status === 'In Progress',
+                                                'bg-green-500': job.status === 'Completed',
+                                                'bg-red-500':   job.status === 'Cancelled',
+                                                'bg-gray-400':  !['Pending','In Progress','Completed','Cancelled'].includes(job.status)
+                                            }"></span>
+                                        <span class="text-gray-800 text-xs font-semibold"
+                                            x-text="job.status || 'Pending'"></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
 
                     <tfoot>
@@ -898,8 +896,8 @@
                 </table>
             </div>
 
-             {{-- INVENTORY TABLE --}}
-          <div class="overflow-x-auto" x-show="category === 'Inventory'">
+           {{-- INVENTORY TABLE --}}
+            <div class="overflow-x-auto" x-show="category === 'Inventory' && showPrintable">
                 <table class="min-w-full table-auto">
                     <thead>
                         {{-- Logo + info header --}}
@@ -949,63 +947,64 @@
                     </thead>
 
                     <tbody id="inventory-table-body" class="divide-y divide-gray-100">
-                        @forelse($inventoryReports as $stock)
-                            @php
-                                $current = $stock->current_stock ?? 0;
-
-                                if ($current <= 0) {
-                                    $stockColor = 'bg-gray-400';  $stockText = 'Out of Stock';  $levelKey = 'Out of Stock';
-                                } elseif ($current <= 30) {
-                                    $stockColor = 'bg-red-500';   $stockText = 'Low Stock';     $levelKey = 'Low Stock';
-                                } elseif ($current <= 60) {
-                                    $stockColor = 'bg-yellow-500';$stockText = 'Medium Stock';  $levelKey = 'Medium Stock';
-                                } else {
-                                    $stockColor = 'bg-green-500'; $stockText = 'High Stock';    $levelKey = 'High Stock';
-                                }
-                            @endphp
-                            <tr class="hover:bg-gray-50" data-report
-                                data-stock-level="{{ $levelKey }}"
-                                data-search="S{{ str_pad($stock->stock_id, 3, '0', STR_PAD_LEFT) }} {{ $stock->product->product_name ?? '' }} {{ $stock->product_type ?? '' }}">
-                                <td class="px-3 py-2 text-center text-gray-800 text-xs">{{ $stock->stock_id }}</td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $stock->product->product_name ?? $stock->product_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">{{ $stock->size ?? '—' }}</td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">{{ $stock->product_type ?? '—' }}</td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">{{ $stock->total_stock ?? 0 }}</td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">{{ $current }}</td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ (($stock->receiver->fname ?? '') . ' ' . ($stock->receiver->lname ?? ''))
-                                        ?: ($stock->received_by ?? '—') }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-xs">
-                                    <div class="flex justify-center items-center space-x-2">
-                                        <span class="w-3 h-3 rounded-full {{ $stockColor }}"></span>
-                                        <span class="text-gray-800 text-xs font-semibold">{{ $stockText }}</span>
+                        {{-- Empty state --}}
+                        <template x-if="currentOrders.length === 0">
+                            <tr>
+                                <td colspan="10" class="px-4 py-16 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                                            class="text-gray-300 mb-4">
+                                            <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
+                                            <path d="M6 9h12M6 13h8" />
+                                        </svg>
+                                        <p class="text-lg font-medium text-gray-500">No inventory records found</p>
+                                        <p class="text-sm text-gray-400 mt-1">
+                                            There are currently no inventory items to display for this coverage.
+                                        </p>
                                     </div>
                                 </td>
                             </tr>
-                        @empty
-                        @endforelse
+                        </template>
 
-                        <tr id="inventory-empty-state"
-                            style="display: {{ $inventoryReports->count() > 0 ? 'none' : '' }};">
-                            <td colspan="10" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                        class="text-gray-300 mb-4">
-                                        <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
-                                        <path d="M6 9h12M6 13h8" />
-                                    </svg>
-                                    <p class="text-lg font-medium text-gray-500">No inventory records found</p>
-                                    <p class="text-sm text-gray-400 mt-1">
-                                        There are currently no inventory items to display
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
+                        {{-- Rows from date‑filtered currentOrders (Inventory) --}}
+                        <template x-for="stock in currentOrders" :key="stock.stock_id || stock.order_id">
+                            @php
+                                // just to avoid Blade errors; logic is in Alpine
+                            @endphp
+                            <tr class="hover:bg-gray-50 text-xs">
+                                <td class="px-3 py-2 text-center text-gray-800"
+                                    x-text="stock.stock_id || stock.order_id"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="stock.product_name || stock.product_type || '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="stock.size ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="stock.product_type ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="stock.total_stock ?? stock.total_amount ?? 0"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="stock.current_stock ?? stock.total_amount ?? 0"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="stock.received_by_name ?? stock.received_by ?? '—'"></td>
+
+                               <td class="px-3 py-2 text-center text-xs">
+                                    <div class="flex justify-center items-center space-x-2">
+                                        <span class="w-3 h-3 rounded-full"
+                                            :class="stockLevel(stock.current_stock ?? stock.total_amount ?? 0).cls"></span>
+                                        <span class="text-gray-800 text-xs font-semibold"
+                                            x-text="stockLevel(stock.current_stock ?? stock.total_amount ?? 0).text"></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
 
                     <tfoot>
@@ -1021,8 +1020,8 @@
                 </table>
             </div>
 
-            {{-- STOCK OUT TABLE --}}
-         <div class="overflow-x-auto" x-show="category === 'Stock Out'">
+          {{-- STOCK OUT TABLE --}}
+            <div class="overflow-x-auto" x-show="category === 'Stock Out' && showPrintable">
                 <table class="min-w-full table-auto">
                     <thead>
                         {{-- Logo + info header --}}
@@ -1073,66 +1072,60 @@
                     </thead>
 
                     <tbody id="stockout-table-body" class="divide-y divide-gray-100">
-                        @forelse($stockoutReports as $so)
-                            <tr class="hover:bg-gray-50" data-report
-                                data-product-type="{{ $so->product_type ?? '' }}"
-                                data-status="{{ $so->status ?? '' }}"
-                                data-search="SO{{ str_pad($so->stockout_id, 3, '0', STR_PAD_LEFT) }}
-                                    {{ $so->stock->product->product_name ?? '' }}
-                                    {{ $so->employee->fname ?? '' }} {{ $so->employee->lname ?? '' }}
-                                    {{ $so->size ?? '' }}
-                                    {{ $so->product_type ?? '' }}
-                                    {{ $so->reason ?? '' }}
-                                    {{ $so->status ?? '' }}">
-                                <td class="px-3 py-2 text-center text-gray-800 text-xs">
-                                    {{ $so->stockout_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $so->stock->product->product_name ?? $so->stock_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ ($so->employee->fname ?? '') . ' ' . ($so->employee->lname ?? '') ?: ($so->employee_id ?? '—') }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $so->size ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $so->product_type ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $so->quantity_out ?? 0 }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $so->date_out ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $so->reason ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $so->status ?? '—' }}
+                        {{-- Empty state --}}
+                        <template x-if="currentOrders.length === 0">
+                            <tr>
+                                <td colspan="10" class="px-4 py-16 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                                            class="text-gray-300 mb-4">
+                                            <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
+                                            <path d="M8 12h8M8 16h5" />
+                                        </svg>
+                                        <p class="text-lg font-medium text-gray-500">No stock-out records found</p>
+                                        <p class="text-sm text-gray-400 mt-1">
+                                            There are currently no stock-out transactions to display for this coverage.
+                                        </p>
+                                    </div>
                                 </td>
                             </tr>
-                        @empty
-                        @endforelse
+                        </template>
 
-                        <tr id="stockout-empty-state"
-                            style="display: {{ $stockoutReports->count() > 0 ? 'none' : '' }};">
-                            <td colspan="10" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                        class="text-gray-300 mb-4">
-                                        <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
-                                        <path d="M8 12h8M8 16h5" />
-                                    </svg>
-                                    <p class="text-lg font-medium text-gray-500">No stock-out records found</p>
-                                    <p class="text-sm text-gray-400 mt-1">
-                                        There are currently no stock-out transactions to display
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
+                        {{-- Rows from date‑filtered currentOrders (Stock Out) --}}
+                        <template x-for="so in currentOrders" :key="so.order_id">
+                            <tr class="hover:bg-gray-50 text-xs"
+                                :data-status="so.status"
+                                :data-product-type="so.product_type">
+                                <td class="px-3 py-2 text-center text-gray-800"
+                                    x-text="so.order_id"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="so.product_type || so.product_name || '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="so.customer_name || '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="so.size ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="so.product_type ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="so.total_amount ?? so.quantity_out ?? 0"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="so.order_date"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="so.reason ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="so.status ?? '—'"></td>
+                            </tr>
+                        </template>
                     </tbody>
 
                     <tfoot>
@@ -1148,8 +1141,8 @@
                 </table>
             </div>
 
-            {{-- STOCK ADJUSTMENT TABLE --}}
-            <div class="overflow-x-auto" x-show="category === 'Stock Adjustment'">
+           {{-- STOCK ADJUSTMENT TABLE --}}
+            <div class="overflow-x-auto" x-show="category === 'Stock Adjustment' && showPrintable">
                 <table class="min-w-full table-auto">
                     <thead>
                         {{-- Logo + info header --}}
@@ -1189,7 +1182,6 @@
                         <tr class="bg-gray-50">
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Adjustment ID</th>
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Product</th>
-                            <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Employee</th>
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Type</th>
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Quantity</th>
                             <th class="px-3 py-2 text-center text-xs font-bold uppercase text-gray-500">Request Date</th>
@@ -1201,67 +1193,59 @@
                     </thead>
 
                     <tbody id="adjustment-table-body" class="divide-y divide-gray-100">
-                        @forelse($stockAdjustmentReports as $adj)
-                            <tr class="hover:bg-gray-50" data-report
-                                data-adjust-type="{{ $adj->adjustment_type ?? '' }}"
-                                data-search="ADJ{{ str_pad($adj->stockadjustment_id, 3, '0', STR_PAD_LEFT) }}
-                                            {{ $adj->stock_id }}
-                                            {{ $adj->employee->fname ?? '' }} {{ $adj->employee->lname ?? '' }}
-                                            {{ $adj->adjustment_type ?? '' }}
-                                            {{ $adj->reason ?? '' }}
-                                            {{ $adj->status ?? '' }}">
-                                <td class="px-3 py-2 text-center text-gray-800 text-xs">
-                                    {{ $adj->stockadjustment_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $adj->stock->product->product_name ?? $adj->stock_id }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ ($adj->employee->fname ?? '') . ' ' . ($adj->employee->lname ?? '') ?: ($adj->employee_id ?? '—') }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $adj->adjustment_type ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $adj->quantity_adjusted ?? 0 }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $adj->request_date ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $adj->reason ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $adj->status ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $adj->adjusted_by ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $adj->approved_by ?? '—' }}
+                        {{-- Empty state --}}
+                        <template x-if="currentOrders.length === 0">
+                            <tr>
+                                <td colspan="10" class="px-4 py-16 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                                            class="text-gray-300 mb-4">
+                                            <rect x="3" y="4" width="18" height="16" rx="2" ry="2" />
+                                            <path d="M7 12h10M7 16h6" />
+                                        </svg>
+                                        <p class="text-lg font-medium text-gray-500">No stock adjustment records found</p>
+                                        <p class="text-sm text-gray-400 mt-1">
+                                            There are currently no stock adjustments to display for this coverage.
+                                        </p>
+                                    </div>
                                 </td>
                             </tr>
-                        @empty
-                        @endforelse
+                        </template>
 
-                        <tr id="adjustment-empty-state"
-                            style="display: {{ $stockAdjustmentReports->count() > 0 ? 'none' : '' }};">
-                            <td colspan="10" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                        class="text-gray-300 mb-4">
-                                        <rect x="3" y="4" width="18" height="16" rx="2" ry="2" />
-                                        <path d="M7 12h10M7 16h6" />
-                                    </svg>
-                                    <p class="text-lg font-medium text-gray-500">No stock adjustment records found</p>
-                                    <p class="text-sm text-gray-400 mt-1">
-                                        There are currently no stock adjustments to display
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
+                        {{-- Rows from date‑filtered currentOrders (Stock Adjustment) --}}
+                        <template x-for="adj in currentOrders" :key="adj.order_id">
+                            <tr class="hover:bg-gray-50 text-xs"
+                                :data-adjust-type="adj.product_type">
+                                <td class="px-3 py-2 text-center text-gray-800"
+                                    x-text="adj.order_id"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="adj.product_name || adj.product_type || '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="adj.product_type ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="adj.total_amount ?? adj.quantity_adjusted ?? 0"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="adj.order_date"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="adj.reason ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="adj.status ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="adj.adjusted_by ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="adj.approved_by ?? '—'"></td>
+                            </tr>
+                        </template>
                     </tbody>
 
                     <tfoot>
@@ -1277,8 +1261,8 @@
                 </table>
             </div>
 
-            {{-- PAYMENT TABLE --}}
-            <div class="overflow-x-auto" x-show="category === 'Payment'">
+           {{-- PAYMENT TABLE --}}
+            <div class="overflow-x-auto" x-show="category === 'Payment' && showPrintable">
                 <table class="min-w-full table-auto">
                     <thead>
                         <tr>
@@ -1328,85 +1312,98 @@
                     </thead>
 
                     <tbody id="payments-table-body" class="divide-y divide-gray-100">
-                        @forelse($paymentReports as $payment)
-                            @php
-                                $rawStatus = trim($payment->status ?? 'Partial');
-                                $pStatus   = $rawStatus;
-
-                                $dotColor = match ($rawStatus) {
-                                    'Fully Paid', 'Full Paid' => 'bg-green-500',
-                                    'Partial'                 => 'bg-yellow-500',
-                                    default                   => 'bg-gray-400',
-                                };
-                            @endphp
-                            <tr class="hover:bg-gray-50"
-                                data-report
-                                data-view="payments"
-                                data-status="{{ $pStatus }}"
-                                data-amount="{{ $payment->amount ?? 0 }}"
-                                data-cash="{{ $payment->cash ?? 0 }}"
-                                data-balance="{{ $payment->balance ?? 0 }}"
-                                data-change="{{ $payment->change_amount ?? 0 }}"
-                                data-search="{{ $payment->payment_id }} {{ $payment->payment_method }} {{ $payment->reference_number }} {{ $payment->amount }} {{ $payment->cash }} {{ $payment->balance }} {{ $pStatus }}">
-                                <td class="px-3 py-2 text-center text-gray-800 text-xs">
-                                    P{{ str_pad($payment->payment_id, 3, '0', STR_PAD_LEFT) }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ (($payment->employee->fname ?? '') . ' ' . ($payment->employee->lname ?? ''))
-                                        ?: ($payment->employee_id ?? '—') }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $payment->payment_method ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $payment->reference_number ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    {{ $payment->payment_date ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    ₱{{ number_format($payment->amount ?? 0, 2) }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    ₱{{ number_format($payment->cash ?? 0, 2) }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    ₱{{ number_format($payment->balance ?? 0, 2) }}
-                                </td>
-                                <td class="px-3 py-2 text-center text-gray-600 text-xs">
-                                    ₱{{ number_format($payment->change_amount ?? 0, 2) }}
-                                </td>
-                                <td class="px-3 py-2 text-center">
-                                    <div class="flex justify-center items-center space-x-2">
-                                        <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                                        <span class="text-gray-800 text-xs font-semibold">{{ $pStatus }}</span>
+                        {{-- Empty state --}}
+                        <template x-if="currentOrders.length === 0">
+                            <tr>
+                                <td colspan="10" class="px-4 py-16 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                                            class="text-gray-300 mb-4">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                            <line x1="1" y1="10" x2="23" y2="10"/>
+                                        </svg>
+                                        <p class="text-lg font-medium text-gray-500">No payment records found</p>
+                                        <p class="text-sm text-gray-400 mt-1">
+                                            There are currently no payment records available for this coverage.
+                                        </p>
                                     </div>
                                 </td>
                             </tr>
-                        @empty
-                        @endforelse
+                        </template>
 
-                        {{-- EMPTY STATE FOR PAYMENTS --}}
-                        <tr id="payments-empty-state" style="display: {{ $paymentReports->count() > 0 ? 'none' : '' }};">
-                            <td colspan="10" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                        class="text-gray-300 mb-4">
-                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                                        <line x1="1" y1="10" x2="23" y2="10"/>
-                                    </svg>
-                                    <p class="text-lg font-medium text-gray-500">No payment records found</p>
-                                    <p class="text-sm text-gray-400 mt-1">
-                                        There are currently no payment records available
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
+                        {{-- Rows from date‑filtered currentOrders (Payments) --}}
+                         <template x-for="pay in currentOrders" :key="pay.order_id">
+                            <tr class="hover:bg-gray-50 text-xs"
+                                :data-status="pay.status">
+                                <td class="px-3 py-2 text-center text-gray-800"
+                                    x-text="'P' + String(pay.order_id).padStart(3,'0')"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="pay.customer_name || '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="pay.product_type || pay.payment_method || '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="pay.reference_number ?? '—'"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="pay.order_date"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="Number(pay.total_amount ?? pay.amount ?? 0).toLocaleString('en-PH',{style:'currency',currency:'PHP'})"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="Number(pay.cash ?? 0).toLocaleString('en-PH',{style:'currency',currency:'PHP'})"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="Number(pay.balance ?? 0).toLocaleString('en-PH',{style:'currency',currency:'PHP'})"></td>
+
+                                <td class="px-3 py-2 text-center text-gray-600"
+                                    x-text="Number(pay.change_amount ?? 0).toLocaleString('en-PH',{style:'currency',currency:'PHP'})"></td>
+
+                                <td class="px-3 py-2 text-center">
+                                    <div class="flex justify-center items-center space-x-2">
+                                        <span class="w-3 h-3 rounded-full"
+                                            :class="{
+                                                'bg-green-500': (pay.status || '').trim() === 'Fully Paid' || (pay.status || '').trim() === 'Full Paid',
+                                                'bg-yellow-500': (pay.status || '').trim() === 'Partial',
+                                                'bg-gray-400': true
+                                            }"></span>
+                                        <span class="text-gray-800 text-xs font-semibold"
+                                            x-text="pay.status || 'Partial'"></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
 
+                    {{-- Totals row --}}
                     <tfoot>
+                        <tr class="bg-gray-100 text-xs font-semibold text-gray-700">
+                            <td colspan="5" class="px-3 py-2 text-right">Totals:</td>
+
+                            <td class="px-3 py-2 text-center"
+                                x-text="Number(currentOrders.reduce((t,p)=>t + Number(p.total_amount ?? p.amount ?? 0),0)).toLocaleString('en-PH',{style:'currency',currency:'PHP'})">
+                            </td>
+
+                            <td class="px-3 py-2 text-center"
+                                x-text="Number(currentOrders.reduce((t,p)=>t + Number(p.cash ?? 0),0)).toLocaleString('en-PH',{style:'currency',currency:'PHP'})">
+                            </td>
+
+                            <td class="px-3 py-2 text-center"
+                                x-text="Number(currentOrders.reduce((t,p)=>t + Number(p.balance ?? 0),0)).toLocaleString('en-PH',{style:'currency',currency:'PHP'})">
+                            </td>
+
+                            <td class="px-3 py-2 text-center"
+                                x-text="Number(currentOrders.reduce((t,p)=>t + Number(p.change_amount ?? 0),0)).toLocaleString('en-PH',{style:'currency',currency:'PHP'})">
+                            </td>
+
+                            <td class="px-3 py-2"></td>
+                        </tr>
+
                         <tr>
                             <td colspan="10" class="pt-4">
                                 <div class="mt-4 flex justify-between text-xs text-gray-600">

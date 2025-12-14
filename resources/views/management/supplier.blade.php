@@ -39,10 +39,13 @@
         </div>
         @endif
 
-        <div class="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+
+            {{-- Left: Search --}}
             <div class="relative w-full md:w-80">
-                <input type="text" id="supplier-search" placeholder="Search suppliers by name or ID..."
-                    class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-full text-sm focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition">
+                <input type="text" id="supplier-search" placeholder="Search suppliers"
+                    class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-full text-sm
+                            focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -51,16 +54,26 @@
                 </svg>
             </div>
 
-            <button @click="openAddModal()"
-                class="w-full md:w-auto bg-yellow-400 text-gray-900 px-6 py-2 rounded-full font-bold flex items-center justify-center space-x-2 hover:bg-yellow-500 transition shadow-lg shadow-yellow-200/50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                    <path d="M12 5v14"/>
-                    <path d="M5 12h14"/>
-                </svg>
-                <span>Add New Supplier</span>
-            </button>
+            {{-- Right: Archive + Add --}}
+            <div class="w-full md:w-auto flex items-center justify-end space-x-3">
+                @include('added.archive_supplier')
+
+                <button @click="openAddModal()"
+                        class="w-full md:w-auto bg-yellow-400 text-gray-900 px-6 py-2 rounded-full font-bold
+                            flex items-center justify-center space-x-2 hover:bg-yellow-500 transition
+                            shadow-lg shadow-yellow-200/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-plus">
+                        <path d="M12 5v14"/>
+                        <path d="M5 12h14"/>
+                    </svg>
+                    <span>Add New Supplier</span>
+                </button>
+            </div>
+
         </div>
+
     </div>
 
     {{-- TABLE OUTSIDE PADDED WRAPPER FOR FULL STRETCH --}}
@@ -79,7 +92,7 @@
                     </tr>
                 </thead>
                 <tbody id="supplier-table-body" class="divide-y divide-gray-100">
-                    @forelse($suppliers as $supplier)
+                 @forelse($suppliers->where('archive', '!=', 'Archived') as $supplier)
                     <tr class="hover:bg-yellow-50/50 transition-colors"
                         data-id="{{ $supplier->supplier_id }}"
                         data-name="{{ $supplier->supplier_name }}"
@@ -106,11 +119,10 @@
                                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
                                     </svg>
                                 </button>
-                                
-                                <button title="Archive" onclick="deleteRow(this)" 
+                                  <button title="Archive" onclick="archiveSupplier(this)" 
                                         class="p-2 rounded-full text-red-500 hover:text-red-700 hover:bg-red-100 transition-colors duration-200 flex items-center justify-center">
-                                     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor"
-                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
                                         <path d="M3 4h18v4H3z" />
                                         <path d="M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
                                         <path d="M10 12h4" />
@@ -507,23 +519,6 @@ function renderSupplierPagination(totalPages) {
     supPaginationLinks.appendChild(next);
 }
 
-// DELETE FUNCTION (used by onclick="deleteRow(this)")
-function deleteRow(button) {
-    if (!confirm('Are you sure you want to archive this supplier?')) return;
-
-    const row = button.closest('tr');
-    // optional: call backend here using row.dataset.id
-
-    row.remove();
-
-    refreshSupplierRows();
-
-    if (filteredRows.length === 0) {
-        showSupplierPage(1);
-    } else {
-        showSupplierPage(supCurrentPage);
-    }
-}
 
 // Search
 document.getElementById('supplier-search').addEventListener('input', function () {
@@ -552,5 +547,66 @@ document.getElementById('supplier-search').addEventListener('input', function ()
 
 // Initialize
 showSupplierPage(1);
+</script>
+
+<script>
+function archiveSupplier(button) {
+    if (!confirm('Are you sure you want to archive this supplier?')) return;
+
+    const row = button.closest('tr');
+    if (!row) return;
+
+    const id = row.dataset.id;
+
+    fetch('{{ route("suppliers.archive", ":id") }}'.replace(':id', id), {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ archive: 'Archived' })
+    })
+    .then(res => res.json())
+    .then(() => {
+        row.classList.add('opacity-50');
+        alert('Supplier archived successfully!');
+        location.reload();
+    })
+    .catch(() => {
+        alert('Failed to archive supplier. Please try again.');
+    });
+}
+
+function unarchiveSupplier(id) {
+    if (!confirm('Remove this supplier from archive?')) return;
+
+    fetch('{{ route("suppliers.unarchive", ":id") }}'.replace(':id', id), {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ archive: null })
+    })
+    .then(res => res.json())
+    .then(() => {
+        window.location.reload();
+    });
+}
+
+function deleteSupplierPermanently(id) {
+    if (!confirm('Permanently delete this supplier? This cannot be undone.')) return;
+
+    fetch('{{ route("suppliers.destroy", ":id") }}'.replace(':id', id), {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(res => res.json())
+    .then(() => {
+        window.location.reload();
+    });
+}
 </script>
 @endsection

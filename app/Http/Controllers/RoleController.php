@@ -56,4 +56,29 @@ class RoleController extends Controller
 
         return response()->json($roles);
     }
+
+        public function archive($id)
+    {
+        $role = Role::findOrFail($id);
+        $role->archive = 'Archived';
+        $role->save();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function unarchive($id)
+    {
+        $role = Role::findOrFail($id);
+        $role->archive = null;
+        $role->save();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function destroy($id)
+    {
+        $role = Role::findOrFail($id);
+        $role->delete(); // or forceDelete() if using soft deletes
+        return response()->json(['status' => 'ok']);
+    }
 }

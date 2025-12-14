@@ -85,9 +85,7 @@
          }"
     >
 
-        <h2 class="text-2xl font-bold mb-4 text-gray-800 flex justify-between items-center">
-            <span>Add New Delivery</span>
-        </h2>
+        <h2 class="text-3xl font-extrabold mb-6 text-gray-800 border-b pb-2">Add Delivery</h2>
 
         <form id="add-delivery-form" method="POST" action="{{ route('deliveries.store') }}">
             @csrf

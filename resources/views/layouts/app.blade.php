@@ -735,7 +735,7 @@ button[onclick^="toggleDropdown"] {
                         </path>
                     </svg>
                 </button>
-                <h1 class="text-xl font-semibold text-gray-800">Mariviles Graphic Studio</h1>
+                <h1 class="text-xl font-semibold text-gray-800">Mariveles Graphic Studio</h1>
             </div>
             
             <!-- User Profile Section -->

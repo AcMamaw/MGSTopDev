@@ -90,4 +90,35 @@ class EmployeeController extends Controller
         }
     }
 
+
+        public function archive($id)
+    {
+        $employee = Employee::findOrFail($id);
+        $employee->archive = 'Archived';
+        $employee->save();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function unarchive($id)
+    {
+        $employee = Employee::findOrFail($id);
+        $employee->archive = null;
+        $employee->save();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function destroy($id)
+    {
+        $employee = Employee::findOrFail($id);
+
+        // If you use soft deletes, call $employee->delete();
+        // else hard delete:
+        $employee->delete();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+
 }

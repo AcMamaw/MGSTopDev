@@ -46,4 +46,32 @@ class SupplierController extends Controller
 
         return response()->json($supplier);
     }
+
+        public function archive($id)
+    {
+        $supplier = Supplier::findOrFail($id);
+        $supplier->archive = 'Archived';
+        $supplier->save();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function unarchive($id)
+    {
+        $supplier = Supplier::findOrFail($id);
+        $supplier->archive = null;
+        $supplier->save();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function destroy($id)
+    {
+        $supplier = Supplier::findOrFail($id);
+
+        // if using soft deletes: $supplier->delete();
+        $supplier->delete();
+
+        return response()->json(['status' => 'ok']);
+    }
 }

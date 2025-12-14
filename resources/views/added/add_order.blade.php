@@ -6,9 +6,9 @@
          x-data="orderData()">
 
         <!-- Left: Add Order (65%) -->
-        <div class="[flex-basis:65%] border-r pr-4 flex flex-col">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">Add New Order</h2>
-
+       <div class="[flex-basis:60%] pr-6 border-r border-gray-200 flex flex-col">
+           <h2 class="text-3xl font-extrabold mb-6 text-gray-800 border-b pb-2">New Order Details</h2>
+          
             <!-- Customer Selection -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Customer</label>
@@ -261,8 +261,8 @@
         </div>
 
         <!-- Right: Payment (35%) -->
-        <div class="[flex-basis:35%] pl-4">
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">Payment</h2>
+        <div class="[flex-basis:40%] pl-2">
+            <h2 class="text-3xl font-extrabold mb-6 text-gray-800 border-b pb-2">Process Payment</h2>
             <form @submit.prevent="submitOrder()">
                 <div class="mb-4">
                     <label class="block text-gray-700 font-medium mb-1">Payment Date</label>

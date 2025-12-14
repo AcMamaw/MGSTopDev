@@ -54,4 +54,30 @@ class CustomerController extends Controller
 
         return response()->json($customer);
     }
+
+    public function archive($id)
+{
+    $customer = Customer::findOrFail($id);
+    $customer->archive = 'Archived';
+    $customer->save();
+
+    return response()->json(['status' => 'ok']);
+}
+
+    public function unarchive($id)
+    {
+        $customer = Customer::findOrFail($id);
+        $customer->archive = null;
+        $customer->save();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function destroy($id)
+    {
+        $customer = Customer::findOrFail($id);
+        $customer->delete(); // or forceDelete() if soft deletes
+
+        return response()->json(['status' => 'ok']);
+    }
 }

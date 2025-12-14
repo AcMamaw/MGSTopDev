@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
-     public function index()
+    public function index()
     {
         // Report history list
         $reports = Report::with('generatedBy')
@@ -23,7 +23,7 @@ class ReportController extends Controller
             ->orderByDesc('report_id')
             ->paginate(20);
 
-        // Data for each printable table
+        // These are for history tables (not date-filtered by picker)
         $orderReports = Order::with(['customer', 'category'])
             ->orderByDesc('order_date')
             ->get();
@@ -36,9 +36,8 @@ class ReportController extends Controller
             ->orderByDesc('joborder_created')
             ->get();
 
-        // Inventory now uses Inventory model
         $inventoryReports = Inventory::with(['product', 'receiver'])
-            ->orderByDesc('stock_id')   
+            ->orderByDesc('stock_id')
             ->get();
 
         $stockoutReports = StockOut::with(['stock.product', 'employee'])
@@ -67,6 +66,7 @@ class ReportController extends Controller
 
     public function store(Request $request)
     {
+        // 1) Validate
         $request->validate([
             'category'    => 'required|string',
             'report_type' => 'required|string',
@@ -75,6 +75,7 @@ class ReportController extends Controller
             'coverage'    => 'nullable|string',
         ]);
 
+        // 2) Who generated this report
         $user = Auth::user();
         $emp  = $user?->employee;
         $generatedByEmployeeId = $emp?->employee_id;
@@ -84,12 +85,14 @@ class ReportController extends Controller
             $generatedByName = trim(($emp->fname ?? '') . ' ' . ($emp->lname ?? '')) ?: 'System';
         }
 
+        // 3) Prepare
         $ordersData    = [];
         $ids           = [];
         $stockIds      = []; // for inventory / stock-related categories
         $categoryLabel = $request->category;
         $coverage      = $request->coverage ?? 'N/A';
 
+        // 4) Build data per category (all with whereBetween(date_from, date_to))
         switch ($request->category) {
             case 'Order':
                 [$ordersData, $ids] = $this->buildOrderData($request);
@@ -125,7 +128,7 @@ class ReportController extends Controller
                 $ids        = [];
         }
 
-        // Base payload for reports table
+        // 5) Base payload for reports table
         $payload = [
             'payment_id'         => null,
             'stock_id'           => null,
@@ -141,6 +144,7 @@ class ReportController extends Controller
             'date_created'       => now()->toDateString(),
         ];
 
+        // 6) Attach representative foreign key
         $firstId    = $ids[0]      ?? null;
         $firstStock = $stockIds[0] ?? null; // only filled for inventory
 
@@ -159,7 +163,6 @@ class ReportController extends Controller
                     break;
 
                 case 'Inventory':
-                    // store both inventory id and related stock id
                     $payload['stock_id'] = $firstStock ?? $firstId;
                     break;
 
@@ -174,17 +177,23 @@ class ReportController extends Controller
             }
         }
 
+        // 7) Save report
         $report = Report::create($payload);
 
+        // 8) Return JSON for Alpine; ordersData is already date‑filtered
         return response()->json([
-            'success'          => true,
-            'report'           => $report,
-            'orders'           => $ordersData,
-            'order_ids'        => $ids,
-            'stock_ids'        => $stockIds, // useful on front‑end if needed
-            'generated_by_name'=> $generatedByName,
+            'success'           => true,
+            'report'            => $report,
+            'orders'            => $ordersData,
+            'order_ids'         => $ids,
+            'stock_ids'         => $stockIds,
+            'generated_by_name' => $generatedByName,
         ]);
     }
+
+    /* ===========================
+       Helper builders (date‑filtered)
+       =========================== */
 
     private function buildOrderData(Request $request): array
     {
@@ -214,7 +223,7 @@ class ReportController extends Controller
 
     private function buildDeliveriesData(Request $request): array
     {
-        $deliveries = Delivery::with(['supplier', 'employee'])
+        $deliveries = Delivery::with(['supplier', 'employee', 'receiver']) // if you have a receiver relation
             ->whereBetween('delivery_date_request', [$request->date_from, $request->date_to])
             ->orderBy('delivery_date_request', 'desc')
             ->get();
@@ -223,21 +232,28 @@ class ReportController extends Controller
         $data = [];
 
         foreach ($deliveries as $delivery) {
+            // receiver name from relation, fallback to raw column
+            $receivedByName = $delivery->receiver
+                ? trim(($delivery->receiver->fname ?? '') . ' ' . ($delivery->receiver->lname ?? ''))
+                : ($delivery->received_by ?? '—');
+
             $data[] = [
-                'order_id'      => $delivery->delivery_id,
-                'customer_name' => $delivery->supplier->supplier_name ?? '—',
-                'category_name' => 'Delivery',
-                'product_type'  => 'N/A',
-                'total_amount'  => 0,
-                'order_date'    => $delivery->delivery_date_request,
-                'status'        => $delivery->status ?? 'Pending',
+                'order_id'           => $delivery->delivery_id,
+                'customer_name'      => $delivery->supplier->supplier_name ?? '—',
+                'category_name'      => 'Delivery',
+                'product_type'       => 'N/A',
+                'total_amount'       => 0,
+                'order_date'         => $delivery->delivery_date_request,
+                'date_received'      => $delivery->delivery_date_received ?? null,
+                'received_by'        => $receivedByName,
+                'status'             => $delivery->status ?? 'Pending',
             ];
         }
 
         return [$data, $ids];
     }
 
-    private function buildJobOrderData(Request $request): array
+        private function buildJobOrderData(Request $request): array
     {
         $jobOrders = Joborder::with(['employee', 'product'])
             ->whereBetween('created_at', [$request->date_from, $request->date_to])
@@ -248,23 +264,27 @@ class ReportController extends Controller
         $data = [];
 
         foreach ($jobOrders as $job) {
+            $employeeName = trim(($job->employee->fname ?? '') . ' ' . ($job->employee->lname ?? ''));
+
             $data[] = [
-                'order_id'      => $job->joborder_id,
-                'customer_name' => trim(($job->employee->fname ?? '') . ' ' . ($job->employee->lname ?? '')),
-                'category_name' => 'Job Order',
-                'product_type'  => $job->product->product_name ?? 'N/A',
-                'total_amount'  => 0,
-                'order_date'    => $job->created_at,
-                'status'        => $job->status ?? 'Pending',
+                'order_id'       => $job->joborder_id,
+                'customer_name'  => $employeeName ?: '—',
+                'category_name'  => 'Job Order',
+                'product_type'   => $job->product->product_name ?? 'N/A',
+                'estimated_time' => $job->estimated_time ?? 0,
+                'order_date'     => $job->joborder_created ?? $job->created_at,
+                'end_date'       => $job->joborder_end ?? null,
+                'status'         => $job->status ?? 'Pending',
             ];
         }
 
         return [$data, $ids];
     }
-   
+
+
     private function buildInventoryData(Request $request): array
     {
-        $inventories = Inventory::with(['product', 'supplier'])
+        $inventories = Inventory::with(['product', 'supplier', 'receiver'])
             ->whereBetween('created_at', [$request->date_from, $request->date_to])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -273,12 +293,22 @@ class ReportController extends Controller
         $data = [];
 
         foreach ($inventories as $inv) {
+            // Product size from inventory row
+            $size = $inv->size ?? '—';
+
+            // Name of the employee who received the stock
+            $receivedByName = $inv->receiver
+                ? trim(($inv->receiver->fname ?? '') . ' ' . ($inv->receiver->lname ?? ''))
+                : ($inv->received_by ?? '—');
+
             $data[] = [
                 'order_id'      => $inv->inventory_id,
-                'stock_id'      => $inv->stock_id, // here you store the related stock id
+                'stock_id'      => $inv->stock_id,
                 'customer_name' => $inv->supplier->supplier_name ?? '—',
                 'category_name' => 'Inventory',
                 'product_type'  => $inv->product->product_name ?? 'N/A',
+                'size'          => $size,
+                'received_by'   => $receivedByName,
                 'total_amount'  => $inv->current_stock ?? 0,
                 'order_date'    => $inv->created_at,
                 'status'        => 'In Stock',
@@ -300,13 +330,15 @@ class ReportController extends Controller
 
         foreach ($stockouts as $out) {
             $data[] = [
-                'order_id'      => $out->stockout_id,
-                'customer_name' => trim(($out->employee->fname ?? '') . ' ' . ($out->employee->lname ?? '')),
-                'category_name' => 'Stock Out',
-                'product_type'  => $out->stock->product->product_name ?? 'N/A',
-                'total_amount'  => $out->quantity_out ?? 0,
-                'order_date'    => $out->date_out,
-                'status'        => $out->status ?? 'Completed',
+                'order_id'       => $out->stockout_id,
+                'customer_name'  => trim(($out->employee->fname ?? '') . ' ' . ($out->employee->lname ?? '')),
+                'category_name'  => 'Stock Out',
+                'product_type'   => $out->stock->product->product_name ?? 'N/A',
+                'size'           => $out->size ?? '—',
+                'reason'         => $out->reason ?? '—',
+                'total_amount'   => $out->quantity_out ?? 0,
+                'order_date'     => $out->date_out,
+                'status'         => $out->status ?? 'Completed',
             ];
         }
 
@@ -315,7 +347,7 @@ class ReportController extends Controller
 
     private function buildStockAdjustmentData(Request $request): array
     {
-        $adjustments = StockAdjustment::with(['employee'])
+        $adjustments = StockAdjustment::with(['employee', 'stock.product', 'adjustedBy', 'approvedBy'])
             ->whereBetween('request_date', [$request->date_from, $request->date_to])
             ->orderBy('request_date', 'desc')
             ->get();
@@ -324,21 +356,37 @@ class ReportController extends Controller
         $data = [];
 
         foreach ($adjustments as $adj) {
+            $requesterName = trim(($adj->employee->fname ?? '') . ' ' . ($adj->employee->lname ?? ''));
+
+            $productName = $adj->stock->product->product_name ?? '—';
+
+            $adjustedByName = $adj->adjustedBy
+                ? trim(($adj->adjustedBy->fname ?? '') . ' ' . ($adj->adjustedBy->lname ?? ''))
+                : ($adj->adjusted_by ?? '—');
+
+            $approvedByName = $adj->approvedBy
+                ? trim(($adj->approvedBy->fname ?? '') . ' ' . ($adj->approvedBy->lname ?? ''))
+                : ($adj->approved_by ?? '—');
+
             $data[] = [
-                'order_id'      => $adj->stockadjustment_id,
-                'customer_name' => trim(($adj->employee->fname ?? '') . ' ' . ($adj->employee->lname ?? '')),
-                'category_name' => 'Stock Adjustment',
-                'product_type'  => $adj->adjustment_type ?? 'N/A',
-                'total_amount'  => $adj->quantity_adjusted ?? 0,
-                'order_date'    => $adj->request_date,
-                'status'        => $adj->status ?? 'Pending',
+                'order_id'       => $adj->stockadjustment_id,
+                'customer_name'  => $requesterName ?: '—',
+                'category_name'  => 'Stock Adjustment',
+                'product_type'   => $adj->adjustment_type ?? 'N/A',
+                'product_name'   => $productName,
+                'total_amount'   => $adj->quantity_adjusted ?? 0,
+                'order_date'     => $adj->request_date,
+                'reason'         => $adj->reason ?? '—',
+                'status'         => $adj->status ?? 'Pending',
+                'adjusted_by'    => $adjustedByName ?: '—',
+                'approved_by'    => $approvedByName ?: '—',
             ];
         }
 
         return [$data, $ids];
     }
 
-    private function buildPaymentData(Request $request): array
+        private function buildPaymentData(Request $request): array
     {
         $payments = Payment::with(['order.customer', 'employee'])
             ->whereBetween('payment_date', [$request->date_from, $request->date_to])
@@ -350,25 +398,29 @@ class ReportController extends Controller
 
         foreach ($payments as $payment) {
             $customerName = '—';
+
             if ($payment->order?->customer) {
                 $customerName = trim(
-                    ($payment->order->customer->fname ?? '') .
-                    ' ' .
+                    ($payment->order->customer->fname ?? '') . ' ' .
                     ($payment->order->customer->lname ?? '')
                 ) ?: '—';
             }
 
             $data[] = [
-                'order_id'      => $payment->payment_id,
-                'customer_name' => $customerName,
-                'category_name' => 'Payment',
-                'product_type'  => $payment->payment_method ?? 'N/A',
-                'total_amount'  => $payment->amount ?? 0,
-                'order_date'    => $payment->payment_date,
-                'status'        => $payment->status ?? 'Completed',
+                'order_id'       => $payment->payment_id,
+                'customer_name'  => $customerName,
+                'category_name'  => 'Payment',
+                'product_type'   => $payment->payment_method ?? 'N/A',
+                'total_amount'   => $payment->amount ?? 0,
+                'cash'           => $payment->cash ?? 0,
+                'balance'        => $payment->balance ?? 0,
+                'change_amount'  => $payment->change_amount ?? 0,
+                'order_date'     => $payment->payment_date,
+                'status'         => $payment->status ?? 'Completed',
             ];
         }
 
         return [$data, $ids];
     }
-}
+
+} 
