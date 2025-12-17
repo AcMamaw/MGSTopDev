@@ -18,6 +18,7 @@ class Employee extends Model
         'gender',
         'bdate',
         'email',
+        'alt_email',
         'contact_no',
         'status',
         'pictures',

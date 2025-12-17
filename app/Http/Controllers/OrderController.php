@@ -465,45 +465,46 @@ class OrderController extends Controller
     {
         try {
             $employees = Employee::select(
-                    'employee_id', 
+                    'employee_id',
                     'role_id',
-                    'fname', 
-                    'lname', 
+                    'fname',
+                    'lname',
                     'status',
                     'email',
                     'contact_no'
                 )
-                ->where('role_id', 4)
+                ->whereIn('role_id', [3, 4]) // allow both roles
                 ->orderBy('status', 'desc')
                 ->orderBy('fname', 'asc')
                 ->get();
 
-            \Log::info('Layout Artists fetched for job assignment:', [
-                'total'    => $employees->count(),
-                'active'   => $employees->where('status', 'Active')->count(),
-                'inactive' => $employees->where('status', 'Inactive')->count(),
-                'role_id'  => 4
+            \Log::info('Employees fetched for job assignment (roles 3 & 4):', [
+                'total'     => $employees->count(),
+                'active'    => $employees->where('status', 'Active')->count(),
+                'inactive'  => $employees->where('status', 'Inactive')->count(),
+                'role_ids'  => [3, 4],
             ]);
 
             return response()->json([
-                'success' => true,
+                'success'   => true,
                 'employees' => $employees,
-                'total' => $employees->count()
+                'total'     => $employees->count(),
             ], 200);
-            
+
         } catch (\Exception $e) {
-            \Log::error('Error fetching Layout Artist employees:', [
+            \Log::error('Error fetching employees for job assignment:', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to load employees: ' . $e->getMessage(),
-                'employees' => []
+                'success'   => false,
+                'message'   => 'Failed to load employees: ' . $e->getMessage(),
+                'employees' => [],
             ], 500);
         }
     }
+
 
     public function assignJobOrder(Request $request)
     {

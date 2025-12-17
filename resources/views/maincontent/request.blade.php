@@ -132,243 +132,97 @@
         </div>
     </div>
 
-<div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
-    <div class="overflow-x-auto">
-        <table id="delivery-table" class="min-w-full table-auto divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Delivery ID</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600 tracking-wider">Supplier</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600 tracking-wider">Requested By</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Date Requested</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Date Received</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600 tracking-wider">Received By</th>
-                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Status</th>
-                </tr>
-            </thead>
-            <tbody id="ongoing-deliveries-tbody" class="divide-y divide-gray-100">
-                @php
-                    $ongoingDeliveries = $deliveries->where('status', '!=', 'Delivered');
-                @endphp
-
-                @forelse ($ongoingDeliveries as $delivery)
-                    <tr class="group relative cursor-pointer transition-colors duration-200"
-                        data-delivery
-                        data-status="{{ $delivery->status }}"
-                        data-search="D{{ str_pad($delivery->delivery_id, 3, '0', STR_PAD_LEFT) }} {{ $delivery->supplier->supplier_name ?? '-' }} {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }} {{ $delivery->delivery_date_request }} {{ $delivery->delivery_date_received ?? '- -' }} {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }} {{ $delivery->status }}">
-
-                        <td class="px-4 py-3 text-center font-semibold text-gray-800 group-hover:opacity-0 group-hover:text-transparent">
-                            D{{ str_pad($delivery->delivery_id, 3, '0', STR_PAD_LEFT) }}
-                        </td>
-                        <td class="px-4 py-3 text-left text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
-                            {{ $delivery->supplier->supplier_name ?? '-' }}
-                        </td>
-                        <td class="px-4 py-3 text-left text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
-                            {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }}
-                        </td>
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
-                            {{ $delivery->delivery_date_request }}
-                        </td>
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
-                            {{ $delivery->delivery_date_received ?? '- -' }}
-                        </td>
-                        <td class="px-4 py-3 text-left text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
-                            {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }}
-                        </td>
-                        <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
-                            @php
-                                $dotColor = match($delivery->status) {
-                                    'Pending' => 'bg-gray-500',
-                                    'Out for Delivery' => 'bg-yellow-500',
-                                    'For Stock In' => 'bg-blue-500',
-                                    default => 'bg-gray-400'
-                                };
-                            @endphp
-                            <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                            <span class="text-gray-800 text-xs font-semibold">{{ $delivery->status }}</span>
-                        </td>
-
-                        <td colspan="7" class="absolute inset-0 flex items-center justify-center opacity-0
-                            group-hover:opacity-100 transition-opacity duration-300 bg-gray-50/70 z-10 rounded-xl border border-gray-300">
-                            <div class="w-full h-full flex divide-x divide-sky-300">
-                                <button type="button"
-                                        class="flex-1 flex items-center justify-center bg-sky-100 hover:bg-sky-200 transition-colors"
-                                        @click="selectedDeliveryId = {{ $delivery->delivery_id }}; showDetails = true">
-                                    <span class="text-sky-700 font-bold text-sm">
-                                        View Details
-                                    </span>
-                                </button>
-
-                                @if($delivery->status === 'Pending')
-                                    <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-blue-100 hover:bg-blue-200 transition-colors"
-                                            @click="updateDeliveryStatus({{ $delivery->delivery_id }}, 'Out for Delivery')">
-                                        <span class="text-blue-700 font-bold text-sm">
-                                            Move to Out for Delivery
-                                        </span>
-                                    </button>
-                                @elseif($delivery->status === 'Out for Delivery')
-                                    <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-green-100 hover:bg-green-200 transition-colors"
-                                            @click="updateDeliveryStatus({{ $delivery->delivery_id }}, 'For Stock In')">
-                                        <span class="text-green-700 font-bold text-sm">
-                                            Confirm for Stock In
-                                        </span>
-                                    </button>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr id="ongoingDeliveriesEmptyState" class="">
-                        <td colspan="7" class="px-4 py-16 text-center">
-                            <div class="flex flex-col items-center justify-center text-gray-400">
-                                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                                </svg>
-                                <p class="text-lg font-semibold text-gray-500">No deliveries match your criteria</p>
-                                <p class="text-sm text-gray-400 mt-1">Try adjusting the search query or status filter.</p>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
-
-
-<div x-show="showDetails" x-transition x-cloak
-    class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-    <div @click.away="showDetails = false"
-        class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
-
-        <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-3">
-             Delivery Details - ID: <span class="text-black-600" x-text="'D' + selectedDeliveryId.toString().padStart(3, '0')"></span>
-        </h2>
-
+    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 border border-gray-100">
+            <table id="delivery-table" class="min-w-full table-auto divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Detail ID</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Product</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Quantity</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Unit</th>
-                        <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Unit Cost</th>
-                        <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Total</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Delivery ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600 tracking-wider">Supplier</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600 tracking-wider">Requested By</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Date Requested</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Date Received</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600 tracking-wider">Received By</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Status</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Action</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach ($deliveries as $delivery)
-                        @php
-                            $grandTotal = $delivery->details->sum(fn($d) => $d->quantity_product * $d->unit_cost);
-                        @endphp
 
-                        @foreach ($delivery->details as $item)
-                            <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}" class="hover:bg-gray-50 transition-colors">
-                                <td class="px-4 py-2 text-center text-sm font-semibold text-yellow-700">
-                                    DD{{ str_pad($item->deliverydetails_id, 3, '0', STR_PAD_LEFT) }}
-                                </td>
-                                <td class="px-4 py-2 text-left text-sm text-gray-800">{{ $item->product->product_name ?? '-' }}</td>
-                                <td class="px-4 py-2 text-center text-sm text-gray-700 font-medium">{{ $item->quantity_product }}</td>
-                                <td class="px-4 py-2 text-center text-sm text-gray-700">{{ $item->unit ?? '-' }}</td>
-                                <td class="px-4 py-2 text-right text-sm text-gray-700">₱{{ number_format($item->unit_cost, 2) }}</td>
-                                <td class="px-4 py-2 text-right text-sm font-semibold text-gray-900">₱{{ number_format($item->quantity_product * $item->unit_cost, 2) }}</td>
-                            </tr>
-                        @endforeach
+                <tbody id="ongoing-deliveries-tbody" class="divide-y divide-gray-100">
+                    @php
+                        $ongoingDeliveries = $deliveries->where('status', '!=', 'Delivered');
+                    @endphp
 
-                        <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}" class="bg-black-50/50">
-                            <td colspan="5" class="px-4 py-3 text-right font-bold text-base text-gray-700">GRAND TOTAL:</td>
-                            <td class="px-4 py-3 text-right font-semibold text-base text-black-800">₱{{ number_format($grandTotal, 2) }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        <div class="mt-8 flex justify-end">
-            <button @click="showDetails = false"
-                    class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md">
-                Close
-            </button>
-        </div>
-    </div>
-</div>
-
-<div x-show="showRequestModal" x-cloak
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
-
-    <div @click.away="showRequestModal = false" x-transition
-            class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
-
-        <div class="flex items-center justify-between mb-6 border-b pb-4">
-            <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                🔔 Pending Stock Adjustments
-            </h2>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 border border-gray-100 text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-center font-bold text-gray-700 uppercase">Stock ID</th>
-                        <th class="px-4 py-3 text-center font-bold text-gray-700 uppercase">Product ID</th>
-                        <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase">Product Name</th>
-                        <th class="px-4 py-3 text-center font-bold text-gray-700 uppercase">Adjustment Type</th>
-                        <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase">Reason</th>
-                        <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase">Adjusted By</th>
-                        <th class="px-4 py-3 text-center font-bold text-gray-700 uppercase">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($stockAdjustments as $adj)
-                        <tr class="text-sm hover:bg-gray-50/50 transition-colors">
-                            <td class="px-4 py-3 text-center text-gray-700 font-medium">
-                                S{{ str_pad($adj->stock_id, 3, '0', STR_PAD_LEFT) }}
+                    @forelse ($ongoingDeliveries as $delivery)
+                        <tr
+                            class="delivery-row cursor-pointer transition-colors duration-200"
+                            data-delivery
+                            data-status="{{ $delivery->status }}"
+                            data-search="D{{ str_pad($delivery->delivery_id, 3, '0', STR_PAD_LEFT) }} {{ $delivery->supplier->supplier_name ?? '-' }} {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }} {{ $delivery->delivery_date_request }} {{ $delivery->delivery_date_received ?? '- -' }} {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }} {{ $delivery->status }}"
+                        >
+                            <td class="px-4 py-3 text-center font-semibold text-gray-800">
+                                D{{ str_pad($delivery->delivery_id, 3, '0', STR_PAD_LEFT) }}
                             </td>
-                            <td class="px-4 py-3 text-center text-gray-700">
-                                P{{ str_pad($adj->stock->product->product_id ?? $adj->stock_id, 3, '0', STR_PAD_LEFT) }}
-                            </td>
-                            <td class="px-4 py-3 text-left text-gray-800 font-medium">
-                                {{ $adj->stock->product->product_name ?? '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-center text-sm font-semibold 
-                                {{ $adj->adjustment_type === 'Addition' ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $adj->adjustment_type ?? '-' }}
-                            </td>
+
                             <td class="px-4 py-3 text-left text-gray-600">
-                                {{ $adj->reason ?? '-' }}
+                                {{ $delivery->supplier->supplier_name ?? '-' }}
                             </td>
-                            <td class="px-4 py-3 text-left text-gray-700">
-                                {{ $adj->adjustedBy->fname ?? '' }} {{ $adj->adjustedBy->lname ?? '' }}
+
+                            <td class="px-4 py-3 text-left text-gray-600">
+                                {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }}
                             </td>
+
+                            <td class="px-4 py-3 text-center text-gray-600">
+                                {{ $delivery->delivery_date_request }}
+                            </td>
+
+                            <td class="px-4 py-3 text-center text-gray-600">
+                                {{ $delivery->delivery_date_received ?? '- -' }}
+                            </td>
+
+                            <td class="px-4 py-3 text-left text-gray-600">
+                                {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }}
+                            </td>
+
+                            <td class="px-4 py-3 text-center flex justify-center items-center space-x-2">
+                                @php
+                                    $dotColor = match($delivery->status) {
+                                        'Pending'          => 'bg-gray-500',
+                                        'Out for Delivery' => 'bg-yellow-500',
+                                        'For Stock In'     => 'bg-blue-500',
+                                        default            => 'bg-gray-400'
+                                    };
+                                @endphp
+                                <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
+                                <span class="text-gray-800 text-xs font-semibold">{{ $delivery->status }}</span>
+                            </td>
+
+                            {{-- ACTION BUTTON TO OPEN DETAILS MODAL --}}
                             <td class="px-4 py-3 text-center">
-                                <div class="flex justify-center gap-2">
-                                    <button type="button"
-                                            onclick="handleStockAdjustment({{ $adj->stockadjustment_id }}, 'accept')"
-                                            class="px-4 py-1.5 bg-yellow-500 text-gray-900 rounded-full text-xs font-bold hover:bg-yellow-600 transition shadow-sm">
-                                        Accept
-                                    </button>
-                                    <button type="button"
-                                            onclick="handleStockAdjustment({{ $adj->stockadjustment_id }}, 'reject')"
-                                            class="px-4 py-1.5 bg-gray-200 text-gray-700 rounded-full text-xs font-bold hover:bg-gray-300 transition shadow-sm">
-                                        Reject
-                                    </button>
-                                </div>
+                                <button
+                                    type="button"
+                                    @click="selectedDeliveryId = {{ $delivery->delivery_id }}; showDetails = true"
+                                    class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm transition"
+                                    title="View details"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7" class="px-4 py-10 text-center">
+                        <tr id="ongoingDeliveriesEmptyState">
+                            <td colspan="8" class="px-4 py-16 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
-                                    <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <circle cx="11" cy="11" r="7" stroke-width="2" />
-                                        <path d="m21 21-4.3-4.3" stroke-width="2" stroke-linecap="round" />
+                                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                     </svg>
-                                    <p class="text-lg font-semibold text-gray-500">No pending stock adjustments</p>
-                                    <p class="text-sm text-gray-400 mt-1">All adjustment requests have been processed.</p>
+                                    <p class="text-lg font-semibold text-gray-500">No deliveries match your criteria</p>
+                                    <p class="text-sm text-gray-400 mt-1">Try adjusting the search query or status filter.</p>
                                 </div>
                             </td>
                         </tr>
@@ -376,16 +230,240 @@
                 </tbody>
             </table>
         </div>
+    </div>
 
-        <div class="mt-8 flex justify-end">
-            <button type="button"
-                    @click="showRequestModal = false"
-                    class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md">
-                Close
-            </button>
+    <div x-show="showDetails" x-transition x-cloak
+        class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+        <div @click.away="showDetails = false"
+            class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
+
+            {{-- HEADER --}}
+            <div class="flex items-center justify-between mb-6 border-b pb-3">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    Delivery Details - ID:
+                    <span class="text-gray-900"
+                        x-text="'D' + selectedDeliveryId.toString().padStart(3, '0')"></span>
+                </h2>
+
+                <button
+                    type="button"
+                    @click="showDetails = false"
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
+                    Close
+                </button>
+            </div>
+
+            {{-- TABLE --}}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 border border-gray-100">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Detail ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Product</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Quantity</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Unit</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Unit Cost</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($deliveries as $delivery)
+                            @php
+                                $grandTotal = $delivery->details->sum(fn($d) => $d->quantity_product * $d->unit_cost);
+                            @endphp
+
+                            @foreach ($delivery->details as $item)
+                                <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}"
+                                    class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-4 py-2 text-center text-sm font-semibold text-yellow-700">
+                                        DD{{ str_pad($item->deliverydetails_id, 3, '0', STR_PAD_LEFT) }}
+                                    </td>
+                                    <td class="px-4 py-2 text-left text-sm text-gray-800">
+                                        {{ $item->product->product_name ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center text-sm text-gray-700 font-medium">
+                                        {{ $item->quantity_product }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center text-sm text-gray-700">
+                                        {{ $item->unit ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-2 text-right text-sm text-gray-700">
+                                        ₱{{ number_format($item->unit_cost, 2) }}
+                                    </td>
+                                    <td class="px-4 py-2 text-right text-sm font-semibold text-gray-900">
+                                        ₱{{ number_format($item->quantity_product * $item->unit_cost, 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+
+                            <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}"
+                                class="bg-gray-50/50">
+                                <td colspan="5"
+                                    class="px-4 py-3 text-right font-bold text-base text-gray-700">
+                                    GRAND TOTAL:
+                                </td>
+                                <td class="px-4 py-3 text-right font-semibold text-base text-gray-900">
+                                    ₱{{ number_format($grandTotal, 2) }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- ACTIONS UNDER THE TABLE --}}
+            <div class="mt-6 w-full">
+                <div class="mb-2 flex justify-center">
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-600">
+                        Action
+                    </span>
+                </div>
+
+                <div class="flex justify-center">
+                    @foreach ($deliveries as $delivery)
+                        <template x-if="selectedDeliveryId === {{ $delivery->delivery_id }}">
+                            @php
+                                $isPending         = $delivery->status === 'Pending';
+                                $isOutForDelivery = $delivery->status === 'Out for Delivery';
+                            @endphp
+
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="flex gap-3">
+                                    {{-- Confirm Delivery (Pending only) --}}
+                                    <button
+                                        type="button"
+                                        @if ($isPending)
+                                            @click="updateDeliveryStatus({{ $delivery->delivery_id }}, 'Out for Delivery')"
+                                        @endif
+                                        class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
+                                            {{ $isPending
+                                                ? 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
+                                        @if (!$isPending)
+                                            disabled
+                                        @endif
+                                    >
+                                        Confirm Delivery
+                                    </button>
+
+                                    {{-- Confirm Stock In (Out for Delivery only) --}}
+                                    <button
+                                        type="button"
+                                        @if ($isOutForDelivery)
+                                            @click="updateDeliveryStatus({{ $delivery->delivery_id }}, 'For Stock In')"
+                                        @endif
+                                        class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
+                                            {{ $isOutForDelivery
+                                                ? 'bg-green-500 text-white hover:bg-green-600 cursor-pointer'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
+                                        @if (!$isOutForDelivery)
+                                            disabled
+                                        @endif
+                                    >
+                                        Confirm Stock In
+                                    </button>
+                                </div>
+
+                                <p class="mt-1 text-[11px] text-gray-400">
+                                    Current status: {{ $delivery->status }}
+                                </p>
+                            </div>
+                        </template>
+                    @endforeach
+                </div>
+            </div>
         </div>
     </div>
-</div>
+
+    <div x-show="showRequestModal" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
+
+        <div @click.away="showRequestModal = false" x-transition
+                class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
+
+            <div class="flex items-center justify-between mb-6 border-b pb-4">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    🔔 Pending Stock Adjustments
+                </h2>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 border border-gray-100 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-center font-bold text-gray-700 uppercase">Stock ID</th>
+                            <th class="px-4 py-3 text-center font-bold text-gray-700 uppercase">Product ID</th>
+                            <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase">Product Name</th>
+                            <th class="px-4 py-3 text-center font-bold text-gray-700 uppercase">Adjustment Type</th>
+                            <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase">Reason</th>
+                            <th class="px-4 py-3 text-left font-bold text-gray-700 uppercase">Adjusted By</th>
+                            <th class="px-4 py-3 text-center font-bold text-gray-700 uppercase">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($stockAdjustments as $adj)
+                            <tr class="text-sm hover:bg-gray-50/50 transition-colors">
+                                <td class="px-4 py-3 text-center text-gray-700 font-medium">
+                                    S{{ str_pad($adj->stock_id, 3, '0', STR_PAD_LEFT) }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-gray-700">
+                                    P{{ str_pad($adj->stock->product->product_id ?? $adj->stock_id, 3, '0', STR_PAD_LEFT) }}
+                                </td>
+                                <td class="px-4 py-3 text-left text-gray-800 font-medium">
+                                    {{ $adj->stock->product->product_name ?? '-' }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm font-semibold 
+                                    {{ $adj->adjustment_type === 'Addition' ? 'text-green-600' : 'text-red-600' }}">
+                                    {{ $adj->adjustment_type ?? '-' }}
+                                </td>
+                                <td class="px-4 py-3 text-left text-gray-600">
+                                    {{ $adj->reason ?? '-' }}
+                                </td>
+                                <td class="px-4 py-3 text-left text-gray-700">
+                                    {{ $adj->adjustedBy->fname ?? '' }} {{ $adj->adjustedBy->lname ?? '' }}
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <div class="flex justify-center gap-2">
+                                        <button type="button"
+                                                onclick="handleStockAdjustment({{ $adj->stockadjustment_id }}, 'accept')"
+                                                class="px-4 py-1.5 bg-yellow-500 text-gray-900 rounded-full text-xs font-bold hover:bg-yellow-600 transition shadow-sm">
+                                            Accept
+                                        </button>
+                                        <button type="button"
+                                                onclick="handleStockAdjustment({{ $adj->stockadjustment_id }}, 'reject')"
+                                                class="px-4 py-1.5 bg-gray-200 text-gray-700 rounded-full text-xs font-bold hover:bg-gray-300 transition shadow-sm">
+                                            Reject
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-4 py-10 text-center">
+                                    <div class="flex flex-col items-center justify-center text-gray-400">
+                                        <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <circle cx="11" cy="11" r="7" stroke-width="2" />
+                                            <path d="m21 21-4.3-4.3" stroke-width="2" stroke-linecap="round" />
+                                        </svg>
+                                        <p class="text-lg font-semibold text-gray-500">No pending stock adjustments</p>
+                                        <p class="text-sm text-gray-400 mt-1">All adjustment requests have been processed.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-8 flex justify-end">
+                <button type="button"
+                        @click="showRequestModal = false"
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
 
 <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto pb-8">
     <div id="delivery-pagination-info">Showing 0 to 0 of 0 results</div>

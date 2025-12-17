@@ -105,7 +105,7 @@
                 </div>
             </div>
 
-            <!-- Orders Table -->
+           <!-- Orders Table -->
             <div class="overflow-x-auto overflow-y-auto flex-grow rounded-lg border border-gray-200">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 sticky top-0 z-10">
@@ -118,62 +118,72 @@
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Order date</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Action</th>
                         </tr>
                     </thead>
                     <tbody id="ordersTableBody" class="divide-y divide-gray-100 bg-white">
                         @php
-                            $completedOrders = isset($allOrders) 
-                                ? $allOrders->where('status','Completed') 
+                            $completedOrders = isset($allOrders)
+                                ? $allOrders->where('status','Completed')
                                 : collect([]);
                         @endphp
 
                         @forelse ($completedOrders as $order)
-                            <tr class="group relative hover:bg-sky-50 transition duration-150 ease-in-out cursor-pointer"
+                            <tr class="cursor-pointer transition duration-150 ease-in-out hover:bg-sky-50"
                                 data-order
                                 data-search="O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }} {{ $order->category->category_name ?? 'N/A' }} {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }} {{ $order->product_type ?? 'N/A' }} {{ $order->employee ? $order->employee->fname . ' ' . $order->employee->lname : '-' }} {{ $order->order_date }} {{ $order->status }}">
-                                <td class="px-4 py-3 text-center font-bold text-yellow-700 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-center font-bold text-yellow-700">
                                     O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
                                 </td>
-                                <td class="px-4 py-3 text-left text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-left text-sm text-gray-600">
                                     {{ $order->category->category_name ?? 'N/A' }}
                                 </td>
-                                <td class="px-4 py-3 text-left text-sm text-gray-800 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-left text-sm text-gray-800">
                                     {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
                                 </td>
-                                <td class="px-4 py-3 text-left text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-left text-sm text-gray-600">
                                     {{ $order->product_type ?? 'N/A' }}
                                 </td>
-                                <td class="px-4 py-3 text-left text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-left text-sm text-gray-600">
                                     {{ $order->employee ? $order->employee->fname . ' ' . $order->employee->lname : '-' }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-center text-sm text-gray-600">
                                     {{ \Carbon\Carbon::parse($order->order_date)->format('M d, Y') }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm text-gray-700 font-semibold group-hover:opacity-0">
+                                <td class="px-4 py-3 text-right text-sm text-gray-700 font-semibold">
                                     ₱{{ number_format($order->total_amount, 2) }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <div class="flex justify-center items-center space-x-1 group-hover:opacity-0">
+                                    <div class="flex justify-center items-center space-x-1">
                                         <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
                                         <span class="text-black-600 text-xs font-bold">{{ $order->status }}</span>
                                     </div>
                                 </td>
 
-                                <!-- Hover Details Button -->
-                                <td colspan="8" class="absolute inset-0 flex items-center justify-center opacity-0 z-20
-                                    group-hover:opacity-100 transition-opacity duration-200 bg-sky-100/80 backdrop-blur-sm">
-                                    <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-sky-100 hover:bg-sky-200 transition-colors py-3"
-                                            @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails2 = true; showOrderHistory = false">
-                                        <span class="text-sky-800 font-extrabold text-sm uppercase tracking-wider">
-                                            View Details
-                                        </span>
+                                {{-- Action: open completed-order details modal --}}
+                                <td class="px-4 py-3 text-center">
+                                    <button
+                                        type="button"
+                                        @click="
+                                            selectedOrderId = {{ $order->order_id }};
+                                            showOrderDetails2 = true;
+                                            showOrderHistory = false;
+                                        "
+                                        class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm transition"
+                                        title="View details"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
                                     </button>
                                 </td>
                             </tr>
                         @empty
-                            <tr id="initialEmptyState" x-show="!searchQuery && {{ $completedOrders->isEmpty() ? 'true' : 'false' }}">
-                                <td colspan="8" class="px-4 py-16 text-center">
+                            <tr id="initialEmptyState"
+                                x-show="!searchQuery && {{ $completedOrders->isEmpty() ? 'true' : 'false' }}">
+                                <td colspan="9" class="px-4 py-16 text-center">
                                     <div class="flex flex-col items-center justify-center text-gray-400">
                                         <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" stroke-width="2"/>
@@ -190,14 +200,14 @@
 
                         <!-- JS Empty State -->
                         <tr id="emptyState" style="display: none;">
-                            <td colspan="8" class="px-4 py-16 text-center">
+                            <td colspan="9" class="px-4 py-16 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <circle cx="11" cy="11" r="8" stroke-width="2"/>
                                         <path d="m21 21-4.3-4.3" stroke-width="2" stroke-linecap="round"/>
                                     </svg>
                                     <p class="text-lg font-medium text-gray-500"
-                                       x-text="searchQuery ? 'No orders match your filter' : 'No orders found'"></p>
+                                    x-text="searchQuery ? 'No orders match your filter' : 'No orders found'"></p>
                                     <p class="text-sm text-gray-400 mt-1" x-show="searchQuery">
                                         Try adjusting your search or filter criteria
                                     </p>
@@ -211,7 +221,7 @@
             <!-- Footer -->
             <div class="mt-4 pt-4 border-t border-gray-200 flex justify-end flex-shrink-0">
                 <button @click="showOrderHistory = false"
-                        class="bg-yellow-500 text-black font-semibold px-6 py-2 rounded-lg hover:bg-yellow-600 transition shadow-md">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Close
                 </button>
             </div>
@@ -226,7 +236,7 @@
 
             <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-3">
                 Order Details - ID:
-                <span class="text-yellow-600" x-text="'O' + selectedOrderId.toString().padStart(3, '0')"></span>
+                <span class="text-black-600" x-text="'O' + selectedOrderId.toString().padStart(3, '0')"></span>
             </h2>
 
             <div class="overflow-x-auto">
@@ -300,7 +310,7 @@
 
             <div class="mt-8 flex justify-end">
                 <button @click="showOrderDetails2 = false; showOrderHistory = true"
-                        class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Close
                 </button>
             </div>

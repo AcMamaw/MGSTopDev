@@ -100,25 +100,6 @@
                                                 </g>
                                             </svg>
                                         </button>
-
-                                        {{-- Permanent Delete --}}
-                                        <button
-                                            title="Delete Permanently"
-                                            onclick="deleteRolePermanently({{ $role->role_id }})"
-                                            class="inline-flex items-center justify-center h-9 w-9 rounded-full text-red-500
-                                                   hover:text-red-700 hover:bg-red-100 transition-colors duration-200"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 width="24" height="24"
-                                                 fill="none" stroke="currentColor"
-                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M3 6h18" />
-                                                <path d="M8 6V4h8v2" />
-                                                <rect x="5" y="6" width="14" height="14" rx="2" />
-                                                <path d="M10 11v6" />
-                                                <path d="M14 11v6" />
-                                            </svg>
-                                        </button>
                                     </div>
                                 </td>
                             </tr>

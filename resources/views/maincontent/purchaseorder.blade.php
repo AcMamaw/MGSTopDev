@@ -81,8 +81,6 @@
         <!-- Include Add Order Modal -->
         @include('added.add_order')
 
-        <!-- Include the Assign Job Order modal -->
-        @include('added.assign_joborders')
     </div>
 </div>
 
@@ -100,141 +98,105 @@
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Balance</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Payment</th>
                 <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Status</th>
+                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-500">Action</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 relative">
             @forelse ($orders as $order)
                 @if ($order->status !== 'Completed')
-                    <tr class="group relative hover:bg-sky-200 cursor-pointer order-row"
+                    @php 
+                        $payStatus    = $order->payment->status ?? 'Not Paid';
+                        $orderStatus  = $order->status;
+                        $isPartial    = $payStatus === 'Partial';
+                        $isFullyPaid  = $payStatus === 'Fully Paid';
+                        $balance      = $order->payment->balance ?? $order->total_amount;
+                    @endphp
+
+                    <tr class="order-row cursor-pointer transition-colors duration-200"
                         data-status="{{ $order->status }}"
                         data-search="O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }} {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }} {{ $order->status }}">
-
                         <!-- Order ID -->
-                        <td class="px-4 py-3 text-center font-medium text-gray-800 group-hover:opacity-0">
+                        <td class="px-4 py-3 text-center font-medium text-gray-800">
                             O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
                         </td>
 
                         <!-- Customer Name -->
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                        <td class="px-4 py-3 text-center text-gray-600">
                             {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
                         </td>
 
                         <!-- Category Name -->
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                        <td class="px-4 py-3 text-center text-gray-600">
                             {{ $order->category->category_name ?? 'N/A' }}
                         </td>
-                       
-                       <!-- Product Type -->
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+
+                        <!-- Product Type -->
+                        <td class="px-4 py-3 text-center text-gray-600">
                             {{ $order->product_type ?? 'N/A' }}
                         </td>
 
                         <!-- Order Date -->
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                        <td class="px-4 py-3 text-center text-gray-600">
                             {{ \Carbon\Carbon::parse($order->order_date)->format('M d, Y') }}
                         </td>
 
                         <!-- Total Amount -->
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0">
+                        <td class="px-4 py-3 text-center text-gray-600">
                             ₱{{ number_format($order->total_amount, 2) }}
                         </td>
 
                         <!-- Balance -->
-                        <td class="px-4 py-3 text-center group-hover:opacity-0">
-                            @php
-                                $balance = $order->payment->balance ?? $order->total_amount;
-                            @endphp
+                        <td class="px-4 py-3 text-center">
                             ₱{{ number_format($balance, 2) }}
                         </td>
 
                         <!-- Payment Status -->
-                        <td class="px-4 py-3 text-center group-hover:opacity-0">
-                            @php
-                                $payStatus = $order->payment->status ?? 'Not Paid';
-                            @endphp
+                        <td class="px-4 py-3 text-center">
                             {{ $payStatus }}
                         </td>
 
                         <!-- Order Status -->
-                        <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
+                        <td class="px-4 py-3 text-center flex justify-center items-center space-x-2">
                             @php
                                 $dotColor = match($order->status) {
-                                    'Pending' => 'bg-gray-500',
+                                    'Pending'     => 'bg-gray-500',
                                     'In Progress' => 'bg-yellow-500',
-                                    'Released' => 'bg-blue-500',
-                                    'Completed' => 'bg-green-500',
-                                    'Cancelled' => 'bg-red-500',
-                                    default => 'bg-gray-400'
+                                    'Released'    => 'bg-blue-500',
+                                    'Completed'   => 'bg-green-500',
+                                    'Cancelled'   => 'bg-red-500',
+                                    default       => 'bg-gray-400'
                                 };
                             @endphp
                             <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
                             <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
                         </td>
 
-                        <!-- Hover overlay for whole row -->
-                        <td colspan="9" class="absolute inset-0 flex items-center justify-center opacity-0 
-                                                group-hover:opacity-100 transition-opacity duration-300 bg-gray-50/70 z-10 rounded-xl border border-gray-300">
-                            @php 
-                                $payStatus = $order->payment->status ?? 'Not Paid';
-                                $orderStatus = $order->status;
-                                $isPartialPayment = ($payStatus === 'Partial');
-                                $isFullyPaid = ($payStatus === 'Fully Paid');
-                            @endphp
-
-                            <div class="w-full h-full flex divide-x divide-sky-300 rounded-lg overflow-hidden">
-
-                                <!-- Details Button always -->
-                                <button type="button"
-                                    class="flex-1 flex items-center justify-center bg-sky-100 hover:bg-sky-200 transition-colors"
-                                    @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                                    <span class="text-sky-700 font-bold text-sm">Details</span>
-                                </button>
-
-                                @if ($orderStatus === 'Pending')
-                                    <!-- Assign Job Order -->
-                                    <button type="button"
-                                        class="flex-1 flex items-center justify-center bg-purple-100 hover:bg-purple-200 transition-colors"
-                                        @click.stop="openAssignJobOrder({{ $order->order_id }})">
-                                        <span class="text-purple-700 font-bold text-sm">
-                                            Assign Job Order
-                                        </span>
-                                    </button>
-
-                                    <!-- Complete Payment (only if partial) -->
-                                    @if ($isPartialPayment)
-                                        <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-yellow-100 hover:bg-yellow-200 transition-colors"
-                                            @click="openPaymentModal({{ $order->order_id }}, {{ $order->payment->balance ?? $order->total_amount }})">
-                                            <span class="text-yellow-700 font-bold text-sm">Complete Payment</span>
-                                        </button>
-                                    @endif
-
-                                @elseif ($orderStatus === 'In Progress' || $orderStatus === 'Released')
-                                    <!-- Complete Payment (only if partial) -->
-                                    @if ($isPartialPayment)
-                                        <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-yellow-100 hover:bg-yellow-200 transition-colors"
-                                            @click="openPaymentModal({{ $order->order_id }}, {{ $order->payment->balance ?? $order->total_amount }})">
-                                            <span class="text-yellow-700 font-bold text-sm">Complete Payment</span>
-                                        </button>
-                                    @elseif ($isFullyPaid && $orderStatus === 'Released')
-                                        <!-- Ready to Claim (only if fully paid and released) -->
-                                        <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-green-100 hover:bg-green-200 transition-colors"
-                                            @click="markAsCompleted({{ $order->order_id }})">
-                                            <span class="text-green-700 font-bold text-sm">Ready to Claim</span>
-                                        </button>
-                                    @endif
-                                @endif
-                            </div>
+                        <!-- Action button (opens details / actions modal) -->
+                        <td class="px-4 py-3 text-center">
+                            <button
+                                type="button"
+                                @click="
+                                    selectedOrderId = {{ $order->order_id }};
+                                    showOrderDetails = true
+                                "
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm transition"
+                                title="View actions"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                     viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
                         </td>
                     </tr>
                 @endif
             @empty
                 <tr class="empty-state-no-orders">
-                    <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="10" class="px-4 py-8 text-center text-gray-500">
                         <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
                         <p class="text-lg font-medium">No orders available</p>
                         <p class="text-sm mt-1">Create a new order to get started</p>
@@ -244,21 +206,20 @@
 
             <!-- Dynamic empty state when filter returns no results -->
             @if($orders->isNotEmpty())
-            <tr class="empty-state-filter" style="display: none;">
-                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
-                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                    <p class="text-lg font-medium">No orders match your filter</p>
-                    <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
-                </td>
-            </tr>
+                <tr class="empty-state-filter" style="display: none;">
+                    <td colspan="10" class="px-4 py-8 text-center text-gray-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <p class="text-lg font-medium">No orders match your filter</p>
+                        <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                    </td>
+                </tr>
             @endif
         </tbody>
     </table>
 </div>
-
-@include('added.payment_complete')
 
 <!-- Pagination -->
 <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto">
@@ -266,93 +227,191 @@
     <ul id="order-pagination-links" class="pagination-links flex gap-2"></ul>
 </div>
 
-    <div x-show="showOrderDetails" x-transition x-cloak
-            class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+  <div x-show="showOrderDetails" x-transition x-cloak
+     class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+    <div @click.away="showOrderDetails = false"
+         class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
 
-            <div @click.away="showOrderDetails = false"
-                class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
+        {{-- HEADER WITH CLOSE --}}
+        <div class="flex items-center justify-between mb-6 border-b pb-3">
+            <h2 class="text-2xl font-bold text-gray-800">
+                Order Details - ID:
+                <span class="text-black-600"
+                      x-text="'O' + selectedOrderId.toString().padStart(3, '0')"></span>
+            </h2>
 
-                <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-3">
-                    Order Details - ID: <span class="text-yellow-600" x-text="'O' + selectedOrderId.toString().padStart(3, '0')"></span>
-                </h2>
+            <button
+                type="button"
+                @click="showOrderDetails = false"
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
+                Close
+            </button>
+        </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 border border-gray-100">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Detail ID</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Product</th>
-                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Size</th>
-                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Color</th>
-                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Quantity</th>
-                                <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Unit</th>
-                                <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Price</th>
-                                <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Total</th>
+        {{-- DETAILS TABLE --}}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 border border-gray-100">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Detail ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600">Product</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Size</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Color</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Quantity</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Unit</th>
+                        <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Price</th>
+                        <th class="px-4 py-3 text-right text-xs font-bold uppercase text-gray-600">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach ($orders as $order)
+                        @php
+                            $grandTotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
+                            $payStatus  = $order->payment->status ?? 'Not Paid';
+                        @endphp
+
+                        @foreach ($order->items ?? [] as $item)
+                            <tr x-show="selectedOrderId === {{ $order->order_id }}"
+                                class="hover:bg-gray-50 transition-colors">
+                                <td class="px-4 py-2 text-center text-sm font-semibold text-yellow-700">
+                                    OD{{ str_pad($item->orderdetails_id, 3, '0', STR_PAD_LEFT) }}
+                                </td>
+                                <td class="px-4 py-2 text-left text-sm text-gray-800">
+                                    {{ $item->stock->product->product_name ?? '-' }}
+                                </td>
+                                <td class="px-4 py-2 text-center text-sm text-gray-700">
+                                    {{ $item->size ?? '-' }}
+                                </td>
+                                <td class="px-4 py-2 text-center text-sm text-gray-700">
+                                    <div class="flex items-center justify-center space-x-1">
+                                        <span class="w-4 h-4 rounded-full border border-gray-300"
+                                              style="background-color: {{ $item->color ?? '#ffffff' }};"></span>
+                                        <span>{{ $item->color ?? '-' }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-2 text-center text-sm text-gray-700 font-medium">
+                                    {{ $item->quantity }}
+                                </td>
+                                <td class="px-4 py-2 text-center text-sm text-gray-700">
+                                    {{ $item->stock->product->unit ?? '-' }}
+                                </td>
+                                <td class="px-4 py-2 text-right text-sm text-gray-700">
+                                    ₱{{ number_format($item->price, 2) }}
+                                </td>
+                                <td class="px-4 py-2 text-right text-sm font-semibold text-gray-900">
+                                    ₱{{ number_format($item->quantity * $item->price, 2) }}
+                                </td>
                             </tr>
-                        </thead>
+                        @endforeach
 
-                    <tbody class="divide-y divide-gray-100">
-                            @foreach ($orders as $order)
+                        <tr x-show="selectedOrderId === {{ $order->order_id }}" class="bg-gray-100">
+                            <td colspan="7" class="px-4 py-3 text-right font-bold text-base text-gray-700">
+                                GRAND TOTAL:
+                            </td>
+                            <td class="px-4 py-3 text-right font-semibold text-base text-gray-900">
+                                ₱{{ number_format($grandTotal, 2) }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- ACTIONS: ASSIGN / COMPLETE PAYMENT / FOR CLAIM --}}
+        <div class="mt-6 w-full">
+            <div class="mb-2 flex justify-center">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-600">
+                    Action
+                </span>
+            </div>
+
+            <div class="flex justify-center">
+                @foreach ($orders as $order)
+                    <template x-if="selectedOrderId === {{ $order->order_id }}">
+                        @php
+                            $payStatus   = $order->payment->status ?? 'Not Paid';
+                            $orderStatus = $order->status;
+                            $isPartial   = $payStatus === 'Partial';
+                            $isFullyPaid = $payStatus === 'Fully Paid';
+                            $balance     = $order->payment->balance ?? $order->total_amount;
+                        @endphp
+
+                        <div class="flex flex-col items-center gap-3">
+                            <div class="flex flex-wrap justify-center gap-3">
+                                {{-- Assign Job Order: active when Pending --}}
+                                <button
+                                    type="button"
+                                    @if ($orderStatus === 'Pending')
+                                        @click="
+                                            showOrderDetails = false;
+                                            openAssignJobOrder({{ $order->order_id }})
+                                        "
+                                    @endif
+                                    class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
+                                        {{ $orderStatus === 'Pending'
+                                            ? 'bg-purple-500 text-black hover:bg-purple-600 cursor-pointer'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
+                                    @if ($orderStatus !== 'Pending')
+                                        disabled
+                                    @endif
+                                >
+                                    Assign Job Order
+                                </button>
+
+                                {{-- Complete Payment: clickable when Partial; disabled otherwise --}}
+                                <button
+                                    type="button"
+                                    @if ($isPartial)
+                                        @click="
+                                            showOrderDetails = false;
+                                            openPaymentModal({{ $order->order_id }}, {{ $balance }})
+                                        "
+                                    @endif
+                                    class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
+                                        {{ $isPartial
+                                            ? 'bg-yellow-500 text-gray-900 hover:bg-yellow-600 cursor-pointer'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
+                                    @if (!$isPartial)
+                                        disabled
+                                    @endif
+                                >
+                                    Complete Payment
+                                </button>
+
+                                {{-- For Claim / Ready to Claim: clickable only when status Released AND Fully Paid --}}
                                 @php
-                                    $grandTotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
+                                    $canClaim = $orderStatus === 'Released' && $isFullyPaid;
                                 @endphp
+                                <button
+                                    type="button"
+                                    @if ($canClaim)
+                                        @click="markAsCompleted({{ $order->order_id }})"
+                                    @endif
+                                    class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
+                                        {{ $canClaim
+                                            ? 'bg-green-500 text-black hover:bg-green-600 cursor-pointer'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
+                                    @if (!$canClaim)
+                                        disabled
+                                    @endif
+                                >
+                                    For Claim
+                                </button>
+                            </div>
 
-                                @foreach ($order->items ?? [] as $item)
-                                    <tr x-show="selectedOrderId === {{ $order->order_id }}" class="hover:bg-gray-50 transition-colors">
-                                        <td class="px-4 py-2 text-center text-sm font-semibold text-yellow-700">
-                                            OD{{ str_pad($item->orderdetails_id, 3, '0', STR_PAD_LEFT) }}
-                                        </td>
-                                        <td class="px-4 py-2 text-left text-sm text-gray-800">
-                                            {{ $item->stock->product->product_name ?? '-' }}
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-700">
-                                            {{ $item->size ?? '-' }}
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-700">
-                                            <div class="flex items-center justify-center space-x-1">
-                                                <span class="w-4 h-4 rounded-full border border-gray-300"
-                                                    style="background-color: {{ $item->color ?? '#ffffff' }};">
-                                                </span>
-                                                <span>{{ $item->color ?? '-' }}</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-700 font-medium">
-                                            {{ $item->quantity }}
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-700">
-                                            {{ $item->stock->product->unit ?? '-' }}
-                                        </td>
-                                        <td class="px-4 py-2 text-right text-sm text-gray-700">
-                                            ₱{{ number_format($item->price, 2) }}
-                                        </td>
-                                        <td class="px-4 py-2 text-right text-sm font-semibold text-gray-900">
-                                            ₱{{ number_format($item->quantity * $item->price, 2) }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-
-                                <tr x-show="selectedOrderId === {{ $order->order_id }}" class="bg-gray-100">
-                                    <td colspan="7" class="px-4 py-3 text-right font-bold text-base text-gray-700">
-                                        GRAND TOTAL:
-                                    </td>
-                                    <td class="px-4 py-3 text-right font-semibold text-base text-gray-900">
-                                        ₱{{ number_format($grandTotal, 2) }}
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="mt-8 flex justify-end">
-                    <button @click="showOrderDetails = false"
-                            class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md">
-                        Close
-                    </button>
-                </div>
+                            <p class="mt-1 text-[11px] text-gray-400">
+                                Order status: {{ $orderStatus }} &mdash; Payment status: {{ $payStatus }}
+                            </p>
+                        </div>
+                    </template>
+                @endforeach
             </div>
         </div>
     </div>
+</div>
+
+        @include('added.payment_complete')
+        @include('added.assign_joborders')
 
 <script>
 const ORDER_STATUS_PRIORITY = {

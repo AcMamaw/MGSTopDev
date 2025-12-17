@@ -176,7 +176,7 @@
                 $fullyPaidPayments = $payments->where('status', 'Fully Paid')->sortByDesc('payment_id');
             @endphp
 
-            <div class="overflow-x-auto overflow-y-auto flex-grow rounded-lg border border-gray-200">
+          <div class="overflow-x-auto overflow-y-auto flex-grow rounded-lg border border-gray-200">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50 sticky top-0 z-10">
                         <tr>
@@ -190,6 +190,7 @@
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Date</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Method</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Action</th>
                         </tr>
                     </thead>
                     <tbody id="paymentsTableBody" class="divide-y divide-gray-100 bg-white">
@@ -210,79 +211,76 @@
                                 })->values();
                             @endphp
                             <tr
-                                class="group relative hover:bg-sky-50 transition duration-150 ease-in-out cursor-pointer"
+                                class="cursor-pointer transition duration-150 ease-in-out hover:bg-sky-50"
                                 data-payment
                                 data-search="P{{ str_pad($payment->payment_id, 3, '0', STR_PAD_LEFT) }} O{{ str_pad($payment->order->order_id ?? 0, 3, '0', STR_PAD_LEFT) }} {{ $customerName }} {{ $employeeName }} {{ number_format($payment->amount, 2) }} {{ number_format($payment->cash ?? 0, 2) }} {{ number_format($payment->change_amount ?? 0, 2) }} {{ $payment->payment_date }} {{ $payment->payment_method ?? '-' }} {{ $payment->status ?? '-' }}"
                             >
                                 {{-- visible cells --}}
-                                <td class="px-4 py-3 text-center font-bold text-yellow-700 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-center font-bold text-yellow-700">
                                     P{{ str_pad($payment->payment_id, 3, '0', STR_PAD_LEFT) }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-center text-sm text-gray-600">
                                     O{{ str_pad($payment->order->order_id ?? 0, 3, '0', STR_PAD_LEFT) }}
                                 </td>
-                                <td class="px-4 py-3 text-left text-sm text-gray-800 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-left text-sm text-gray-800">
                                     {{ $customerName }}
                                 </td>
-                                <td class="px-4 py-3 text-left text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-left text-sm text-gray-600">
                                     {{ $employeeName }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm text-gray-700 font-semibold group-hover:opacity-0">
+                                <td class="px-4 py-3 text-right text-sm text-gray-700 font-semibold">
                                     ₱{{ number_format($payment->amount, 2) }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-right text-sm text-gray-600">
                                     ₱{{ number_format($payment->cash ?? 0, 2) }}
                                 </td>
-                                <td class="px-4 py-3 text-right text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-right text-sm text-gray-600">
                                     ₱{{ number_format($payment->change_amount ?? 0, 2) }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-center text-sm text-gray-600">
                                     {{ $payment->payment_date }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-center text-sm text-gray-600">
                                     {{ $payment->payment_method ?? '-' }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <div class="flex justify-center items-center space-x-1 group-hover:opacity-0">
+                                    <div class="flex justify-center items-center space-x-1">
                                         <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
                                         <span class="text-black-600 text-xs font-bold">{{ $payment->status ?? '-' }}</span>
                                     </div>
                                 </td>
 
-                                {{-- HOVER OVERLAY BUTTON --}}
-                                <td
-                                    colspan="10"
-                                    class="absolute inset-0 flex items-center justify-center opacity-0 z-20
-                                           group-hover:opacity-100 transition-opacity duration-200 bg-sky-100/80 backdrop-blur-sm"
-                                >
+                                {{-- Action button: View Receipt --}}
+                                <td class="px-4 py-3 text-center">
                                     <button
                                         type="button"
-                                        class="flex-1 flex items-center justify-center bg-sky-100 hover:bg-sky-200 transition-colors py-3"
-                                        @click="
-                                            openReceipt({
-                                                payment_id: {{ $payment->payment_id }},
-                                                payment_date: '{{ $payment->payment_date }}',
-                                                customer_name: @js($customerName),
-                                                status: @js($payment->status ?? ''),
-                                                payment_method: @js($payment->payment_method ?? ''),
-                                                reference_number: @js($payment->reference_number ?? ''),
-                                                amount: {{ $payment->amount ?? 0 }},
-                                                balance: {{ $payment->balance ?? 0 }},
-                                                cash: {{ $payment->cash ?? 0 }},
-                                                change_amount: {{ $payment->change_amount ?? 0 }},
-                                                items: @js($itemsArray)
-                                            })
-                                        "
+                                        @click="openReceipt({
+                                            payment_id: {{ $payment->payment_id }},
+                                            payment_date: '{{ $payment->payment_date }}',
+                                            customer_name: @js($customerName),
+                                            status: @js($payment->status ?? ''),
+                                            payment_method: @js($payment->payment_method ?? ''),
+                                            reference_number: @js($payment->reference_number ?? ''),
+                                            amount: {{ $payment->amount ?? 0 }},
+                                            balance: {{ $payment->balance ?? 0 }},
+                                            cash: {{ $payment->cash ?? 0 }},
+                                            change_amount: {{ $payment->change_amount ?? 0 }},
+                                            items: @js($itemsArray)
+                                        })"
+                                        class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm transition"
+                                        title="View receipt"
                                     >
-                                        <span class="text-sky-800 font-extrabold text-sm uppercase tracking-wider">
-                                            View Receipt
-                                        </span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
                                     </button>
                                 </td>
                             </tr>
                         @empty
                             <tr id="paymentsInitialEmptyState" x-show="!searchQuery && {{ $fullyPaidPayments->isEmpty() ? 'true' : 'false' }}">
-                                <td colspan="10" class="px-4 py-16 text-center">
+                                <td colspan="11" class="px-4 py-16 text-center">
                                     <div class="flex flex-col items-center justify-center text-gray-400">
                                         <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path d="M12 2a10 10 0 0 0 0 20c3.5 0 6.6-1.7 8.5-4.3M12 18v-6l-3-3m3 3h5m0 0a9 9 0 0 0-4.5-8.6"/>
@@ -295,14 +293,14 @@
                         @endforelse
 
                         <tr id="paymentsEmptyState" style="display: none;">
-                            <td colspan="10" class="px-4 py-16 text-center">
+                            <td colspan="11" class="px-4 py-16 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <circle cx="11" cy="11" r="8" stroke-width="2"/>
                                         <path d="m21 21-4.3-4.3" stroke-width="2" stroke-linecap="round"/>
                                     </svg>
                                     <p class="text-lg font-medium text-gray-500"
-                                       x-text="searchQuery ? 'No payments match your filter' : 'No payments found'"></p>
+                                    x-text="searchQuery ? 'No payments match your filter' : 'No payments found'"></p>
                                     <p class="text-sm text-gray-400 mt-1" x-show="searchQuery">
                                         Try adjusting your search or filter criteria
                                     </p>
@@ -313,11 +311,11 @@
                 </table>
             </div>
 
+
             <div class="mt-4 pt-4 border-t border-gray-200 flex justify-end flex-shrink-0">
                 <button
                     @click="showPaymentHistory = false"
-                    class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md"
-                >
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Close
                 </button>
             </div>
@@ -553,7 +551,7 @@
             <div class="mt-6 flex justify-center no-print">
                 <button type="button"
                         @click="showReceipt = false; showPaymentHistory = true"
-                        class="px-8 py-2 rounded-lg bg-yellow-400 text-black text-sm font-semibold hover:bg-yellow-500 transition">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Close
                 </button>
             </div>

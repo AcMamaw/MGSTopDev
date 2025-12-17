@@ -115,6 +115,7 @@
                         data-gender="{{ $emp->gender }}"
                         data-bdate="{{ $emp->bdate }}"
                         data-email="{{ $emp->email }}"
+                        data-alt_email="{{ $emp->alt_email }}"
                         data-contact_no="{{ $emp->contact_no }}"
                         data-username="{{ $emp->user->username ?? '' }}"
                         data-password_plain="{{ $emp->user->plain_password ?? '' }}"
@@ -238,8 +239,18 @@
                             x-model="email"
                             @focus="$event.target.select()"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
-                            placeholder="Enter email address">
+                            placeholder="Enter main email address">
                     </div>
+
+                   <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Alt Email</label>
+                    <input type="email"
+                        x-model="alt_email"
+                        @focus="$event.target.select()"
+                        :placeholder="isEdit ? (alt_email || 'Enter alternate email (optional)') : 'Enter alternate email (optional)'"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition">
+                </div>
+
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Contact No</label>
                         <input type="text"
@@ -263,18 +274,21 @@
                     Cancel
                 </button>
 
-                <button x-show="!isEdit" @click="addEmployee()"
+                <button x-show="!isEdit"
+                        @click="addEmployee()"
                         class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
                     Confirm
                 </button>
 
-                <button x-show="isEdit" @click="updateEmployee()"
+                <button x-show="isEdit"
+                        @click="updateEmployee()"
                         class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
                     Update
                 </button>
             </div>
         </div>
     </div>
+
 
     <div x-show="showUserModal" x-cloak x-transition
         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
@@ -294,7 +308,7 @@
                 <div x-data="{ showPassword: false }">
                     <label class="block text-sm font-semibold text-gray-700 mb-1 text-left">
                         Password
-                        <span x-show="isPasswordHashed" class="text-xs font-normal text-gray-500">(hashed/stored)</span>
+                        <span x-show="isPasswordHashed" class="text-xs font-normal text-gray-500"></span>
                     </label>
                     <div class="relative">
                         <input :type="showPassword ? 'text' : 'password'"
@@ -302,47 +316,27 @@
                             readonly
                             :class="isPasswordHashed ? 'text-xs' : ''"
                             class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 font-mono text-left">
-
-                        <button type="button"
-                                @click="showPassword = !showPassword"
-                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1 rounded-full">
-                            <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg"
-                                class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                            </svg>
-
-                           <svg x-show="showPassword"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-5 w-5" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7
-                                        a10.05 10.05 0 012.382-4.568M6.223 6.223A9.956 9.956 0 0112 5
-                                        c4.477 0 8.268 2.943 9.542 7a10.05 10.05 0 01-4.043 5.197M15 12
-                                        a3 3 0 00-3-3M3 3l18 18" />
-                            </svg>
-                        </button>
                     </div>
                 </div>
             </div>
 
-            <p x-show="isPasswordHashed" class="mt-4 text-xs text-gray-500 text-left">
-                ⚠️ This is the hashed password stored in the database. It cannot be reversed to the original text. You must use a separate reset feature to provide a new password.
-            </p>
 
-            <div class="mt-6 flex justify-end">
-                <button
-                    type="button"
-                    @click="showUserModal = false; window.location.reload()"
-                    class="px-6 py-2 rounded-full text-black bg-yellow-400 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
+            <div class="mt-6 flex justify-between">
+                <button type="button"
+                        @click="resetPassword()"
+                        class="px-6 py-2 rounded-full text-black bg-yellow-500 font-bold hover:bg-yellow-600 transition shadow-md shadow-yellow-200/50">
+                    Reset password
+                </button>
+
+                <button type="button"
+                        @click="showUserModal = false; window.location.reload()"
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Close
                 </button>
             </div>
         </div>
     </div>
+
 
     <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto">
         <div id="employee-pagination-info">Showing 1 to 1 of 1 results</div>
@@ -359,13 +353,13 @@ function employeePage() {
         editingId:null,
 
         showUserModal:false,
-        isPasswordHashed:false,
+        isPasswordHashed:true,   // always hashed now
 
         alertVisible:false,
         alertMessage:'',
         alertType:'success',
 
-        fname:'', lname:'', gender:'', role_id:'', email:'', contact_no:'', bdate:'',
+        fname:'', lname:'', gender:'', role_id:'', email:'', alt_email:'', contact_no:'', bdate:'',
         username:'', password:'',
 
         roles:@json($roles),
@@ -381,7 +375,7 @@ function employeePage() {
             this.isEdit = false;
             this.editingId = null;
             this.fname=''; this.lname=''; this.gender=''; this.role_id='';
-            this.email=''; this.contact_no=''; this.bdate='';
+            this.email=''; this.alt_email=''; this.contact_no=''; this.bdate='';
             this.showEmployeeModal = true;
         },
 
@@ -392,31 +386,64 @@ function employeePage() {
             this.isEdit    = true;
             this.editingId = row.dataset.id;
 
-            this.fname      = row.dataset.fname || '';
-            this.lname      = row.dataset.lname || '';
-            this.gender     = row.dataset.gender || '';
-            this.role_id    = row.dataset.role_id || '';
-            this.email      = row.dataset.email || '';
-            this.contact_no = row.dataset.contact_no || '';
-            this.bdate      = row.dataset.bdate || '';
+            this.fname       = row.dataset.fname || '';
+            this.lname       = row.dataset.lname || '';
+            this.gender      = row.dataset.gender || '';
+            this.role_id     = row.dataset.role_id || '';
+            this.email       = row.dataset.email || '';
+            this.alt_email   = row.dataset.alt_email || '';
+            this.contact_no  = row.dataset.contact_no || '';
+            this.bdate       = row.dataset.bdate || '';
 
             this.showEmployeeModal = true;
         },
 
         openUserModal(username, plain, hash) {
             this.username = username || '';
-            if (plain) {
-                this.password = plain;
-                this.isPasswordHashed = false;
-            } else {
-                this.password = hash || '';
-                this.isPasswordHashed = true;
-            }
+            // always show hashed password
+            this.password = hash || '';
+            this.isPasswordHashed = true;
             this.showUserModal = true;
         },
 
         closeEmployeeModal() {
             this.showEmployeeModal = false;
+        },
+
+        // NEW: reset password + email via backend
+        resetPassword() {
+            if (!this.username) {
+                this.showAlert('No username loaded.', 'error');
+                alert('No username loaded.');
+                return;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+            fetch('{{ route("employees.reset-password") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: this.username
+                })
+            })
+            .then(async res => {
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    const msg = data.message || 'Error resetting password.';
+                    this.showAlert(msg, 'error');
+                    alert(msg);
+                    throw new Error(msg);
+                }
+                this.showAlert('New password sent to employee email.', 'success');
+                alert('New password sent to employee email.');
+                window.location.reload();
+            })
+            .catch(err => console.error(err));
         },
 
         addEmployee() {
@@ -442,6 +469,7 @@ function employeePage() {
                     gender:this.gender,
                     role_id:this.role_id,
                     email:this.email,
+                    alt_email:this.alt_email,
                     contact_no:this.contact_no,
                     bdate:this.bdate
                 })
@@ -469,6 +497,7 @@ function employeePage() {
                 row.dataset.gender = e.gender;
                 row.dataset.bdate = e.bdate;
                 row.dataset.email = e.email ?? '';
+                row.dataset.alt_email = e.alt_email ?? '';
                 row.dataset.contact_no = e.contact_no ?? '';
                 row.dataset.username = data.username ?? '';
                 row.dataset.password_plain = data.plain_password ?? '';
@@ -496,7 +525,7 @@ function employeePage() {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="6" y="11" width="12" height="10" rx="2" ry="2"/>
                                     <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                                    <rcle cx="12" cy="17" r="2" fill="currentColor"/>
+                                    <circle cx="12" cy="17" r="2" fill="currentColor"/>
                                     <line x1="12" y1="12" x2="12" y2="15" />
                                 </svg>
                             </button>
@@ -521,10 +550,29 @@ function employeePage() {
 
                 tbody.appendChild(row);
 
-                this.openUserModal(data.username, data.plain_password, data.password_hash);
+                // optional alt_email -> backend send (keep or remove)
+                if (this.alt_email && this.alt_email.trim() !== '') {
+                    const first3F = (this.fname || '').substring(0, 3);
+                    const first3L = (this.lname || '').substring(0, 3);
+                    const password = `${first3F}${first3L}123`;
+
+                    fetch('{{ url("/employees/send-credentials") }}', {
+                        method:'POST',
+                        headers:{
+                            'Content-Type':'application/json',
+                            'X-CSRF-TOKEN':csrfToken,
+                            'Accept':'application/json'
+                        },
+                        body:JSON.stringify({
+                            to: this.alt_email,
+                            username: this.email,
+                            password: password
+                        })
+                    }).catch(() => {});
+                }
 
                 this.fname=''; this.lname=''; this.gender=''; this.role_id='';
-                this.email=''; this.contact_no=''; this.bdate='';
+                this.email=''; this.alt_email=''; this.contact_no=''; this.bdate='';
                 this.showEmployeeModal=false;
 
                 updateEmployeePagination();
@@ -533,7 +581,6 @@ function employeePage() {
             })
             .catch(err => {
                 console.error(err);
-                // generic fallback
             });
         },
 
@@ -555,6 +602,7 @@ function employeePage() {
                     gender: this.gender,
                     role_id: this.role_id,
                     email: this.email,
+                    alt_email: this.alt_email,
                     contact_no: this.contact_no,
                     bdate: this.bdate
                 })
@@ -582,6 +630,7 @@ function employeePage() {
                 row.dataset.gender     = e.gender;
                 row.dataset.bdate      = e.bdate;
                 row.dataset.email      = e.email ?? '';
+                row.dataset.alt_email  = e.alt_email ?? '';
                 row.dataset.contact_no = e.contact_no ?? '';
 
                 const roleName = this.roles.find(r => r.role_id == e.role_id)?.role_name ?? 'N/A';
@@ -601,7 +650,6 @@ function employeePage() {
             })
             .catch(err => {
                 console.error(err);
-                // generic fallback
             });
         }
     }
@@ -681,7 +729,6 @@ function renderEmployeePagination() {
     }
     employeePaginationLinks.appendChild(next);
 }
-
 
 function updateEmployeePagination() {
     employeeRows = Array.from(employeeTableBody.querySelectorAll('tr'));

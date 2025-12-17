@@ -9,9 +9,6 @@
                 <h2 class="text-2xl font-bold text-gray-800">Assign Job Order</h2>
                 <p class="text-sm text-gray-500 mt-1">Select Layout Artists to assign to this order</p>
             </div>
-            <button type="button" @click="showAssignJobOrderModal = false" class="text-gray-500 hover:text-gray-700 text-2xl">
-                ✕
-            </button>
         </div>
 
         <form @submit.prevent="submitAssignJobOrder()" class="space-y-4">

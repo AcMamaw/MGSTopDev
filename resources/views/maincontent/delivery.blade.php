@@ -179,29 +179,34 @@
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Date Received</th>
                     <th class="px-4 py-3 text-left text-xs font-bold uppercase text-gray-600 tracking-wider">Received By</th>
                     <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Action</th>
                 </tr>
             </thead>
+
             <tbody id="delivery-table-body" class="divide-y divide-gray-100 relative">
                 @forelse ($deliveries->where('status', '!=', 'Delivered') as $delivery)
                     <tr
-                        class="group relative cursor-pointer transition-colors duration-200 delivery-row {{ session('new_delivery_id') == $delivery->delivery_id ? 'is-new bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-gray-50/70' }}"
+                        class="delivery-row cursor-pointer transition-colors duration-200 {{ session('new_delivery_id') == $delivery->delivery_id ? 'is-new bg-yellow-50' : '' }}"
                         data-status="{{ $delivery->status }}"
                         data-search="D{{ str_pad($delivery->delivery_id, 3, '0', STR_PAD_LEFT) }} {{ $delivery->supplier->supplier_name ?? '' }} {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }} {{ $delivery->receiver->fname ?? '' }} {{ $delivery->receiver->lname ?? '' }} {{ $delivery->status }}"
                     >
-                        <td class="px-4 py-3 text-center font-semibold text-gray-800 group-hover:opacity-0 group-hover:text-transparent">
+                        <td class="px-4 py-3 text-center font-semibold text-gray-800">
                             D{{ str_pad($delivery->delivery_id, 3, '0', STR_PAD_LEFT) }}
                         </td>
-                        <td class="px-4 py-3 text-left text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+
+                        <td class="px-4 py-3 text-left text-gray-600">
                             {{ $delivery->supplier->supplier_name ?? '-' }}
                         </td>
-                        <td class="px-4 py-3 text-left text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+
+                        <td class="px-4 py-3 text-left text-gray-600">
                             {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }}
                         </td>
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+
+                        <td class="px-4 py-3 text-center text-gray-600">
                             @php
                                 $types = $delivery->details->pluck('product_type')->unique()->filter();
                             @endphp
-                            @if($types->count() === 1 && $types->first())
+                            @if ($types->count() === 1 && $types->first())
                                 <span class="text-xs font-bold px-2 py-0.5 rounded-full">
                                     {{ $types->first() }}
                                 </span>
@@ -211,66 +216,57 @@
                                 <span class="text-xs text-gray-400">N/A</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+
+                        <td class="px-4 py-3 text-center text-gray-600">
                             {{ $delivery->delivery_date_request }}
                         </td>
-                        <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+
+                        <td class="px-4 py-3 text-center text-gray-600">
                             {{ $delivery->status === 'Delivered' ? ($delivery->delivery_date_received ?? '- -') : '- -' }}
                         </td>
-                        <td class="px-4 py-3 text-left text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+
+                        <td class="px-4 py-3 text-left text-gray-600">
                             {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }}
                         </td>
-                        <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
-                            @php
-                                $dotColor = match($delivery->status) {
-                                    'Pending'          => 'bg-gray-500',
-                                    'Out for Delivery' => 'bg-yellow-500',
-                                    'For Stock In'     => 'bg-blue-500',
-                                    'Delivered'        => 'bg-green-500',
-                                    default            => 'bg-gray-400'
-                                };
-                            @endphp
-                            <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                            <span class="text-gray-800 text-xs font-semibold">{{ $delivery->status }}</span>
-                        </td>
 
-                        {{-- HOVER ACTIONS --}}
-                        <td
-                            colspan="8"
-                            class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-50/70 z-10 rounded-xl border border-gray-300"
-                        >
-                            <div class="w-full h-full flex divide-x divide-sky-300">
-                                <button
-                                    type="button"
-                                    class="flex-1 flex items-center justify-center bg-sky-100 hover:bg-sky-200 transition-colors"
-                                    @click="selectedDeliveryId = {{ $delivery->delivery_id }}; showDetails = true"
-                                >
-                                    <span class="text-sky-700 font-bold text-sm">
-                                        View Details
-                                    </span>
-                                </button>
+                       <td class="px-4 py-3 text-center flex justify-center items-center space-x-2">
+                        @php
+                            $dotColor = match($delivery->status) {
+                                'Pending'          => 'bg-gray-500',
+                                'Out for Delivery' => 'bg-yellow-500',
+                                'For Stock In'     => 'bg-blue-500',
+                                'Re Stock'         => 'bg-blue-500',
+                                'Delivered'        => 'bg-green-500',
+                                default            => 'bg-gray-400',
+                            };
+                        @endphp
+                        <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
+                        <span class="text-gray-800 text-xs font-semibold">{{ $delivery->status }}</span>
+                    </td>
 
-                                @if($delivery->status === 'For Stock In')
-                                    <button
-                                        type="button"
-                                        @click="stockInDelivery({{ $delivery->delivery_id }})"
-                                        class="flex-1 flex items-center justify-center bg-green-100 hover:bg-green-200 transition-colors"
-                                    >
-                                        <span class="text-green-700 font-bold text-sm">
-                                            Stock In / Complete
-                                        </span>
-                                    </button>
-                                @endif
-                            </div>
+                        {{-- Action button (no hover overlay) --}}
+                        <td class="px-4 py-3 text-center">
+                            <button
+                                type="button"
+                                @click="selectedDeliveryId = {{ $delivery->delivery_id }}; showDetails = true"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm transition"
+                                title="View details"
+                            >
+                                {{-- right arrow icon --}}
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
                         </td>
                     </tr>
                 @empty
                     <tr class="empty-state-delivery-none">
-                        <td colspan="8" class="px-4 py-16 text-center">
+                        <td colspan="9" class="px-4 py-16 text-center">
                             <div class="flex flex-col items-center justify-center text-gray-400">
                                 <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                 </svg>
                                 <p class="text-lg font-semibold text-gray-500">No deliveries available</p>
                                 <p class="text-sm text-gray-400 mt-1">Create a new delivery to get started.</p>
@@ -281,11 +277,11 @@
 
                 @if($deliveries->isNotEmpty())
                     <tr class="empty-state-delivery-filter" style="display:none;">
-                        <td colspan="8" class="px-4 py-16 text-center">
+                        <td colspan="9" class="px-4 py-16 text-center">
                             <div class="flex flex-col items-center justify-center text-gray-400">
                                 <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                                 <p class="text-lg font-semibold text-gray-500">No deliveries match your filter</p>
                                 <p class="text-sm text-gray-400 mt-1">Try adjusting the search query or status filter.</p>
@@ -297,18 +293,32 @@
         </table>
     </div>
 
+
     @include('added.add_delivery')
 
     {{-- DETAILS MODAL --}}
     <div x-show="showDetails" x-transition x-cloak
-         class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+        class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
         <div @click.away="showDetails = false"
-             class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-3">
-                Delivery Details - ID:
-                <span class="text-black-600" x-text="'D' + selectedDeliveryId.toString().padStart(3, '0')"></span>
-            </h2>
+            class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
 
+            {{-- HEADER WITH CLOSE BUTTON ON RIGHT --}}
+            <div class="flex items-center justify-between mb-6 border-b pb-3">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    Delivery Details - ID:
+                    <span class="text-gray-900"
+                        x-text="'D' + selectedDeliveryId.toString().padStart(3, '0')"></span>
+                </h2>
+
+                <button
+                    type="button"
+                    @click="showDetails = false"
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
+                    Close
+                </button>
+            </div>
+
+            {{-- TABLE --}}
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 border border-gray-100">
                     <thead class="bg-gray-50">
@@ -328,7 +338,8 @@
                             @endphp
 
                             @foreach ($delivery->details as $item)
-                                <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}" class="hover:bg-gray-50 transition-colors">
+                                <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}"
+                                    class="hover:bg-gray-50 transition-colors">
                                     <td class="px-4 py-2 text-center text-sm font-semibold text-yellow-700">
                                         DD{{ str_pad($item->deliverydetails_id, 3, '0', STR_PAD_LEFT) }}
                                     </td>
@@ -350,11 +361,12 @@
                                 </tr>
                             @endforeach
 
-                            <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}" class="bg-black-50/50">
+                            <tr x-show="selectedDeliveryId === {{ $delivery->delivery_id }}"
+                                class="bg-gray-50/50">
                                 <td colspan="5" class="px-4 py-3 text-right font-bold text-base text-gray-700">
                                     GRAND TOTAL:
                                 </td>
-                                <td class="px-4 py-3 text-right font-semibold text-base text-black-800">
+                                <td class="px-4 py-3 text-right font-semibold text-base text-gray-900">
                                     ₱{{ number_format($grandTotal, 2) }}
                                 </td>
                             </tr>
@@ -363,11 +375,49 @@
                 </table>
             </div>
 
-            <div class="mt-8 flex justify-end">
-                <button @click="showDetails = false"
-                        class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md">
-                    Close
-                </button>
+            {{-- ACTIONS UNDER THE TABLE --}}
+            <div class="mt-6 w-full">
+                {{-- Label centered --}}
+                <div class="mb-2 flex justify-center">
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-600">
+                        Action
+                    </span>
+                </div>
+                    
+                {{-- Button centered --}}
+                <div class="flex justify-center">
+                    @foreach ($deliveries as $delivery)
+                        <template x-if="selectedDeliveryId === {{ $delivery->delivery_id }}">
+                            @php
+                                $isForStockIn  = $delivery->status === 'For Stock In';
+                                $isReStock     = $delivery->status === 'Re Stock';
+                                $canStockIn    = $isForStockIn || $isReStock;
+                            @endphp
+
+                            <div class="text-center">
+                                <button
+                                    type="button"
+                                    @if ($canStockIn)
+                                        @click="stockInDelivery({{ $delivery->delivery_id }})"
+                                    @endif
+                                    class="px-6 py-2 rounded-full text-sm font-semibold shadow-md
+                                        {{ $canStockIn
+                                            ? 'bg-green-500 text-black hover:bg-green-600 cursor-pointer'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
+                                    @if (!$canStockIn)
+                                        disabled
+                                    @endif
+                                >
+                                    Stock In
+                                </button>
+
+                                <p class="mt-1 text-[11px] text-gray-400">
+                                    Current status: {{ $delivery->status }}
+                                </p>
+                            </div>
+                        </template>
+                    @endforeach
+                </div>
             </div>
         </div>
     </div>
@@ -433,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <!-- Scripts -->
 <script>
     async function stockInDelivery(deliveryId) {
-        if (!confirm("Are you sure you want to stock in this delivery? This will mark it as Delivered.")) return;
+        if (!confirm("Are you sure you want to stock in this delivery?")) return;
         try {
             const response = await axios.post(`/deliveries/${deliveryId}/stock-in`);
             if (response.data.success) {

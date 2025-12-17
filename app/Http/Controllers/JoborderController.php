@@ -187,7 +187,7 @@ class JoborderController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Job order picked successfully! Inventory reduced across available stocks and job order created.',
+                'message' => 'Job order picked successfully!',
             ]);
 
         } catch (\Exception $e) {
@@ -248,7 +248,7 @@ class JoborderController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Job order completed! Order is now "Released" and ready for pickup.'
+                'message' => 'Job order completed!'
             ]);
 
         } catch (\Exception $e) {

@@ -86,7 +86,6 @@
         </div>
     </div>
 
-
     <div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
         <div class="overflow-x-auto">
             <table id="job-orders-table" class="min-w-full table-auto divide-y divide-gray-200">
@@ -100,12 +99,14 @@
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Total Amount</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Status</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Picked</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Action</th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-gray-100 relative">
                     @forelse($orders as $order)
                         <tr
-                            class="group relative cursor-pointer transition-colors duration-200 job-order-row"
+                            class="job-order-row cursor-pointer transition-colors duration-200"
                             data-status="{{ $order->status }}"
                             data-category="{{ $order->category->category_name ?? 'N/A' }}"
                             data-product-type="{{ $order->product_type ?? 'N/A' }}"
@@ -116,31 +117,31 @@
                                 {{ $order->product_type ?? '' }}
                                 {{ $order->status }}"
                         >
-                            <td class="px-4 py-3 text-center font-medium text-gray-800 group-hover:opacity-0 group-hover:text-transparent">
+                            <td class="px-4 py-3 text-center font-medium text-gray-800">
                                 O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
                             </td>
 
-                            <td class="px-4 py-3 text-left text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+                            <td class="px-4 py-3 text-left text-gray-600">
                                 {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
                             </td>
 
-                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+                            <td class="px-4 py-3 text-center text-gray-600">
                                 {{ $order->category->category_name ?? 'N/A' }}
                             </td>
 
-                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+                            <td class="px-4 py-3 text-center text-gray-600">
                                 {{ $order->product_type ?? 'N/A' }}
                             </td>
 
-                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+                            <td class="px-4 py-3 text-center text-gray-600">
                                 {{ \Carbon\Carbon::parse($order->order_date)->format('M d, Y') }}
                             </td>
 
-                            <td class="px-4 py-3 text-center text-gray-600 group-hover:opacity-0 group-hover:text-transparent">
+                            <td class="px-4 py-3 text-center text-gray-600">
                                 ₱{{ number_format($order->total_amount, 2) }}
                             </td>
 
-                            <td class="px-4 py-3 text-center group-hover:opacity-0 flex justify-center items-center space-x-2">
+                            <td class="px-4 py-3 text-center flex justify-center items-center space-x-2">
                                 @php
                                     $dotColor = match($order->status) {
                                         'Pending'     => 'bg-gray-500',
@@ -154,7 +155,7 @@
                                 <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
                             </td>
 
-                            <td class="px-4 py-3 text-center group-hover:opacity-0">
+                            <td class="px-4 py-3 text-center">
                                 @if($order->is_picked)
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                                         ✓ Picked
@@ -166,45 +167,32 @@
                                 @endif
                             </td>
 
-                            <td colspan="8"
-                                class="absolute inset-0 flex items-center justify-center opacity-0
-                                       group-hover:opacity-100 transition-opacity duration-300 bg-gray-50/70 z-10 rounded-xl border border-gray-300">
-                                <div class="w-full h-full flex divide-x divide-sky-300">
-                                    <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-sky-100 hover:bg-sky-200 transition-colors"
-                                            @click="selectedOrderId = {{ $order->order_id }}; showOrderDetails = true">
-                                        <span class="text-sky-700 font-bold text-sm">
-                                            Details
-                                        </span>
-                                    </button>
-
-                                    @if(!$order->is_picked)
-                                        <button type="button"
-                                                class="flex-1 flex items-center justify-center bg-yellow-100 hover:bg-yellow-200 transition-colors"
-                                                @click.stop="pickJobOrder({{ $order->order_id }})">
-                                            <span class="text-yellow-700 font-bold text-sm">
-                                                Pick Job Order
-                                            </span>
-                                        </button>
-                                    @elseif($order->is_picked && $order->status !== 'Released')
-                                        <button type="button"
-                                                class="flex-1 flex items-center justify-center bg-green-100 hover:bg-green-200 transition-colors"
-                                                @click.stop="doneJobOrder({{ $order->order_id }})">
-                                            <span class="text-green-700 font-bold text-sm">
-                                                Done Job Order
-                                            </span>
-                                        </button>
-                                    @endif
-                                </div>
+                            {{-- ACTION BUTTON: opens job-order actions/details modal --}}
+                            <td class="px-4 py-3 text-center">
+                                <button
+                                    type="button"
+                                    @click="
+                                        selectedOrderId = {{ $order->order_id }};
+                                        showOrderDetails = true
+                                    "
+                                    class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm transition"
+                                    title="View job order"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
                             </td>
                         </tr>
                     @empty
                         <tr class="empty-state-base">
-                            <td colspan="8" class="px-4 py-16 text-center">
+                            <td colspan="9" class="px-4 py-16 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
                                     <p class="text-lg font-medium">No orders assigned to you</p>
                                     <p class="text-sm mt-1">Check back later for new assignments</p>
@@ -215,11 +203,11 @@
 
                     @if($orders->isNotEmpty())
                         <tr class="empty-state-filtered" style="display:none;">
-                            <td colspan="8" class="px-4 py-16 text-center">
+                            <td colspan="9" class="px-4 py-16 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                     </svg>
                                     <p class="text-lg font-medium">No orders match your filter</p>
                                     <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
@@ -238,20 +226,32 @@
     </div>
 
     <div x-show="showOrderDetails" x-transition x-cloak
-         class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+        class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
         <div @click.away="showOrderDetails = false"
-             class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-3">
-                Order Details - ID:
-                <span class="text-yellow-600" x-text="'O' + selectedOrderId.toString().padStart(3, '0')"></span>
-            </h2>
+            class="bg-white w-full max-w-4xl rounded-xl shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto">
 
+            {{-- HEADER WITH CLOSE --}}
+            <div class="flex items-center justify-between mb-6 border-b pb-3">
+                <h2 class="text-2xl font-bold text-gray-800">
+                    Order Details - ID:
+                    <span class="text-black-600"
+                        x-text="'O' + selectedOrderId.toString().padStart(3, '0')"></span>
+                </h2>
+
+                <button type="button"
+                        @click="showOrderDetails = false"
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
+                    Close
+                </button>
+            </div>
+
+            {{-- DETAILS TABLE --}}
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 border border-gray-100">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Detail ID</th>
-                            <th class="px-4 py-3 text-left   text-xs font-bold uppercase text-gray-600">Product</th>
+                            <th class="px-4 py-3 text-left  text-xs font-bold uppercase text-gray-600">Product</th>
                             <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Size</th>
                             <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Color</th>
                             <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600">Quantity</th>
@@ -264,10 +264,13 @@
                         @foreach ($orders as $order)
                             @php
                                 $grandTotal = $order->items->sum(fn($i) => $i->quantity * $i->price);
+                                $orderStatus = $order->status;
+                                $isPicked    = $order->is_picked;
                             @endphp
 
                             @foreach ($order->items ?? [] as $item)
-                                <tr x-show="selectedOrderId === {{ $order->order_id }}" class="hover:bg-gray-50 transition-colors">
+                                <tr x-show="selectedOrderId === {{ $order->order_id }}"
+                                    class="hover:bg-gray-50 transition-colors">
                                     <td class="px-4 py-2 text-center text-sm font-semibold text-yellow-700">
                                         OD{{ str_pad($item->orderdetails_id, 3, '0', STR_PAD_LEFT) }}
                                     </td>
@@ -280,7 +283,7 @@
                                     <td class="px-4 py-2 text-center text-sm text-gray-700">
                                         <div class="flex items-center justify-center space-x-1">
                                             <span class="w-4 h-4 rounded-full border border-gray-300"
-                                                  style="background-color: {{ $item->color ?? '#ffffff' }};"></span>
+                                                style="background-color: {{ $item->color ?? '#ffffff' }};"></span>
                                             <span>{{ $item->color ?? '-' }}</span>
                                         </div>
                                     </td>
@@ -312,16 +315,74 @@
                 </table>
             </div>
 
-            <div class="mt-8 flex justify-end">
-                <button type="button"
-                        @click="showOrderDetails = false"
-                        class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md">
-                    Close
-                </button>
+            {{-- ACTIONS: PICK / DONE JOB ORDER --}}
+            <div class="mt-6 w-full">
+                <div class="mb-2 flex justify-center">
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-600">
+                        Action
+                    </span>
+                </div>
+
+                <div class="flex justify-center">
+                    @foreach ($orders as $order)
+                        <template x-if="selectedOrderId === {{ $order->order_id }}">
+                            @php
+                                $orderStatus = $order->status;
+                                $isPicked    = $order->is_picked;
+                                // Pick allowed when not picked yet
+                                $canPick     = !$isPicked;
+                                // Done allowed when picked and status In Progress
+                                $canDone     = $isPicked && $orderStatus === 'In Progress';
+                            @endphp
+
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="flex flex-wrap justify-center gap-3">
+                                    {{-- Pick Job Order: when not picked --}}
+                                    <button
+                                        type="button"
+                                        @if ($canPick)
+                                            @click="pickJobOrder({{ $order->order_id }})"
+                                        @endif
+                                        class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
+                                            {{ $canPick
+                                                ? 'bg-yellow-400 text-black hover:bg-yellow-500 cursor-pointer'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
+                                        @if (!$canPick)
+                                            disabled
+                                        @endif
+                                    >
+                                        Pick Job Order
+                                    </button>
+
+                                    {{-- Done Job Order: when picked and status In Progress --}}
+                                    <button
+                                        type="button"
+                                        @if ($canDone)
+                                            @click="doneJobOrder({{ $order->order_id }})"
+                                        @endif
+                                        class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
+                                            {{ $canDone
+                                                ? 'bg-green-500 text-black hover:bg-green-600 cursor-pointer'
+                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
+                                        @if (!$canDone)
+                                            disabled
+                                        @endif
+                                    >
+                                        Done Job Order
+                                    </button>
+                                </div>
+
+                                <p class="mt-1 text-[11px] text-gray-400">
+                                    Status: {{ $orderStatus }} &mdash; Picked:
+                                    {{ $isPicked ? 'Yes' : 'No' }}
+                                </p>
+                            </div>
+                        </template>
+                    @endforeach
+                </div>
             </div>
         </div>
     </div>
-
 </div>
 
 <script>
@@ -502,7 +563,7 @@ function jobOrderComponent() {
         },
 
         doneJobOrder(orderId) {
-            if (!confirm('Mark this job order as DONE? This will change status to "Released" (Ready for Pickup).'))
+            if (!confirm('Are you sure the Job Order already done?'))
                 return;
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]').content;

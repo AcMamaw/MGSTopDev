@@ -107,12 +107,14 @@
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Requested</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Received</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Action</th>
                         </tr>
                     </thead>
                     <tbody id="deliveriesTableBody" class="divide-y divide-gray-100 bg-white">
                         @php
-                    
-                            $deliveredDeliveries = isset($deliveries) ? $deliveries->where('status', 'Delivered')->sortByDesc('delivery_id') : collect([]);
+                            $deliveredDeliveries = isset($deliveries)
+                                ? $deliveries->where('status', 'Delivered')->sortByDesc('delivery_id')
+                                : collect([]);
                         @endphp
 
                         @forelse ($deliveredDeliveries as $delivery)
@@ -127,55 +129,67 @@
                                 }
                             @endphp
 
-                            <tr class="group relative hover:bg-sky-50 transition duration-150 ease-in-out cursor-pointer" data-delivery
-                                data-search="D{{ str_pad($delivery->delivery_id, 3, '0', STR_PAD_LEFT) }} {{ $delivery->supplier->supplier_name ?? '-' }} {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }} {{ $productType }} {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }} {{ $delivery->delivery_date_request }} {{ $delivery->delivery_date_received ?? '- -' }} {{ $delivery->status }}">
-                                
-                                <td class="px-4 py-3 text-center font-bold text-yellow-700 group-hover:opacity-0">
+                            <tr
+                                class="cursor-pointer transition duration-150 ease-in-out hover:bg-sky-50"
+                                data-delivery
+                                data-search="D{{ str_pad($delivery->delivery_id, 3, '0', STR_PAD_LEFT) }} {{ $delivery->supplier->supplier_name ?? '-' }} {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }} {{ $productType }} {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }} {{ $delivery->delivery_date_request }} {{ $delivery->delivery_date_received ?? '- -' }} {{ $delivery->status }}"
+                            >
+                                <td class="px-4 py-3 text-center font-bold text-yellow-700">
                                     D{{ str_pad($delivery->delivery_id, 3, '0', STR_PAD_LEFT) }}
                                 </td>
-                                <td class="px-4 py-3 text-left text-sm text-gray-800 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-left text-sm text-gray-800">
                                     {{ $delivery->supplier->supplier_name ?? '-' }}
                                 </td>
-                                <td class="px-4 py-3 text-left text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-left text-sm text-gray-600">
                                     {{ $delivery->employee->fname ?? '' }} {{ $delivery->employee->lname ?? '' }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-sm text-gray-600 group-hover:opacity-0">
-                                    <span>
-                                        {{ $productType }}
-                                    </span>
+                                <td class="px-4 py-3 text-center text-sm text-gray-600">
+                                    <span>{{ $productType }}</span>
                                 </td>
-                                <td class="px-4 py-3 text-left text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-left text-sm text-gray-600">
                                     {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-center text-sm text-gray-600">
                                     {{ $delivery->delivery_date_request }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-sm text-gray-600 group-hover:opacity-0">
+                                <td class="px-4 py-3 text-center text-sm text-gray-600">
                                     {{ $delivery->delivery_date_received ?? '- -' }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <div class="flex justify-center items-center space-x-1 group-hover:opacity-0">
+                                    <div class="flex justify-center items-center space-x-1">
                                         <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
                                         <span class="text-black-600 text-xs font-bold">{{ $delivery->status }}</span>
                                     </div>
                                 </td>
 
-                                <td colspan="8" class="absolute inset-0 flex items-center justify-center opacity-0 z-20
-                                    group-hover:opacity-100 transition-opacity duration-200 bg-sky-100/80 backdrop-blur-sm">
-                                    <button type="button"
-                                            class="flex-1 flex items-center justify-center bg-sky-100 hover:bg-sky-200 transition-colors py-3"
-                                            @click="selectedDeliveryId = {{ $delivery->delivery_id }}; showDetails2 = true; showHistoryModal = false">
-                                        <span class="text-sky-800 font-extrabold text-sm uppercase tracking-wider">
-                                            View Details
-                                        </span>
+                                {{-- Action button --}}
+                                <td class="px-4 py-3 text-center">
+                                    <button
+                                        type="button"
+                                        @click="
+                                            selectedDeliveryId = {{ $delivery->delivery_id }};
+                                            showDetails2 = true;
+                                            showHistoryModal = false;
+                                        "
+                                        class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm transition"
+                                        title="View details"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
                                     </button>
                                 </td>
                             </tr>
                         @empty
-                            <tr id="deliveriesInitialEmptyState" x-show="!searchQuery && {{ $deliveredDeliveries->isEmpty() ? 'true' : 'false' }}">
-                                <td colspan="8" class="px-4 py-16 text-center">
+                            <tr id="deliveriesInitialEmptyState"
+                                x-show="!searchQuery && {{ $deliveredDeliveries->isEmpty() ? 'true' : 'false' }}">
+                                <td colspan="9" class="px-4 py-16 text-center">
                                     <div class="flex flex-col items-center justify-center text-gray-400">
-                                        <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c3.5 0 6.6-1.7 8.5-4.3M12 18v-6l-3-3m3 3h5m0 0a9 9 0 0 0-4.5-8.6"/></svg>
+                                        <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2a10 10 0 0 0 0 20c3.5 0 6.6-1.7 8.5-4.3M12 18v-6l-3-3m3 3h5m0 0a9 9 0 0 0-4.5-8.6"/>
+                                        </svg>
                                         <p class="text-lg font-medium text-gray-500">No delivered records found</p>
                                         <p class="text-sm text-gray-400 mt-1">Delivered history will appear here once available</p>
                                     </div>
@@ -184,7 +198,7 @@
                         @endforelse
 
                         <tr id="deliveriesEmptyState" style="display: none;">
-                            <td colspan="8" class="px-4 py-16 text-center">
+                            <td colspan="9" class="px-4 py-16 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <circle cx="11" cy="11" r="8" stroke-width="2"/>
@@ -204,7 +218,7 @@
 
             <div class="mt-4 pt-4 border-t border-gray-200 flex justify-end flex-shrink-0">
                 <button @click="showHistoryModal = false"
-                    class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Close
                 </button>
             </div>
@@ -263,7 +277,7 @@
 
             <div class="mt-8 flex justify-end">
                 <button @click="showDetails2 = false; showHistoryModal =true"
-                        class="bg-yellow-500 text-gray-900 font-bold px-8 py-2 rounded-full hover:bg-yellow-600 transition shadow-md">
+                        class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 font-semibold bg-white hover:bg-gray-50 transition">
                     Close
                 </button>
             </div>

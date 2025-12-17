@@ -349,6 +349,27 @@ button[onclick^="toggleDropdown"] {
                 <span class="nav-text">Deliveries</span>
             </a>
         </li>
+         <!-- Production Flow -->
+        <li>
+            <a href="{{ route('joborders') }}"
+               class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+               {{ request()->routeIs('joborders') 
+                    ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
+                    : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-5 h-5 flex-shrink-0"
+                     fill="none" viewBox="0 0 28 24"
+                     stroke="currentColor" stroke-width="1.9">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M6 2H22C23.1046 2 24 2.89543 24 4V20C24 21.1046 23.1046 22 22 22H6C4.89543 22 4 21.1046 4 20V4C4 2.89543 4.89543 2 6 2Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M8 7H20M8 11H20M8 15H16" />
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M10 18L13 21L19 16" />
+                </svg>
+                <span class="nav-text">Job Order</span>
+            </a>
+        </li>
         @endif
 
         <!-- (Cashier Only) -->

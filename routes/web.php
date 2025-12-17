@@ -128,7 +128,11 @@ Route::middleware('auth')->group(function () {
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
         Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
         Route::post('/products/{product}/image', [ProductController::class, 'updateImage'])->name('products.updateImage');
-   });
+        Route::post('/employees/send-credentials', [EmployeeController::class, 'sendCredentials'])
+        ->name('employees.sendCredentials');
+        Route::post('/employees/reset-password', [EmployeeController::class, 'resetPassword'])
+        ->name('employees.reset-password');
+    });
 
     // --------------------------
     // Store Management
