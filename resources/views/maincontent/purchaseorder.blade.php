@@ -105,11 +105,11 @@
             @forelse ($orders as $order)
                 @if ($order->status !== 'Completed')
                     @php 
-                        $payStatus    = $order->payment->status ?? 'Not Paid';
-                        $orderStatus  = $order->status;
-                        $isPartial    = $payStatus === 'Partial';
-                        $isFullyPaid  = $payStatus === 'Fully Paid';
-                        $balance      = $order->payment->balance ?? $order->total_amount;
+                        $payStatus   = $order->payment->status ?? 'Not Paid';
+                        $orderStatus = $order->status;
+                        $isPartial   = $payStatus === 'Partial';
+                        $isFullyPaid = $payStatus === 'Fully Paid';
+                        $balance     = $order->payment->balance ?? $order->total_amount;
                     @endphp
 
                     <tr class="order-row cursor-pointer transition-colors duration-200"
@@ -141,12 +141,12 @@
                         </td>
 
                         <!-- Total Amount -->
-                        <td class="px-4 py-3 text-center text-gray-600">
+                        <td class="px-4 py-3 text-right text-gray-600">
                             ₱{{ number_format($order->total_amount, 2) }}
                         </td>
 
                         <!-- Balance -->
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-4 py-3 text-right">
                             ₱{{ number_format($balance, 2) }}
                         </td>
 
@@ -155,8 +155,8 @@
                             {{ $payStatus }}
                         </td>
 
-                        <!-- Order Status -->
-                        <td class="px-4 py-3 text-center flex justify-center items-center space-x-2">
+                        <!-- Order Status (aligned) -->
+                        <td class="px-4 py-3">
                             @php
                                 $dotColor = match($order->status) {
                                     'Pending'     => 'bg-gray-500',
@@ -167,8 +167,12 @@
                                     default       => 'bg-gray-400'
                                 };
                             @endphp
-                            <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                            <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
+                            <div class="flex items-center justify-center">
+                                <span class="w-3 h-3 rounded-full {{ $dotColor }} mr-2 flex-shrink-0"></span>
+                                <span class="text-gray-800 text-xs font-semibold whitespace-nowrap">
+                                    {{ $order->status }}
+                                </span>
+                            </div>
                         </td>
 
                         <!-- Action button (opens details / actions modal) -->
@@ -220,6 +224,7 @@
         </tbody>
     </table>
 </div>
+
 
 <!-- Pagination -->
 <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto">
@@ -349,7 +354,7 @@
                                     @endif
                                     class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
                                         {{ $orderStatus === 'Pending'
-                                            ? 'bg-purple-500 text-black hover:bg-purple-600 cursor-pointer'
+                                            ? 'bg-purple-400 text-black hover:bg-purple-500 cursor-pointer'
                                             : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
                                     @if ($orderStatus !== 'Pending')
                                         disabled
@@ -369,7 +374,7 @@
                                     @endif
                                     class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
                                         {{ $isPartial
-                                            ? 'bg-yellow-500 text-gray-900 hover:bg-yellow-600 cursor-pointer'
+                                            ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-500 cursor-pointer'
                                             : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
                                     @if (!$isPartial)
                                         disabled
@@ -389,7 +394,7 @@
                                     @endif
                                     class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
                                         {{ $canClaim
-                                            ? 'bg-green-500 text-black hover:bg-green-600 cursor-pointer'
+                                            ? 'bg-green-400 text-black hover:bg-green-500 cursor-pointer'
                                             : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
                                     @if (!$canClaim)
                                         disabled

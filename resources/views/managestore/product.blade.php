@@ -121,7 +121,7 @@
                                     {{-- Set Image --}}
                                     <button title="Set Image"
                                             @click="openImageModal($event)"
-                                            class="p-2 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors duration-200 flex items-center justify-center">
+                                            class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200 flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                              class="h-5 w-5" viewBox="0 0 24 24"
                                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -133,7 +133,7 @@
                                     {{-- Edit --}}
                                     <button title="Edit"
                                             @click="openEditModal($event)"
-                                            class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200 flex items-center justify-center">
+                                            class="p-2 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors duration-200 flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor"
                                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen">
                                             <path d="M12 20h9" />
@@ -179,9 +179,9 @@
 
     {{-- Add / Edit Product Modal --}}
     <div x-show="showProductModal" x-cloak x-transition
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
         <div @click.away="closeModal()"
-             class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg">
+            class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg">
             <h2 class="text-3xl font-extrabold mb-7 text-center text-gray-800"
                 x-text="isEdit ? 'Edit Product Details' : 'Add New Product'"></h2>
 
@@ -219,41 +219,30 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Product Name</label>
                     <input type="text"
-                            x-model="productName"
-                            @focus="if(isEdit){ $el.select(); }"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
-                            placeholder="Enter product name">
+                        x-model="productName"
+                        @focus="if(isEdit){ $el.select(); }"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+                        placeholder="Enter product name">
                 </div>
 
                 {{-- Description --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Description</label>
                     <input type="text"
-                            x-model="description"
-                            @focus="if(isEdit){ $el.select(); }"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
-                            placeholder="Brief product description">
+                        x-model="description"
+                        @focus="if(isEdit){ $el.select(); }"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+                        placeholder="Brief product description">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    {{-- Unit --}}
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Unit</label>
-                        <input type="text"
-                                x-model="unit"
-                                @focus="if(isEdit){ $el.select(); }"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
-                                placeholder="e.g. per piece, per box, per liter">
-                    </div>
-
-                    {{-- Markup Rule --}}
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Markup Rule (%)</label>
-                        <input type="number"
-                                x-model="markupRule"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
-                                placeholder="e.g. 50" min="0">
-                    </div>
+                {{-- Unit – full width --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Unit</label>
+                    <input type="text"
+                        x-model="unit"
+                        @focus="if(isEdit){ $el.select(); }"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition"
+                        placeholder="e.g. per piece, per box, per liter">
                 </div>
             </div>
 
@@ -277,8 +266,6 @@
             </div>
         </div>
     </div>
-
-  
 
     {{-- Image Modal (file upload) --}}
     <div x-show="showImageModal" x-cloak x-transition
@@ -347,7 +334,6 @@ function productPage() {
         productName: '',
         description: '',
         unit: '',
-        markupRule: '',
 
         // image modal
         showImageModal: false,
@@ -356,14 +342,13 @@ function productPage() {
         imagePreview: '',
 
         openAddModal() {
-            this.isEdit = false;
-            this.editingId = null;
-            this.supplierId = '';
-            this.categoryId = '';
+            this.isEdit      = false;
+            this.editingId   = null;
+            this.supplierId  = '';
+            this.categoryId  = '';
             this.productName = '';
             this.description = '';
-            this.unit = '';
-            this.markupRule = '';
+            this.unit        = '';
             this.showProductModal = true;
         },
 
@@ -371,15 +356,14 @@ function productPage() {
             const row = event.currentTarget.closest('tr');
             if (!row) return;
 
-            this.isEdit = true;
-            this.editingId = row.dataset.id;
+            this.isEdit      = true;
+            this.editingId   = row.dataset.id;
 
             this.supplierId  = row.dataset.supplier_id || '';
             this.categoryId  = row.dataset.category_id || '';
             this.productName = row.dataset.product_name || '';
             this.description = row.dataset.description || '';
             this.unit        = row.dataset.unit || '';
-            this.markupRule  = row.dataset.markup_rule || '';
 
             this.showProductModal = true;
         },
@@ -393,29 +377,29 @@ function productPage() {
             if (!row) return;
 
             this.imageProductId = row.dataset.id;
-            this.imageFile = null;
-            this.imagePreview = row.dataset.image_path || '';
+            this.imageFile      = null;
+            this.imagePreview   = row.dataset.image_path || '';
             this.showImageModal = true;
         },
 
         closeImageModal() {
             this.showImageModal = false;
             this.imageProductId = null;
-            this.imageFile = null;
-            this.imagePreview = '';
+            this.imageFile      = null;
+            this.imagePreview   = '';
         },
 
         onImageSelected(e) {
             const file = e.target.files[0];
             if (!file) {
-                this.imageFile = null;
+                this.imageFile    = null;
                 this.imagePreview = '';
                 return;
             }
 
             this.imageFile = file;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
+            const reader   = new FileReader();
+            reader.onload  = (ev) => {
                 this.imagePreview = ev.target.result;
             };
             reader.readAsDataURL(file);
@@ -465,12 +449,13 @@ function productPage() {
                     'X-CSRF-TOKEN':'{{ csrf_token() }}'
                 },
                 body: JSON.stringify({
-                    supplier_id: this.supplierId,
-                    category_id: this.categoryId,
+                    supplier_id:  this.supplierId,
+                    category_id:  this.categoryId,
                     product_name: this.productName,
-                    description: this.description,
-                    unit: this.unit,
-                    markup_rule: this.markupRule || 0
+                    description:  this.description,
+                    unit:         this.unit,
+                    // fixed markup rule 50.00
+                    markup_rule:  50.00
                 })
             })
             .then(res => res.json())
@@ -481,16 +466,16 @@ function productPage() {
 
                 const row   = document.createElement('tr');
                 row.className = 'hover:bg-yellow-50/50 transition-colors product-row';
-                row.dataset.id            = data.product_id;
-                row.dataset.supplier_id   = data.supplier_id;
-                row.dataset.supplier_name = data.supplier_name;
-                row.dataset.category_id   = data.category_id;
-                row.dataset.category_name = data.category_name;
-                row.dataset.product_name  = data.product_name;
-                row.dataset.description   = data.description ?? '';
-                row.dataset.unit          = data.unit;
-                row.dataset.markup_rule   = data.markup_rule ?? 0;
-                row.dataset.image_path    = data.image_path ?? '';
+                row.dataset.id             = data.product_id;
+                row.dataset.supplier_id    = data.supplier_id;
+                row.dataset.supplier_name  = data.supplier_name;
+                row.dataset.category_id    = data.category_id;
+                row.dataset.category_name  = data.category_name;
+                row.dataset.product_name   = data.product_name;
+                row.dataset.description    = data.description ?? '';
+                row.dataset.unit           = data.unit;
+                row.dataset.markup_rule    = data.markup_rule ?? 50.00;
+                row.dataset.image_path     = data.image_path ?? '';
 
                 row.innerHTML = `
                     <td class='px-4 py-3 text-center font-medium text-gray-800'>
@@ -505,7 +490,7 @@ function productPage() {
                         <div class='flex items-center justify-center space-x-2'>
                             <button title="Set Image"
                                     @click="openImageModal($event)"
-                                    class="p-2 rounded-full text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors duration-200 flex items-center justify-center">
+                                    class="p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24"
                                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="3" y="3" width="18" height="16" rx="2" ry="2"/>
@@ -515,7 +500,7 @@ function productPage() {
                             </button>
                             <button title='Edit'
                                 onclick='window.__productOpenEditFromRow(event)'
-                                class='p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition'>
+                                class='p-2 rounded-full text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition'>
                                 <svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
                                     <path d='M12 20h9' />
                                     <path d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z' />
@@ -535,12 +520,11 @@ function productPage() {
                 if (emptyRow) emptyRow.style.display = 'none';
                 tbody.appendChild(row);
 
-                this.supplierId = '';
-                this.categoryId = '';
+                this.supplierId  = '';
+                this.categoryId  = '';
                 this.productName = '';
                 this.description = '';
-                this.unit = '';
-                this.markupRule = '';
+                this.unit        = '';
                 this.showProductModal = false;
 
                 updateProductPagination();
@@ -558,7 +542,7 @@ function productPage() {
             if (this.productName) payload.product_name = this.productName;
             if (this.description) payload.description  = this.description;
             if (this.unit)        payload.unit         = this.unit;
-            if (this.markupRule !== '') payload.markup_rule = this.markupRule;
+            // markup_rule not editable here; backend keeps existing value 50.00
 
             if (Object.keys(payload).length === 0) {
                 alert('Nothing to update.');
@@ -581,14 +565,14 @@ function productPage() {
                 const row = Array.from(tbody.querySelectorAll('.product-row')).find(r => r.dataset.id == this.editingId);
                 if (!row) return;
 
-                row.dataset.supplier_id   = p.supplier_id;
-                row.dataset.supplier_name = p.supplier_name;
-                row.dataset.category_id   = p.category_id;
-                row.dataset.category_name = p.category_name;
-                row.dataset.product_name  = p.product_name;
-                row.dataset.description   = p.description ?? '';
-                row.dataset.unit          = p.unit;
-                row.dataset.markup_rule   = p.markup_rule ?? 0;
+                row.dataset.supplier_id    = p.supplier_id;
+                row.dataset.supplier_name  = p.supplier_name;
+                row.dataset.category_id    = p.category_id;
+                row.dataset.category_name  = p.category_name;
+                row.dataset.product_name   = p.product_name;
+                row.dataset.description    = p.description ?? '';
+                row.dataset.unit           = p.unit;
+                row.dataset.markup_rule    = p.markup_rule ?? 50.00;
 
                 row.children[0].textContent = 'P' + String(p.product_id).padStart(3,'0');
                 row.children[1].textContent = p.supplier_name;
@@ -612,6 +596,7 @@ window.__productOpenEditFromRow = function (event) {
     root.__x.$data.openEditModal(event);
 };
 
+// pagination and search code unchanged below...
 const productRowsPerPage    = 5;
 const productTableBody      = document.getElementById('product-table-body');
 const productEmptyRow       = document.getElementById('product-empty-row');
@@ -619,9 +604,9 @@ const productPaginationLinks= document.getElementById('product-pagination-links'
 const productPaginationInfo = document.getElementById('product-pagination-info');
 const productSearchInput    = document.getElementById('product-search');
 
-let allProductRows = Array.from(productTableBody.querySelectorAll('.product-row'));
+let allProductRows   = Array.from(productTableBody.querySelectorAll('.product-row'));
 let productCurrentPage = 1;
-let visibleRows = [...allProductRows];
+let visibleRows      = [...allProductRows];
 
 function applyProductSearch() {
     const q = (productSearchInput.value || '').toLowerCase();

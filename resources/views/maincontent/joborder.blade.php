@@ -39,7 +39,8 @@
         </p>
     </header>
 
-    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 max-w-full mx-auto">
+        {{-- CONTROLS --}}
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 max-w-7xl mx-auto">
         {{-- Left: search + filter --}}
         <div class="flex flex-col sm:flex-row items-stretch gap-4 w-full md:w-auto">
             {{-- Search --}}
@@ -61,7 +62,7 @@
             </div>
 
             {{-- Status filter --}}
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
                 <label for="status-filter" class="text-sm font-semibold text-gray-700 hidden sm:block">
                     Status:
                 </label>
@@ -86,138 +87,143 @@
         </div>
     </div>
 
-    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto border-t-4 border-yellow-400">
-        <div class="overflow-x-auto">
-            <table id="job-orders-table" class="min-w-full table-auto divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Order ID</th>
-                        <th class="px-4 py-3 text-left  text-xs font-bold uppercase text-gray-600 tracking-wider">Customer</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Category</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Product Type</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Order Date</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Total Amount</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Status</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Picked</th>
-                        <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Action</th>
-                    </tr>
-                </thead>
+    {{-- TABLE --}}
+    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-full mx-auto overflow-x-auto border-t-4 border-yellow-400">
+        <table id="job-orders-table" class="min-w-full table-auto divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Order ID</th>
+                    <th class="px-4 py-3 text-left  text-xs font-bold uppercase text-gray-600 tracking-wider">Customer</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Category</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Product Type</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Order Date</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Total Amount</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Picked</th>
+                    <th class="px-4 py-3 text-center text-xs font-bold uppercase text-gray-600 tracking-wider">Action</th>
+                </tr>
+            </thead>
 
-                <tbody class="divide-y divide-gray-100 relative">
-                    @forelse($orders as $order)
-                        <tr
-                            class="job-order-row cursor-pointer transition-colors duration-200"
-                            data-status="{{ $order->status }}"
-                            data-category="{{ $order->category->category_name ?? 'N/A' }}"
-                            data-product-type="{{ $order->product_type ?? 'N/A' }}"
-                            data-search="O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
-                                {{ $order->customer->fname ?? '' }}
-                                {{ $order->customer->lname ?? '' }}
-                                {{ $order->category->category_name ?? '' }}
-                                {{ $order->product_type ?? '' }}
-                                {{ $order->status }}"
-                        >
-                            <td class="px-4 py-3 text-center font-medium text-gray-800">
-                                O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
-                            </td>
+            <tbody class="divide-y divide-gray-100 relative">
+                @forelse($orders as $order)
+                    <tr
+                        class="job-order-row cursor-pointer transition-colors duration-200"
+                        data-status="{{ $order->status }}"
+                        data-category="{{ $order->category->category_name ?? 'N/A' }}"
+                        data-product-type="{{ $order->product_type ?? 'N/A' }}"
+                        data-search="O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
+                            {{ $order->customer->fname ?? '' }}
+                            {{ $order->customer->lname ?? '' }}
+                            {{ $order->category->category_name ?? '' }}
+                            {{ $order->product_type ?? '' }}
+                            {{ $order->status }}"
+                    >
+                        <td class="px-4 py-3 text-center font-medium text-gray-800">
+                            O{{ str_pad($order->order_id, 3, '0', STR_PAD_LEFT) }}
+                        </td>
 
-                            <td class="px-4 py-3 text-left text-gray-600">
-                                {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
-                            </td>
+                        <td class="px-4 py-3 text-left text-gray-600">
+                            {{ $order->customer->fname ?? '' }} {{ $order->customer->lname ?? '' }}
+                        </td>
 
-                            <td class="px-4 py-3 text-center text-gray-600">
-                                {{ $order->category->category_name ?? 'N/A' }}
-                            </td>
+                        <td class="px-4 py-3 text-center text-gray-600">
+                            {{ $order->category->category_name ?? 'N/A' }}
+                        </td>
 
-                            <td class="px-4 py-3 text-center text-gray-600">
-                                {{ $order->product_type ?? 'N/A' }}
-                            </td>
+                        <td class="px-4 py-3 text-center text-gray-600">
+                            {{ $order->product_type ?? 'N/A' }}
+                        </td>
 
-                            <td class="px-4 py-3 text-center text-gray-600">
-                                {{ \Carbon\Carbon::parse($order->order_date)->format('M d, Y') }}
-                            </td>
+                        <td class="px-4 py-3 text-center text-gray-600">
+                            {{ \Carbon\Carbon::parse($order->order_date)->format('M d, Y') }}
+                        </td>
 
-                            <td class="px-4 py-3 text-center text-gray-600">
-                                ₱{{ number_format($order->total_amount, 2) }}
-                            </td>
+                        <td class="px-4 py-3 text-center text-gray-600">
+                            ₱{{ number_format($order->total_amount, 2) }}
+                        </td>
 
-                            <td class="px-4 py-3 text-center flex justify-center items-center space-x-2">
-                                @php
-                                    $dotColor = match($order->status) {
-                                        'Pending'     => 'bg-gray-500',
-                                        'In Progress' => 'bg-yellow-500',
-                                        'Released'    => 'bg-blue-500',
-                                        'Completed'   => 'bg-green-500',
-                                        default       => 'bg-gray-400'
-                                    };
-                                @endphp
+                        {{-- Status, aligned like Delivery --}}
+                        <td class="px-4 py-3">
+                            @php
+                                $dotColor = match($order->status) {
+                                    'Pending'     => 'bg-gray-500',
+                                    'In Progress' => 'bg-yellow-500',
+                                    'Released'    => 'bg-blue-500',
+                                    'Completed'   => 'bg-green-500',
+                                    default       => 'bg-gray-400'
+                                };
+                            @endphp
+                            <div class="flex items-center justify-center gap-2">
                                 <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                                <span class="text-gray-800 text-xs font-semibold">{{ $order->status }}</span>
-                            </td>
+                                <span class="text-gray-800 text-xs font-semibold whitespace-nowrap">
+                                    {{ $order->status }}
+                                </span>
+                            </div>
+                        </td>
 
-                            <td class="px-4 py-3 text-center">
-                                @if($order->is_picked)
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                        ✓ Picked
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
-                                        Not Picked
-                                    </span>
-                                @endif
-                            </td>
+                        {{-- Picked badge --}}
+                        <td class="px-4 py-3 text-center">
+                            @if($order->is_picked)
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    ✓ Picked
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                                    Not Picked
+                                </span>
+                            @endif
+                        </td>
 
-                            {{-- ACTION BUTTON: opens job-order actions/details modal --}}
-                            <td class="px-4 py-3 text-center">
-                                <button
-                                    type="button"
-                                    @click="
-                                        selectedOrderId = {{ $order->order_id }};
-                                        showOrderDetails = true
-                                    "
-                                    class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm transition"
-                                    title="View job order"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr class="empty-state-base">
-                            <td colspan="9" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center text-gray-400">
-                                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    <p class="text-lg font-medium">No orders assigned to you</p>
-                                    <p class="text-sm mt-1">Check back later for new assignments</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
+                        {{-- Action button --}}
+                        <td class="px-4 py-3 text-center">
+                            <button
+                                type="button"
+                                @click="
+                                    selectedOrderId = {{ $order->order_id }};
+                                    showOrderDetails = true
+                                "
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm transition"
+                                title="View job order"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                @empty
+                    <tr class="empty-state-base">
+                        <td colspan="9" class="px-4 py-16 text-center">
+                            <div class="flex flex-col items-center justify-center text-gray-400">
+                                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <p class="text-lg font-medium">No orders assigned to you</p>
+                                <p class="text-sm mt-1">Check back later for new assignments</p>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
 
-                    @if($orders->isNotEmpty())
-                        <tr class="empty-state-filtered" style="display:none;">
-                            <td colspan="9" class="px-4 py-16 text-center">
-                                <div class="flex flex-col items-center justify-center text-gray-400">
-                                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                    </svg>
-                                    <p class="text-lg font-medium">No orders match your filter</p>
-                                    <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endif
-                </tbody>
-            </table>
-        </div>
+                @if($orders->isNotEmpty())
+                    <tr class="empty-state-filtered" style="display:none;">
+                        <td colspan="9" class="px-4 py-16 text-center">
+                            <div class="flex flex-col items-center justify-center text-gray-400">
+                                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                <p class="text-lg font-medium">No orders match your filter</p>
+                                <p class="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                            </div>
+                        </td>
+                    </tr>
+                @endif
+            </tbody>
+        </table>
     </div>
 
     <div class="custom-pagination mt-6 flex justify-between items-center text-sm text-gray-600 max-w-7xl mx-auto pb-8">

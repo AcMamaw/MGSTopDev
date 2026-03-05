@@ -368,7 +368,16 @@
 
         {{-- Section 1: Report Generation Form --}}
         <div class="bg-white p-6 rounded-xl shadow-lg mb-8 border-t-4 border-yellow-400">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">⚙️ Generate New Report</h2>
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                 <svg xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="w-5 h-5 flex-shrink-0">
+                            <path d="M12 15.5a3.5 3.5 0 1 0 0-7a3.5 3.5 0 0 0 0 7z"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                <span>Generate New Report</span>
+            </h2>
 
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                 <div class="col-span-1">
@@ -437,7 +446,17 @@
 
         {{-- Section 2: Report History --}}
         <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-yellow-400 mb-8">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">📄 Report History</h2>
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <svg class="h-6 w-6 text-gray-700" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M7 3h8l4 4v14H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 9h6M9 13h6M9 17h3" />
+                </svg>
+                <span>Report History</span>
+            </h2>
+
 
             <div class="overflow-x-auto border border-gray-200 rounded-lg">
                 <table class="min-w-full table-auto text-sm">

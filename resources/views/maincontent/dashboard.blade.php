@@ -91,20 +91,27 @@
 
         {{-- RIGHT (60%) : Products to Reorder, full height --}}
         <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-md flex flex-col">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 flex justify-between items-center">
-                ⚠️ Products to Reorder
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <svg class="h-6 w-6 text-yellow-500" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01M5 19h14L12 5 5 19z" />
+                        </svg>
+                        <span>Products to Reorder</span>
+                    </div>
 
-                @php
-                    $role = auth()->user()->employee->role->role_name ?? null;
-                @endphp
+                    @php
+                        $role = auth()->user()->employee->role->role_name ?? null;
+                    @endphp
 
-
-                @if($role === 'Admin' || $role === 'All Around Staff')
-                    <a href="{{ route('stock') }}" class="text-sm text-red-600 hover:text-red-800 font-normal">
-                        View All Alerts →
-                    </a>
-                @endif
-            </h2>
+                    @if(in_array($role, ['Admin', 'All Around Staff', 'Inventory Manager']))
+                        <a href="{{ route('stock') }}"
+                        class="text-sm text-red-600 hover:text-red-800 font-normal">
+                            View All Alerts →
+                        </a>
+                    @endif
+                </h2>
 
             <div class="divide-y divide-gray-100 flex-1 max-h-80 overflow-y-auto">
                 @forelse($lowStockProducts as $stock)
@@ -167,7 +174,7 @@
                 <p class="text-gray-500 text-sm">No products with stock available.</p>
             @endforelse
         </div>
-     @if($role === 'Admin' || $role === 'All Around Staff')
+        @if(in_array($role, ['Admin', 'All Around Staff', 'Inventory Manager']))
         <div class="text-right mt-4">
             <a href="{{ route('stock') }}" class="text-blue-600 hover:text-blue-800 font-medium text-sm">
                 View Full Inventory →

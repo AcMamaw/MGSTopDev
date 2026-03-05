@@ -229,20 +229,25 @@
                             {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }}
                         </td>
 
-                       <td class="px-4 py-3 text-center flex justify-center items-center space-x-2">
-                        @php
-                            $dotColor = match($delivery->status) {
-                                'Pending'          => 'bg-gray-500',
-                                'Out for Delivery' => 'bg-yellow-500',
-                                'For Stock In'     => 'bg-blue-500',
-                                'Re Stock'         => 'bg-blue-500',
-                                'Delivered'        => 'bg-green-500',
-                                default            => 'bg-gray-400',
-                            };
-                        @endphp
-                        <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                        <span class="text-gray-800 text-xs font-semibold">{{ $delivery->status }}</span>
-                    </td>
+                      <td class="px-4 py-3">
+                            @php
+                                $dotColor = match($delivery->status) {
+                                    'Pending'          => 'bg-gray-500',
+                                    'Out for Delivery' => 'bg-yellow-500',
+                                    'For Stock In'     => 'bg-blue-500',
+                                    'Re Stock'         => 'bg-blue-500',
+                                    'Delivered'        => 'bg-green-500',
+                                    default            => 'bg-gray-400',
+                                };
+                            @endphp
+                            <div class="flex items-center justify-center gap-2">
+                                <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
+                                <span class="text-gray-800 text-xs font-semibold whitespace-nowrap">
+                                    {{ $delivery->status }}
+                                </span>
+                            </div>
+                        </td>
+
 
                         {{-- Action button (no hover overlay) --}}
                         <td class="px-4 py-3 text-center">
@@ -402,7 +407,7 @@
                                     @endif
                                     class="px-6 py-2 rounded-full text-sm font-semibold shadow-md
                                         {{ $canStockIn
-                                            ? 'bg-green-500 text-black hover:bg-green-600 cursor-pointer'
+                                            ? 'bg-green-400 text-black hover:bg-green-500 cursor-pointer'
                                             : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
                                     @if (!$canStockIn)
                                         disabled

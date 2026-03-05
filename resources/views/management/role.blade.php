@@ -107,7 +107,7 @@
                                 <div class="flex items-center justify-center space-x-2">
                                     <button title="Edit"
                                             @click="openEditModal($event)"
-                                            class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200 flex items-center justify-center">
+                                            class="p-2 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors duration-200 flex items-center justify-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor"
                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen">
                                             <path d="M12 20h9" />

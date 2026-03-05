@@ -184,7 +184,7 @@
                                 {{ $delivery->receiver->fname ?? '-' }} {{ $delivery->receiver->lname ?? '-' }}
                             </td>
 
-                            <td class="px-4 py-3 text-center flex justify-center items-center space-x-2">
+                            <td class="px-4 py-3">
                                 @php
                                     $dotColor = match($delivery->status) {
                                         'Pending'          => 'bg-gray-500',
@@ -193,8 +193,12 @@
                                         default            => 'bg-gray-400'
                                     };
                                 @endphp
-                                <span class="w-3 h-3 rounded-full {{ $dotColor }}"></span>
-                                <span class="text-gray-800 text-xs font-semibold">{{ $delivery->status }}</span>
+                                <div class="flex items-center justify-center">
+                                    <span class="w-3 h-3 rounded-full {{ $dotColor }} mr-2 flex-shrink-0"></span>
+                                    <span class="text-gray-800 text-xs font-semibold whitespace-nowrap">
+                                        {{ $delivery->status }}
+                                    </span>
+                                </div>
                             </td>
 
                             {{-- ACTION BUTTON TO OPEN DETAILS MODAL --}}
@@ -337,7 +341,7 @@
                                         @endif
                                         class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
                                             {{ $isPending
-                                                ? 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
+                                                ? 'bg-blue-300 text-black hover:bg-blue-400 cursor-pointer'
                                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
                                         @if (!$isPending)
                                             disabled
@@ -354,7 +358,7 @@
                                         @endif
                                         class="px-5 py-2 rounded-full text-sm font-semibold shadow-md
                                             {{ $isOutForDelivery
-                                                ? 'bg-green-500 text-white hover:bg-green-600 cursor-pointer'
+                                                ? 'bg-green-400 text-white hover:bg-green-500 cursor-pointer'
                                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed' }}"
                                         @if (!$isOutForDelivery)
                                             disabled
@@ -383,7 +387,7 @@
 
             <div class="flex items-center justify-between mb-6 border-b pb-4">
                 <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    🔔 Pending Stock Adjustments
+                     Pending Stock Adjustments
                 </h2>
             </div>
 

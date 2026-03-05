@@ -227,7 +227,68 @@ button[onclick^="toggleDropdown"] {
         @endphp
 
         <!-- (Staff) -->
-        @if(in_array($role, ['All Around Staff']))
+        @if(in_array($role, ['All Around Staff', 'Inventory Manager']))
+
+          <!-- 🧰 Manage Store Dropdown -->
+        <li class="relative">
+            <button
+                onclick="toggleDropdown('maintenanceDropdown')"
+                class="dropdown-button w-full flex items-center justify-between p-3 rounded-lg text-sm font-medium transition duration-150
+                text-gray-800 hover:bg-yellow-100 hover:text-yellow-700">
+                <div class="flex items-center space-x-3">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="w-5 h-5 flex-shrink-0"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M3 9l1.5-5h15L21 9M4 9h16v11a1 1 0 01-1 1H5a1 1 0 01-1-1V9zm3 11V13h10v7" />
+                    </svg>
+                    <span class="nav-text whitespace-nowrap">Manage Store</span>
+                </div>
+                <svg id="arrow-maintenanceDropdown"
+                     class="w-4 h-4 ml-2 transition-transform duration-200"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+
+            <ul id="maintenanceDropdown"
+                onmouseenter="preventDropdownClose('maintenanceDropdown')"
+                onmouseleave="allowDropdownClose('maintenanceDropdown')"
+                class="{{ request()->routeIs('product') || request()->routeIs('category') ? 'block' : 'hidden' }} 
+                       mt-1 bg-white rounded-lg shadow-lg overflow-hidden text-sm">
+                <li>
+                    <a href="{{ route('product') }}"
+                       class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
+                       {{ request()->routeIs('product') 
+                            ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
+                            : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 7h12l-1 12H7L6 7z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 7V5a3 3 0 016 0v2" />
+                        </svg>
+                        <span>Products</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('category') }}"
+                       class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
+                       {{ request()->routeIs('category') 
+                            ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
+                            : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <rect x="13" y="3" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <rect x="3" y="13" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                            <rect x="13" y="13" width="8" height="8" rx="1" ry="1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                        </svg>
+                        <span>Categories</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
 
         <!-- 📦 Inventory Dropdown -->
         <li class="relative">
@@ -372,62 +433,84 @@ button[onclick^="toggleDropdown"] {
         </li>
         @endif
 
-        <!-- (Cashier Only) -->
+     <!-- (Cashier Only) -->
         @if($role === 'Cashier')
-        <li>
-            <a href="{{ route('purchaseorder') }}"
-               class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-               {{ request()->routeIs('purchaseorder') 
-                    ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
-                    : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     class="w-5 h-5 flex-shrink-0"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6H19m-6 0a1 1 0 11-2 0m2 0a1 1 0 01-2 0" />
-                </svg>
-                <span class="nav-text">Sales</span>
-            </a>
-        </li>
+            <li>
+                <a href="{{ route('customer') }}"
+                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                {{ request()->routeIs('customer') 
+                        ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
+                        : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                        class="w-5 h-5 flex-shrink-0">
+                        <circle cx="12" cy="7" r="3"/>
+                        <path d="M6 20v-2c0-2 3-4 6-4s6 2 6 4v2H6z"/>
+                        <circle cx="5" cy="10" r="2.5"/>
+                        <path d="M1 20v-2c0-1.5 2.5-3 5-3"/>
+                        <circle cx="19" cy="10" r="2.5"/>
+                        <path d="M23 20v-2c0-1.5-2.5-3-5-3"/>
+                    </svg>
+                    <span class="nav-text">Customer</span>
+                </a>
+            </li>
 
-        <li>
-            <a href="{{ route('reports') }}"
-               class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-               {{ request()->routeIs('reports') 
-                    ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
-                    : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     class="w-5 h-5 flex-shrink-0"
-                     fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor" stroke-width="1.9">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M9 2h6a2 2 0 012 2h1a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h1a2 2 0 012-2z" />
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M9 8h6M9 12h6M9 16h6M7 12l1 1 2-2M7 16l1 1 2-2" />
-                </svg>
-                <span class="nav-text">Reports</span>
-            </a>
-        </li>
+            <li>
+                <a href="{{ route('purchaseorder') }}"
+                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                {{ request()->routeIs('purchaseorder') 
+                        ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
+                        : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5 flex-shrink-0"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6H19m-6 0a1 1 0 11-2 0m2 0a1 1 0 01-2 0" />
+                    </svg>
+                    <span class="nav-text">Sales</span>
+                </a>
+            </li>
 
-        <li>
-            <a href="{{ route('request') }}"
-               class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
-               {{ request()->routeIs('request') 
-                    ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
-                    : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     class="w-5 h-5 flex-shrink-0"
-                     fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor" stroke-width="1.9">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M4 4h16v12H6l-2 2V4z" />
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M6 7h12M6 11h8" />
-                </svg>
-                <span class="nav-text">Requests</span>
-            </a>
-        </li>
+            <li>
+                <a href="{{ route('reports') }}"
+                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                {{ request()->routeIs('reports') 
+                        ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
+                        : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5 flex-shrink-0"
+                        fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="1.9">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 2h6a2 2 0 012 2h1a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h1a2 2 0 012-2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 8h6M9 12h6M9 16h6M7 12l1 1 2-2M7 16l1 1 2-2" />
+                    </svg>
+                    <span class="nav-text">Reports</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="{{ route('request') }}"
+                class="nav-link flex items-center space-x-3 p-3 rounded-lg text-sm font-medium transition duration-150
+                {{ request()->routeIs('request') 
+                        ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
+                        : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5 flex-shrink-0"
+                        fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="1.9">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 4h16v12H6l-2 2V4z" />
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M6 7h12M6 11h8" />
+                    </svg>
+                    <span class="nav-text">Requests</span>
+                </a>
+            </li>
         @endif
+
 
         <!-- (Admin Only) -->
         @if($role === 'Admin')
@@ -511,23 +594,6 @@ button[onclick^="toggleDropdown"] {
                             <path d="M23 20v-2c0-1.5-2.5-3-5-3"/>
                         </svg>
                         <span>Customer</span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{{ route('role') }}"
-                       class="block px-4 py-2 flex items-center space-x-2 rounded-lg text-sm font-medium transition duration-150
-                       {{ request()->routeIs('role') 
-                            ? 'bg-yellow-100 text-yellow-700 shadow-md hover:bg-yellow-200' 
-                            : 'text-gray-800 hover:bg-yellow-100 hover:text-yellow-700' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                             class="w-5 h-4 flex-shrink-0">
-                            <path d="M12 15.5a3.5 3.5 0 1 0 0-7a3.5 3.5 0 0 0 0 7z"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33a1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        </svg>
-                        <span>Roles</span>
                     </a>
                 </li>
             </ul>

@@ -153,7 +153,7 @@
                                         '{{ $emp->user->password ?? '' }}'
                                     )"
                                     title="Account Info"
-                                    class="p-2 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors duration-200 flex items-center justify-center">
+                                    class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200 flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2">
                                         <rect x="6" y="11" width="12" height="10" rx="2" ry="2"/>
                                         <path d="M8 11V7a4 4 0 0 1 8 0v4" />
@@ -164,7 +164,7 @@
                                 <button
                                     title="Edit"
                                     @click="openEditModal($event)"
-                                    class="p-2 rounded-full text-green-500 hover:text-green-700 hover:bg-green-100 transition-colors duration-200 flex items-center justify-center">
+                                    class="p-2 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-100 transition-colors duration-200 flex items-center justify-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor"
                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 20h9" />
@@ -521,7 +521,7 @@ function employeePage() {
                             <button
                                 onclick="Alpine.store('emp').openUserModal('${data.username ?? ''}', '${data.plain_password ?? ''}', '${data.password_hash ?? ''}')"
                                 title="Account Info"
-                                class="p-2 rounded-full text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors duration-200">
+                                class="p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="6" y="11" width="12" height="10" rx="2" ry="2"/>
                                     <path d="M8 11V7a4 4 0 0 1 8 0v4" />
@@ -531,7 +531,7 @@ function employeePage() {
                             </button>
                             <button title="Edit"
                                 onclick="Alpine.store('emp').openEditModal(event)"
-                                class="p-2 rounded-full text-green-400 hover:text-green-600 hover:bg-green-100 transition-colors duration-200">
+                                class="p-2 rounded-full text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors duration-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M12 20h9"/>
                                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
