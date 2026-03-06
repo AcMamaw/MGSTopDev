@@ -6,7 +6,8 @@ RUN apt-get update && apt-get install -y \
     curl zip unzip git libpng-dev libonig-dev libxml2-dev ca-certificates \
     && docker-php-ext-install pdo pdo_mysql mysqli \
     && curl -sS https://getcomposer.org/installer | php \
-    && mv composer.phar /usr/local/bin/composer
+    && mv composer.phar /usr/local/bin/composer \
+    && curl -o /var/www/rds-ca.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 
 COPY . .
 
