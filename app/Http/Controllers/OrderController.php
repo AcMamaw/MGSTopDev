@@ -12,6 +12,7 @@ use App\Models\OrderDetail;
 use App\Models\Stockout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -76,6 +77,8 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         try {
+            Log::info('Order store request received', $request->all()); // DEBUG: Log all incoming data
+
             $validated = $request->validate([
                 'customer_id'       => 'required|exists:customers,customer_id',
                 'order_date'        => 'required|date',
@@ -125,6 +128,12 @@ class OrderController extends Controller
                 $computedProfit = round($computedProfit, 2);
                 $clientTotal    = round((float) $validated['total_amount'], 2);
 
+                Log::info('Total calculation', [
+                    'client_total' => $clientTotal,
+                    'computed_total' => $computedTotal,
+                    'items' => $validated['items']
+                ]);
+
                 if (abs($clientTotal - $computedTotal) > 0.01) {
                     throw new \Exception("Total mismatch. Client total ({$clientTotal}) does not equal computed total ({$computedTotal}).");
                 }
@@ -167,13 +176,13 @@ class OrderController extends Controller
 
                 // 4) Create Order (now with category_id)
                 $order = Order::create([
-                    'customer_id'  => $validated['customer_id'],
-                    'category_id'  => $categoryId,
-                    'order_date'   => $validated['order_date'],
-                    'ordered_by'   => auth()->user()->employee->employee_id,
-                    'product_type' => $orderProductTypeText,
-                    'total_amount' => $amount,
-                    'status'       => $orderStatus,
+                    'customer_id'   => $validated['customer_id'],
+                    'category_id'   => $categoryId,
+                    'order_date'    => $validated['order_date'],
+                    'ordered_by'    => auth()->user()->employee->employee_id,
+                    'product_type'  => $orderProductTypeText,
+                    'total_amount'  => $amount,
+                    'status'        => $orderStatus,
                 ]);
 
                 // 5) Create OrderDetails and handle stock
@@ -267,20 +276,26 @@ class OrderController extends Controller
                 'payment' => $payment,
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validation failed: ' . json_encode($e->errors()),
                 'errors'  => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Order Store Error: ' . $e->getMessage());
+            Log::error('Order Store Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
+                'debug' => 'Check storage/logs/laravel.log',
             ], 500);
         }
     }
 
+    // ... [REST OF YOUR METHODS STAY EXACTLY THE SAME - storeCustomer, markAsCompleted, etc.]
     public function storeCustomer(Request $request)
     {
         $validated = $request->validate([
@@ -323,7 +338,7 @@ class OrderController extends Controller
                     }
 
                     if ($inventory->current_stock < $orderDetail->quantity) {
-                        throw new \Exception("Insufficient stock for: {$inventory->product->product_name}. Available: {$inventory->current_stock}, Required: {$orderDetail->quantity}");
+                        throw new \Exception("Insufficient stock for: {$orderDetail->product->product_name}. Available: {$inventory->current_stock}, Required: {$orderDetail->quantity}");
                     }
 
                     $inventory->current_stock -= $orderDetail->quantity;
@@ -354,7 +369,7 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Mark as Completed Error: ' . $e->getMessage());
+            Log::error('Mark as Completed Error: ' . $e->getMessage());
             
             return response()->json([
                 'success' => false,
@@ -366,13 +381,13 @@ class OrderController extends Controller
     public function updatePayment(Request $request)
     {
         $validated = $request->validate([
-            'order_id'         => 'required|exists:orders,order_id',
-            'cash'             => 'required|numeric|min:0',
-            'balance'          => 'required|numeric|min:0',
-            'status'           => 'required|in:Fully Paid,Partial',
-            'change_amount'    => 'required|numeric|min:0',
-            'payment_method'   => 'required|in:Cash,GCash',
-            'reference_number' => 'nullable|string|max:255',
+            'order_id'          => 'required|exists:orders,order_id',
+            'cash'              => 'required|numeric|min:0',
+            'balance'           => 'required|numeric|min:0',
+            'status'            => 'required|in:Fully Paid,Partial',
+            'change_amount'     => 'required|numeric|min:0',
+            'payment_method'    => 'required|in:Cash,GCash',
+            'reference_number'  => 'nullable|string|max:255',
         ]);
 
         try {
@@ -391,12 +406,12 @@ class OrderController extends Controller
 
             // Update payment
             $payment->update([
-                'cash'            => $validated['cash'],
-                'balance'         => $validated['balance'],
-                'status'          => $validated['status'],
-                'change_amount'   => $validated['change_amount'],
-                'payment_method'  => $validated['payment_method'],
-                'reference_number'=> $validated['reference_number'],
+                'cash'             => $validated['cash'],
+                'balance'          => $validated['balance'],
+                'status'           => $validated['status'],
+                'change_amount'    => $validated['change_amount'],
+                'payment_method'   => $validated['payment_method'],
+                'reference_number' => $validated['reference_number'],
             ]);
 
             // Reload with fresh values

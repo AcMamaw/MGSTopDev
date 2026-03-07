@@ -241,8 +241,8 @@
         <div class="flex items-center justify-between mb-6 border-b pb-3">
             <h2 class="text-2xl font-bold text-gray-800">
                 Order Details - ID:
-                <span class="text-black-600"
-                      x-text="selectedOrderId ? ('O' + String(selectedOrderId).padStart(3, '0')) : 'O000'"></span>
+               <!-- FIXED -->
+                <span class="text-black-600" x-text="selectedOrderId ? ('O' + selectedOrderId.toString().padStart(3, '0')) : 'O000'"></span>
             </h2>
 
             <button
