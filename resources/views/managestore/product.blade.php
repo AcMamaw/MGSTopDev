@@ -324,6 +324,10 @@
 <script>
 function productPage() {
     return {
+        // toast
+        showToast: false,
+        toastMessage: '',
+        
         // product modal
         showProductModal: false,
         isEdit: false,
@@ -422,17 +426,26 @@ function productPage() {
                 body: formData
             })
             .then(res => res.json())
-            .then(p => {
-                const tbody = document.getElementById('product-table-body');
-                if (!tbody) return;
-                const row = Array.from(tbody.querySelectorAll('tr'))
-                    .find(r => r.dataset.id == this.imageProductId);
-                if (row) {
-                    row.dataset.image_path = p.image_path || '';
-                }
-                this.closeImageModal();
-                alert('Product image updated successfully!');
+           .then(p => {
+            if (p.error) {
+                alert('Upload failed: ' + p.error);
+                return;
+            }
+            const tbody = document.getElementById('product-table-body');
+            if (!tbody) return;
+            const row = Array.from(tbody.querySelectorAll('tr'))
+                .find(r => r.dataset.id == this.imageProductId);
+            if (row && p.image_path) {
+                row.dataset.image_path = p.image_path;
+            }
+            this.imagePreview = p.image_path || this.imagePreview;
+            this.closeImageModal();
+            alert('Product image updated successfully!');
             })
+            .catch(err => {
+                console.error('Upload error:', err);
+                alert('Upload failed. Check console for details.');
+            });
             .catch(console.error);
         },
 
