@@ -19,6 +19,7 @@ class EmployeeController extends Controller
     {
         $this->fileUploadService = $fileUploadService;
     }
+
     public function index()
     {
         $employees = Employee::with(['role', 'user'])->get();
@@ -54,14 +55,14 @@ class EmployeeController extends Controller
             }
         }
 
-        // create employee (includes alt_email)
+        // Create employee
         $employee = Employee::create($data);
 
-        // generate credentials
+        // Generate credentials
         $plainPassword = substr($employee->fname, 0, 3) . substr($employee->lname, 0, 3) . '123';
-        $username      = $employee->email;   // you can change if you want
+        $username      = $employee->email;
 
-        // create user record
+        // Create user record
         $user = User::create([
             'employee_id'    => $employee->employee_id,
             'username'       => $username,
@@ -70,19 +71,23 @@ class EmployeeController extends Controller
             'plain_password' => $plainPassword,
         ]);
 
-        // reload employee with role relation
+        // Reload employee with role relation
         $employee = Employee::with('role')->find($employee->employee_id);
 
-        // decide where to send
+        // ✅ Send to alt_email first, fallback to email
         $to = $employee->alt_email ?: $employee->email;
 
         if ($to) {
-            // send email with credentials
-            Mail::to($to)->send(new SendCredentialsMail([
-                'email'    => $user->email,
-                'username' => $user->username,
-                'password' => $user->plain_password,
-            ]));
+            try {
+                Mail::to($to)->send(new SendCredentialsMail([
+                    'email'    => $user->email,
+                    'username' => $user->username,
+                    'password' => $user->plain_password,
+                ]));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send credentials email: ' . $e->getMessage());
+                // Don't fail the whole request if email fails
+            }
         }
 
         return response()->json([
@@ -125,8 +130,8 @@ class EmployeeController extends Controller
 
     public function archive($id)
     {
-        $employee           = Employee::findOrFail($id);
-        $employee->archive  = 'Archived';
+        $employee          = Employee::findOrFail($id);
+        $employee->archive = 'Archived';
         $employee->save();
 
         return response()->json(['status' => 'ok']);
@@ -134,8 +139,8 @@ class EmployeeController extends Controller
 
     public function unarchive($id)
     {
-        $employee           = Employee::findOrFail($id);
-        $employee->archive  = null;
+        $employee          = Employee::findOrFail($id);
+        $employee->archive = null;
         $employee->save();
 
         return response()->json(['status' => 'ok']);
@@ -155,8 +160,8 @@ class EmployeeController extends Controller
             'username' => 'required|string',
         ]);
 
-        $user = User::where('username', $request->username)->firstOrFail();
-        $employee = $user->employee; // needs relation
+        $user     = User::where('username', $request->username)->firstOrFail();
+        $employee = $user->employee;
 
         $plain = substr($employee->fname, 0, 3) . substr($employee->lname, 0, 3) . rand(100, 999);
 
@@ -164,16 +169,51 @@ class EmployeeController extends Controller
         $user->plain_password = $plain;
         $user->save();
 
+        // ✅ Send to alt_email first, fallback to email
         $to = $employee->alt_email ?: $employee->email;
 
         if ($to) {
-            Mail::to($to)->send(new SendCredentialsMail([
-                'email'    => $user->email,
-                'username' => $user->username,
-                'password' => $plain,
-            ]));
+            try {
+                Mail::to($to)->send(new SendCredentialsMail([
+                    'email'    => $user->email,
+                    'username' => $user->username,
+                    'password' => $plain,
+                ]));
+            } catch (\Exception $e) {
+                \Log::error('Failed to send reset password email: ' . $e->getMessage());
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Password reset but email failed: ' . $e->getMessage(),
+                ], 500);
+            }
         }
 
         return response()->json(['status' => 'ok']);
+    }
+
+    // ✅ ADDED: sendCredentials method (called from blade JS)
+    public function sendCredentials(Request $request)
+    {
+        $request->validate([
+            'to'       => 'required|email',
+            'username' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        try {
+            Mail::to($request->to)->send(new SendCredentialsMail([
+                'email'    => $request->username,
+                'username' => $request->username,
+                'password' => $request->password,
+            ]));
+
+            return response()->json(['status' => 'ok']);
+        } catch (\Exception $e) {
+            \Log::error('sendCredentials failed: ' . $e->getMessage());
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
