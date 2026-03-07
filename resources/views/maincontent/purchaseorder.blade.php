@@ -241,8 +241,8 @@
         <div class="flex items-center justify-between mb-6 border-b pb-3">
             <h2 class="text-2xl font-bold text-gray-800">
                 Order Details - ID:
-               <!-- FIXED -->
-                <span class="text-black-600" x-text="selectedOrderId ? ('O' + String(selectedOrderId).padStart(3, '0')) : 'O000'"></span>     
+                <span class="text-black-600"
+                      x-text="'O' + selectedOrderId.toString().padStart(3, '0')"></span>
             </h2>
 
             <button
@@ -469,17 +469,11 @@ function paymentComponent() {
         paymentReference: '',
 
         // Selected Order
-        selectedOrderId: 0,
-        // Receipt state
+        selectedOrderId: null,
+
+        // ===== RECEIPT STATE (NEW) =====
         showReceipt: false,
         showSuccess: false,
-
-        // ===== S3 UPLOAD STATE =====
-        uploading: false,
-        uploadSuccess: false,
-        uploadError: '',
-        uploadedUrl: '',
-
         receipt: {
             receipt_number: null,
             items: [],
@@ -503,66 +497,15 @@ function paymentComponent() {
             return hex || '';
         },
 
-        // ===== PRINT + UPLOAD TO S3 via existing FileUploadController route =====
-        async printAndUploadReceipt() {
-            // Print first
-            window.print();
-
-            // Then upload HTML receipt to S3
-            this.uploading     = true;
-            this.uploadSuccess = false;
-            this.uploadError   = '';
-            this.uploadedUrl   = '';
-
-            try {
-                const csrfToken   = document.querySelector('meta[name="csrf-token"]')?.content;
-                const receiptHtml = document.getElementById('printableReceipt').innerHTML;
-
-                const response = await fetch('{{ route("upload.receipt.pdf") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        receipt_html:   receiptHtml,
-                        order_id:       this.selectedOrderId,
-                        receipt_number: this.receipt.receipt_number,
-                    }),
-                });
-
-                // Guard against HTML 500 page instead of JSON
-                const ct = response.headers.get('content-type') || '';
-                if (!ct.includes('application/json')) {
-                    throw new Error('Server error — check Laravel logs (set APP_DEBUG=true in .env).');
-                }
-
-                const data = await response.json();
-
-                if (data.success) {
-                    this.uploadSuccess = true;
-                    this.uploadedUrl   = data.url || '';
-                } else {
-                    this.uploadError = 'Upload failed: ' + (data.message || 'Unknown error');
-                }
-            } catch (err) {
-                console.error('S3 upload error:', err);
-                this.uploadError = 'Upload error: ' + err.message;
-            } finally {
-                this.uploading = false;
-            }
-        },
-
-        // Filter orders
+        // Filter orders (set logical visibility only)
         filterOrders() {
             const rows = document.querySelectorAll('.order-row');
             let visibleCount = 0;
 
             rows.forEach(row => {
-                const status     = row.getAttribute('data-status');
+                const status = row.getAttribute('data-status');
                 const searchText = row.getAttribute('data-search').toLowerCase();
-                const query      = this.searchQuery.toLowerCase();
+                const query = this.searchQuery.toLowerCase();
 
                 const matchesStatus = this.statusFilter === 'all' || status === this.statusFilter;
                 const matchesSearch = !query || searchText.includes(query);
@@ -585,14 +528,14 @@ function paymentComponent() {
             }
         },
 
-        // Assign Job Order
+        // Assign Job Order Methods (unchanged)
         async openAssignJobOrder(orderId) {
-            this.selectedOrderId     = orderId;
+            this.selectedOrderId = orderId;
             this.showAssignJobOrderModal = true;
-            this.selectedEmployees   = [];
-            this.selectAllEmployees  = false;
-            this.employees           = [];
-            this.employeeSearch      = '';
+            this.selectedEmployees = [];
+            this.selectAllEmployees = false;
+            this.employees = [];
+            this.employeeSearch = '';
 
             try {
                 const res = await fetch('/employees/active', {
@@ -603,6 +546,7 @@ function paymentComponent() {
                 });
 
                 if (!res.ok) {
+                    const errorText = await res.text();
                     alert('Failed to load employees: ' + res.statusText);
                     this.employees = [];
                     return;
@@ -626,10 +570,11 @@ function paymentComponent() {
             if (this.selectAllEmployees) {
                 const filteredEmployees = this.employees.filter(e => {
                     if (!this.employeeSearch) return true;
-                    const search   = this.employeeSearch.toLowerCase();
+                    const search = this.employeeSearch.toLowerCase();
                     const fullName = (e.fname + ' ' + e.lname).toLowerCase();
                     return fullName.includes(search);
                 });
+
                 this.selectedEmployees = filteredEmployees.map(e => e.employee_id);
             } else {
                 this.selectedEmployees = [];
@@ -652,7 +597,7 @@ function paymentComponent() {
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({
-                    order_id:  this.selectedOrderId,
+                    order_id: this.selectedOrderId,
                     employees: this.selectedEmployees
                 })
             })
@@ -673,13 +618,13 @@ function paymentComponent() {
             });
         },
 
-        // Payment modal
+        // Payment Methods
         openPaymentModal(orderId, balance) {
-            this.selectedOrderId          = orderId;
-            this.paymentBalance           = Number(balance) || 0; // FIX: always Number, never null
-            this.paymentCash              = 0;
-            this.paymentMethod            = '';
-            this.paymentReference         = '';
+            this.selectedOrderId = orderId;
+            this.paymentBalance = balance;
+            this.paymentCash = 0;
+            this.paymentMethod = '';
+            this.paymentReference = '';
             this.showCompletePaymentModal = true;
         },
 
@@ -693,19 +638,19 @@ function paymentComponent() {
                 return;
             }
 
-            const cashReceived   = Number(this.paymentCash)   || 0;
+            const cashReceived   = Number(this.paymentCash) || 0;
             const currentBalance = Number(this.paymentBalance) || 0;
             const newBalance     = Math.max(currentBalance - cashReceived, 0);
             const changeAmount   = Math.max(cashReceived - currentBalance, 0);
             const paymentStatus  = newBalance === 0 ? 'Fully Paid' : 'Partial';
 
             const paymentData = {
-                order_id:         this.selectedOrderId,
-                cash:             cashReceived,
-                balance:          newBalance,
-                status:           paymentStatus,
-                change_amount:    changeAmount,
-                payment_method:   this.paymentMethod,
+                order_id: this.selectedOrderId,
+                cash: cashReceived,
+                balance: newBalance,
+                status: paymentStatus,
+                change_amount: changeAmount,
+                payment_method: this.paymentMethod,
                 reference_number: this.paymentMethod === 'GCash' ? this.paymentReference : null
             };
 
@@ -720,17 +665,7 @@ function paymentComponent() {
                 },
                 body: JSON.stringify(paymentData)
             })
-            .then(response => {
-                // FIX: guard against HTML 500 error page instead of JSON
-                const ct = response.headers.get('content-type') || '';
-                if (!ct.includes('application/json')) {
-                    return response.text().then(text => {
-                        console.error('Non-JSON response:', text.substring(0, 300));
-                        throw new Error('Server error — set APP_DEBUG=true in .env to see details.');
-                    });
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (!data.success) {
                     alert(data.message || 'Failed to update payment.');
@@ -740,25 +675,20 @@ function paymentComponent() {
                 const pay   = data.payment || {};
                 const order = data.order   || {};
 
-                // Populate receipt — all values wrapped in Number() to prevent null crashes
+                // Fill minimal receipt info
                 this.receipt.receipt_number   = pay.payment_id || pay.id || null;
-                this.receipt.status           = pay.status           || paymentStatus;
-                this.receipt.payment_method   = pay.payment_method   || this.paymentMethod;
+                this.receipt.status           = pay.status || paymentStatus;
+                this.receipt.payment_method   = pay.payment_method || this.paymentMethod;
                 this.receipt.reference_number = pay.reference_number || this.paymentReference || null;
-                this.receipt.payment_date     = pay.payment_date     || new Date().toISOString().slice(0, 10);
-                this.receipt.amount           = Number(pay.amount        ?? currentBalance);
-                this.receipt.cash             = Number(pay.cash          ?? cashReceived);
+                this.receipt.payment_date     = pay.payment_date || new Date().toISOString().slice(0, 10);
+                this.receipt.amount           = Number(pay.amount ?? currentBalance);
+                this.receipt.cash             = Number(pay.cash ?? cashReceived);
                 this.receipt.change_amount    = Number(pay.change_amount ?? changeAmount);
-                this.receipt.balance          = Number(pay.balance       ?? newBalance);
-                this.receipt.customer_name    = order.customer_name    || '';
+                this.receipt.balance          = Number(pay.balance ?? newBalance);
+
+                this.receipt.customer_name    = order.customer_name || '';
                 this.receipt.customer_address = order.customer_address || '';
                 this.receipt.items            = Array.isArray(order.items) ? order.items : [];
-
-                // Reset S3 upload state for fresh receipt
-                this.uploading     = false;
-                this.uploadSuccess = false;
-                this.uploadError   = '';
-                this.uploadedUrl   = '';
 
                 this.showCompletePaymentModal = false;
                 this.showReceipt = true;
@@ -773,8 +703,8 @@ function paymentComponent() {
 
 // ==================== PAGINATION + INITIAL ORDER ====================
 document.addEventListener('DOMContentLoaded', function() {
-    const orderRowsPerPage     = 5;
-    const orderTableBody       = document.querySelector('#order-table tbody');
+    const orderRowsPerPage   = 5;
+    const orderTableBody     = document.querySelector('#order-table tbody');
     const orderPaginationLinks = document.getElementById('order-pagination-links');
     const orderPaginationInfo  = document.getElementById('order-pagination-info');
 
@@ -784,6 +714,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let orderCurrentPage = 1;
 
+    // Sort rows once by status (Released → In Progress → Pending)
     function orderInitialRows() {
         const rows = Array.from(orderTableBody.querySelectorAll('.order-row'));
         rows.forEach(r => { if (!r.dataset.visible) r.dataset.visible = "true"; });
@@ -804,14 +735,16 @@ document.addEventListener('DOMContentLoaded', function() {
         rows.forEach(r => orderTableBody.appendChild(r));
     }
 
+    // Get rows that are logically visible (for pagination)
     window.getVisibleOrderRows = function() {
         return Array.from(orderTableBody.querySelectorAll('.order-row'))
             .filter(row => row.dataset.visible !== "false");
     };
 
+    // Show a page
     window.showOrderPage = function(page) {
-        const visibleRows     = window.getVisibleOrderRows();
-        const totalResults    = visibleRows.length;
+        const visibleRows    = window.getVisibleOrderRows();
+        const totalResults   = visibleRows.length;
         const orderTotalPages = Math.ceil(totalResults / orderRowsPerPage) || 1;
 
         if (page < 1) page = 1;
@@ -832,6 +765,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.renderOrderPagination(orderTotalPages, totalResults);
     };
 
+    // Render pagination buttons + info
     window.renderOrderPagination = function(totalPages, totalResults) {
         orderPaginationLinks.innerHTML = '';
 
