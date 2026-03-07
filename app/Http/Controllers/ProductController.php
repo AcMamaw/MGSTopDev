@@ -9,7 +9,6 @@ use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
 use App\Services\FileUploadService;
 
-
 class ProductController extends Controller
 {
     protected $fileUploadService;
@@ -18,6 +17,7 @@ class ProductController extends Controller
     {
         $this->fileUploadService = $fileUploadService;
     }
+
     // List products + suppliers + categories for dropdown
     public function index()
     {
@@ -48,15 +48,15 @@ class ProductController extends Controller
         $product->load(['supplier', 'category']);
 
         return response()->json([
-            'product_id'     => $product->product_id,
-            'supplier_id'    => $product->supplier_id,
-            'supplier_name'  => $product->supplier->supplier_name ?? '',
-            'category_id'    => $product->category_id,
-            'category_name'  => $product->category->category_name ?? '',
-            'product_name'   => $product->product_name,
-            'description'    => $product->description,
-            'unit'           => $product->unit,
-            'markup_rule'    => $product->markup_rule,
+            'product_id'    => $product->product_id,
+            'supplier_id'   => $product->supplier_id,
+            'supplier_name' => $product->supplier->supplier_name ?? '',
+            'category_id'   => $product->category_id,
+            'category_name' => $product->category->category_name ?? '',
+            'product_name'  => $product->product_name,
+            'description'   => $product->description,
+            'unit'          => $product->unit,
+            'markup_rule'   => $product->markup_rule,
         ]);
     }
 
@@ -80,15 +80,15 @@ class ProductController extends Controller
         $product->load(['supplier', 'category']);
 
         return response()->json([
-            'product_id'     => $product->product_id,
-            'supplier_id'    => $product->supplier_id,
-            'supplier_name'  => $product->supplier->supplier_name ?? '',
-            'category_id'    => $product->category_id,
-            'category_name'  => $product->category->category_name ?? '',
-            'product_name'   => $product->product_name,
-            'description'    => $product->description,
-            'unit'           => $product->unit,
-            'markup_rule'    => $product->markup_rule,
+            'product_id'    => $product->product_id,
+            'supplier_id'   => $product->supplier_id,
+            'supplier_name' => $product->supplier->supplier_name ?? '',
+            'category_id'   => $product->category_id,
+            'category_name' => $product->category->category_name ?? '',
+            'product_name'  => $product->product_name,
+            'description'   => $product->description,
+            'unit'          => $product->unit,
+            'markup_rule'   => $product->markup_rule,
         ]);
     }
 
@@ -98,38 +98,95 @@ class ProductController extends Controller
         $products = Product::with(['supplier', 'category'])->get();
         return response()->json($products);
     }
-  
+
+    // -------------------------------------------------------
+    // Upload product image to Cloudinary (FIXED)
+    // -------------------------------------------------------
     public function updateImage(Request $request, Product $product)
     {
         $request->validate([
-            'image' => 'required|image|max:2048', // 2MB
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
-        // Delete old Cloudinary image if exists
-        if ($product->image_path && str_starts_with($product->image_path, 'https://res.cloudinary.com')) {
-            // Extract public_id from URL if stored
-            // You might want to store public_id separately in the future
-        }
+        try {
+            // Build Cloudinary upload URL directly (no package needed)
+            $cloudName = env('CLOUDINARY_CLOUD_NAME', 'dlhcczwfz');
+            $apiKey    = env('CLOUDINARY_API_KEY',    '896181671383421');
+            $apiSecret = env('CLOUDINARY_API_SECRET', 'H2xrDLLGgPTU8Tr6HjGQBrMu5yY');
 
-        // Upload to Cloudinary
-        $uploadResult = $this->fileUploadService->uploadProductImage($request->file('image'));
+            $file      = $request->file('image');
+            $filePath  = $file->getRealPath();
+            $publicId  = 'products/product_' . $product->product_id . '_' . time();
+            $timestamp = time();
 
-        if (!$uploadResult['success']) {
+            // Build signature
+            $paramsToSign = [
+                'public_id' => $publicId,
+                'timestamp' => $timestamp,
+            ];
+            ksort($paramsToSign);
+
+            $signatureString = '';
+            foreach ($paramsToSign as $key => $value) {
+                $signatureString .= $key . '=' . $value . '&';
+            }
+            $signatureString = rtrim($signatureString, '&') . $apiSecret;
+            $signature = sha1($signatureString);
+
+            // Upload via multipart POST to Cloudinary REST API
+            $uploadUrl = "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload";
+
+            $postFields = [
+                'file'       => new \CURLFile($filePath, $file->getMimeType(), $file->getClientOriginalName()),
+                'api_key'    => $apiKey,
+                'timestamp'  => $timestamp,
+                'public_id'  => $publicId,
+                'signature'  => $signature,
+            ];
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $uploadUrl);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // needed on some servers
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($curlError) {
+                throw new \Exception('cURL error: ' . $curlError);
+            }
+
+            $result = json_decode($response, true);
+
+            if ($httpCode !== 200 || !isset($result['secure_url'])) {
+                $errMsg = $result['error']['message'] ?? 'Unknown Cloudinary error';
+                throw new \Exception('Cloudinary error: ' . $errMsg);
+            }
+
+            // Save URL to DB
+            $product->image_path = $result['secure_url'];
+            $product->save();
+
             return response()->json([
-                'error' => 'Failed to upload image: ' . $uploadResult['error']
+                'success'    => true,
+                'product_id' => $product->product_id,
+                'image_path' => $product->image_path,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Cloudinary upload failed for product ' . $product->product_id . ': ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Image upload failed: ' . $e->getMessage(),
             ], 500);
         }
-
-        $product->image_path = $uploadResult['url'];
-        $product->save();
-
-        return response()->json([
-            'product_id' => $product->product_id,
-            'image_path' => $product->image_path,
-        ]);
     }
 
-      public function archive(Product $product)
+    public function archive(Product $product)
     {
         $product->archive = 'Archived';
         $product->save();
@@ -151,5 +208,4 @@ class ProductController extends Controller
 
         return response()->json(['status' => 'ok']);
     }
-
 }

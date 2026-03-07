@@ -303,10 +303,11 @@
                     Cancel
                 </button>
 
-                <button @click="uploadImage()"
+                <button id="upload-image-btn"
+                        @click="uploadImage()"
                         :disabled="!imageFile"
                         :class="{'opacity-50 cursor-not-allowed': !imageFile}"
-                        class="px-6 py-2 rounded-full bg-yellow-500 text-black font-bold hover:bg-yellow-600 transition shadow-md shadow-blue-200/50">
+                        class="px-6 py-2 rounded-full bg-yellow-500 ...">
                     Upload & Save
                 </button>
             </div>
@@ -321,10 +322,12 @@
     </div>
 </div>
 
+
 <script>
 function productPage() {
     return {
-        // product modal
+        showToast: false,
+        toastMessage: '',
         showProductModal: false,
         isEdit: false,
         editingId: null,
@@ -405,6 +408,7 @@ function productPage() {
             reader.readAsDataURL(file);
         },
 
+        // ✅ FIXED uploadImage() — handles errors, shows toast, no more 500 silent fail
         uploadImage() {
             if (!this.imageProductId || !this.imageFile) {
                 alert('Please choose an image file first.');
@@ -414,6 +418,13 @@ function productPage() {
             const formData = new FormData();
             formData.append('image', this.imageFile);
 
+            // Disable upload button while uploading
+            const uploadBtn = document.getElementById('upload-image-btn');
+            if (uploadBtn) {
+                uploadBtn.disabled = true;
+                uploadBtn.textContent = 'Uploading...';
+            }
+
             fetch('{{ route("products.updateImage", 0) }}'.replace('/0', '/' + this.imageProductId), {
                 method: 'POST',
                 headers: {
@@ -421,19 +432,50 @@ function productPage() {
                 },
                 body: formData
             })
-            .then(res => res.json())
-            .then(p => {
-                const tbody = document.getElementById('product-table-body');
-                if (!tbody) return;
-                const row = Array.from(tbody.querySelectorAll('tr'))
-                    .find(r => r.dataset.id == this.imageProductId);
-                if (row) {
-                    row.dataset.image_path = p.image_path || '';
+            .then(res => {
+                // ✅ Check HTTP status before parsing JSON
+                if (!res.ok) {
+                    return res.json().then(errData => {
+                        throw new Error(errData.message || 'Server error ' + res.status);
+                    }).catch(() => {
+                        throw new Error('Server returned error ' + res.status + '. Check Laravel logs.');
+                    });
                 }
-                this.closeImageModal();
-                alert('Product image updated successfully!');
+                return res.json();
             })
-            .catch(console.error);
+            .then(p => {
+                if (!p.success) {
+                    throw new Error(p.message || 'Upload failed');
+                }
+
+                // ✅ Update the row's image_path dataset
+                const tbody = document.getElementById('product-table-body');
+                if (tbody) {
+                    const row = Array.from(tbody.querySelectorAll('tr'))
+                        .find(r => r.dataset.id == this.imageProductId);
+                    if (row) {
+                        row.dataset.image_path = p.image_path || '';
+                    }
+                }
+
+                this.closeImageModal();
+
+                // ✅ Show green toast instead of alert
+                this.toastMessage = 'Product image updated successfully!';
+                this.showToast = true;
+                setTimeout(() => { this.showToast = false; }, 3000);
+            })
+            .catch(err => {
+                console.error('Upload error:', err);
+                alert('Upload failed: ' + err.message);
+            })
+            .finally(() => {
+                // Re-enable button
+                if (uploadBtn) {
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = 'Upload & Save';
+                }
+            });
         },
 
         addProduct() {
@@ -454,7 +496,6 @@ function productPage() {
                     product_name: this.productName,
                     description:  this.description,
                     unit:         this.unit,
-                    // fixed markup rule 50.00
                     markup_rule:  50.00
                 })
             })
@@ -494,7 +535,7 @@ function productPage() {
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24"
                                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="3" y="3" width="18" height="16" rx="2" ry="2"/>
-                                    <rcle cx="8.5" cy="8.5" r="1.5"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
                                     <path d="M21 13l-3.5-3.5L13 14l-2-2L6 17"/>
                                 </svg>
                             </button>
@@ -506,7 +547,7 @@ function productPage() {
                                     <path d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z' />
                                 </svg>
                             </button>
-                            <button title='Archive' onclick='deleteRow(this)' class='p-2 rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition'>
+                            <button title='Archive' onclick='markArchiveFromRow(this)' class='p-2 rounded-full text-red-400 hover:text-red-600 hover:bg-red-100 transition'>
                                 <svg xmlns='http://www.w3.org/2000/svg' width='22' height='25' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
                                     <path d='M3 4h18v4H3z' />
                                     <path d='M4 8v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8' />
@@ -528,7 +569,10 @@ function productPage() {
                 this.showProductModal = false;
 
                 updateProductPagination();
-                alert('Product added successfully!');
+
+                this.toastMessage = 'Product added successfully!';
+                this.showToast = true;
+                setTimeout(() => { this.showToast = false; }, 3000);
             })
             .catch(console.error);
         },
@@ -542,7 +586,6 @@ function productPage() {
             if (this.productName) payload.product_name = this.productName;
             if (this.description) payload.description  = this.description;
             if (this.unit)        payload.unit         = this.unit;
-            // markup_rule not editable here; backend keeps existing value 50.00
 
             if (Object.keys(payload).length === 0) {
                 alert('Nothing to update.');
@@ -583,7 +626,10 @@ function productPage() {
 
                 this.showProductModal = false;
                 updateProductPagination();
-                alert('Product updated successfully!');
+
+                this.toastMessage = 'Product updated successfully!';
+                this.showToast = true;
+                setTimeout(() => { this.showToast = false; }, 3000);
             })
             .catch(console.error);
         }
@@ -596,17 +642,17 @@ window.__productOpenEditFromRow = function (event) {
     root.__x.$data.openEditModal(event);
 };
 
-// pagination and search code unchanged below...
-const productRowsPerPage    = 5;
-const productTableBody      = document.getElementById('product-table-body');
-const productEmptyRow       = document.getElementById('product-empty-row');
-const productPaginationLinks= document.getElementById('product-pagination-links');
-const productPaginationInfo = document.getElementById('product-pagination-info');
-const productSearchInput    = document.getElementById('product-search');
+// pagination and search
+const productRowsPerPage     = 5;
+const productTableBody       = document.getElementById('product-table-body');
+const productEmptyRow        = document.getElementById('product-empty-row');
+const productPaginationLinks = document.getElementById('product-pagination-links');
+const productPaginationInfo  = document.getElementById('product-pagination-info');
+const productSearchInput     = document.getElementById('product-search');
 
-let allProductRows   = Array.from(productTableBody.querySelectorAll('.product-row'));
+let allProductRows     = Array.from(productTableBody.querySelectorAll('.product-row'));
 let productCurrentPage = 1;
-let visibleRows      = [...allProductRows];
+let visibleRows        = [...allProductRows];
 
 function applyProductSearch() {
     const q = (productSearchInput.value || '').toLowerCase();
