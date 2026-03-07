@@ -203,6 +203,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/upload-report', [FileUploadController::class, 'uploadReport'])->name('upload.report');
         Route::post('/upload-document', [FileUploadController::class, 'uploadDocument'])->name('upload.document');
         Route::post('/delete', [FileUploadController::class, 'deleteFile'])->name('delete.file');
+
+        // ✅ NEW: Upload receipt PDF (base64) to S3
+        Route::post('/upload-receipt-pdf', [FileUploadController::class, 'uploadReceiptPdf'])
+            ->name('upload.receipt.pdf');
     });
 
 }); // end auth middleware
