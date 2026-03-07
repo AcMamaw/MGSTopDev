@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class FileUploadService
 {
@@ -13,13 +14,7 @@ class FileUploadService
     public function uploadProductImage(UploadedFile $file, string $folder = 'products'): array
     {
         try {
-            // Check if Cloudinary is available
-            if (!class_exists('CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary')) {
-                // Fallback to local storage if Cloudinary not installed
-                return $this->uploadToLocalStorage($file, $folder);
-            }
-
-            $uploadedFile = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::upload($file->getRealPath(), [
+            $uploadedFile = Cloudinary::upload($file->getRealPath(), [
                 'folder' => $folder,
                 'public_id' => uniqid(),
                 'transformation' => [
@@ -29,15 +24,14 @@ class FileUploadService
             ]);
 
             return [
-                'success' => true,
-                'url' => $uploadedFile->getSecurePath(),
+                'success'   => true,
+                'url'       => $uploadedFile->getSecurePath(),
                 'public_id' => $uploadedFile->getPublicId(),
-                'path' => $uploadedFile->getPath()
             ];
         } catch (\Exception $e) {
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ];
         }
     }
@@ -60,15 +54,15 @@ class FileUploadService
             $path = $file->storeAs($folder, $filename, 's3');
 
             return [
-                'success' => true,
-                'url' => Storage::disk('s3')->url($path),
-                'path' => $path,
+                'success'  => true,
+                'url'      => Storage::disk('s3')->url($path),
+                'path'     => $path,
                 'filename' => $filename
             ];
         } catch (\Exception $e) {
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ];
         }
     }
@@ -95,11 +89,7 @@ class FileUploadService
     public function deleteFromCloudinary(string $publicId): bool
     {
         try {
-            if (!class_exists('CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary')) {
-                return true; // Assume deleted if Cloudinary not installed
-            }
-
-            \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::destroy($publicId);
+            Cloudinary::destroy($publicId);
             return true;
         } catch (\Exception $e) {
             return false;
@@ -116,29 +106,6 @@ class FileUploadService
             return true;
         } catch (\Exception $e) {
             return false;
-        }
-    }
-
-    /**
-     * Fallback: Upload to local storage
-     */
-    private function uploadToLocalStorage(UploadedFile $file, string $folder = 'images'): array
-    {
-        try {
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('public/' . $folder, $filename);
-
-            return [
-                'success' => true,
-                'url' => asset('storage/' . str_replace('public/', '', $path)),
-                'path' => $path,
-                'filename' => $filename
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
         }
     }
 }
