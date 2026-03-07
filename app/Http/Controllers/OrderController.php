@@ -263,7 +263,7 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Order and payment created successfully',
-                'order'   => $order->load('items', 'customer', 'payments'),
+                'order' => $order->load('items', 'customer', 'payment'),
                 'payment' => $payment,
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {

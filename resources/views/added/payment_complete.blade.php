@@ -15,11 +15,12 @@
             <!-- Current Balance -->
             <div>
                 <label class="block text-gray-700 font-medium mb-1">Current Balance</label>
-                <input type="number" :value="paymentBalance" readonly
+                {{-- FIX: was just :value="paymentBalance" which crashes on null --}}
+                <input type="number" :value="Number(paymentBalance || 0).toFixed(2)" readonly
                        class="w-full px-4 py-2 border rounded-lg bg-gray-100 font-bold text-lg">
             </div>
 
-             <!-- Payment Method -->
+            <!-- Payment Method -->
             <div>
                 <label class="block text-gray-700 font-medium mb-1">Payment Method</label>
                 <select x-model="paymentMethod"
@@ -45,44 +46,45 @@
                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400" required>
             </div>
 
-          
             <!-- Payment Summary -->
-            <div x-show="paymentCash > 0"
-                 class="bg-blue-50 border border-blue-300 rounded-lg p-4 mt-2">
+            <div x-show="paymentCash > 0" class="bg-blue-50 border border-blue-300 rounded-lg p-4 mt-2">
                 <h3 class="font-semibold text-blue-900 mb-2">Payment Summary:</h3>
                 <div class="space-y-1 text-sm text-blue-800">
-                    <p>Current Balance: ₱<span x-text="paymentBalance.toFixed(2)"></span></p>
-                    <p>Cash Received: ₱<span x-text="paymentCash.toFixed(2)"></span></p>
+                    {{-- FIX: wrap all in Number() so .toFixed() never crashes --}}
+                    <p>Current Balance: ₱<span x-text="Number(paymentBalance || 0).toFixed(2)"></span></p>
+                    <p>Cash Received: ₱<span x-text="Number(paymentCash || 0).toFixed(2)"></span></p>
                     <hr class="my-2 border-blue-200">
                     <p class="font-semibold">
                         New Balance: ₱
-                        <span x-text="Math.max(paymentBalance - paymentCash, 0).toFixed(2)"></span>
+                        <span x-text="Math.max(Number(paymentBalance || 0) - Number(paymentCash || 0), 0).toFixed(2)"></span>
                     </p>
                     <p class="font-semibold">
                         Change: ₱
-                        <span x-text="Math.max(paymentCash - paymentBalance, 0).toFixed(2)"></span>
+                        <span x-text="Math.max(Number(paymentCash || 0) - Number(paymentBalance || 0), 0).toFixed(2)"></span>
                     </p>
                     <p class="font-semibold">
                         Status:
-                        <span x-text="paymentCash >= paymentBalance ? 'Fully Paid' : 'Partial'"></span>
+                        <span x-text="Number(paymentCash || 0) >= Number(paymentBalance || 0) ? 'Fully Paid' : 'Partial'"></span>
                     </p>
                 </div>
             </div>
 
             <!-- Dynamic Warning -->
             <div x-show="paymentCash > 0"
-                 :class="paymentCash < paymentBalance ? 'bg-yellow-50 border border-yellow-300 text-yellow-800' : 'bg-green-50 border border-green-300 text-green-800'"
+                 :class="Number(paymentCash || 0) < Number(paymentBalance || 0)
+                    ? 'bg-yellow-50 border border-yellow-300 text-yellow-800'
+                    : 'bg-green-50 border border-green-300 text-green-800'"
                  class="rounded-lg p-3 mt-2">
-                <template x-if="paymentCash < paymentBalance">
+                <template x-if="Number(paymentCash || 0) < Number(paymentBalance || 0)">
                     <p class="font-semibold">
                         ⚠️ Partial Payment - Remaining balance: ₱
-                        <span x-text="(paymentBalance - paymentCash).toFixed(2)"></span>
+                        <span x-text="(Number(paymentBalance || 0) - Number(paymentCash || 0)).toFixed(2)"></span>
                     </p>
                 </template>
-                <template x-if="paymentCash >= paymentBalance">
+                <template x-if="Number(paymentCash || 0) >= Number(paymentBalance || 0)">
                     <p class="font-semibold">
                         ✅ Full Payment - Change to return: ₱
-                        <span x-text="(paymentCash - paymentBalance).toFixed(2)"></span>
+                        <span x-text="(Number(paymentCash || 0) - Number(paymentBalance || 0)).toFixed(2)"></span>
                     </p>
                 </template>
             </div>
@@ -93,7 +95,7 @@
                     Cancel
                 </button>
                 <button type="submit"
-                            class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
+                        class="px-6 py-2 rounded-full bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500 transition shadow-md shadow-yellow-200/50">
                     Confirm Payment
                 </button>
             </div>
@@ -103,62 +105,71 @@
 
 <style>
 @media print {
-    body * {
-        visibility: hidden;
-    }
-    #printableReceipt, #printableReceipt * {
-        visibility: visible;
-    }
+    body * { visibility: hidden; }
+    #printableReceipt, #printableReceipt * { visibility: visible; }
     #printableReceipt {
         position: relative;
         visibility: visible;
         margin: 0 auto !important;
-        top: 0;
-        left: 0;
-        right: 0;
+        top: 0; left: 0; right: 0;
         width: 80%;
         min-height: auto;
         box-shadow: none !important;
         border-radius: 0 !important;
         background: #ffffff !important;
     }
-    html, body {
-        height: auto;
-        margin: 0;
-        padding: 0;
-    }
-    .no-print {
-        display: none !important;
-    }
+    html, body { height: auto; margin: 0; padding: 0; }
+    .no-print { display: none !important; }
 }
 </style>
 
-<div
-    x-show="showSuccess"
-    x-cloak
-    x-transition
-    class="no-print fixed top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded shadow-lg text-sm z-[9999]">
+<!-- Success toast -->
+<div x-show="showSuccess" x-cloak x-transition
+     class="no-print fixed top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded shadow-lg text-sm z-[9999]">
     Your order was processed successfully.
 </div>
 
-
+<!-- RECEIPT MODAL -->
 <div x-show="showReceipt" x-transition x-cloak
      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div id="printableReceipt"
          @click.away="showReceipt = false"
          class="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 relative text-gray-800 max-h-[90vh] overflow-y-auto">
 
+        {{-- FIX #5: printAndUploadReceipt is now defined in paymentComponent() --}}
         <button type="button"
-                onclick="printAndUploadReceipt(this)"
-                class="no-print fixed bottom-8 right-8 p-4 rounded-full bg-yellow-400 text-black shadow-2xl hover:bg-yellow-500 hover:scale-110 transition-all duration-200 z-50 border-4 border-white"
+                @click="printAndUploadReceipt()"
+                :disabled="uploading"
+                class="no-print fixed bottom-8 right-8 p-4 rounded-full bg-yellow-400 text-black shadow-2xl hover:bg-yellow-500 hover:scale-110 transition-all duration-200 z-50 border-4 border-white disabled:opacity-60"
                 title="Print & Save Receipt">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg x-show="!uploading" xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 6 2 18 2 18 9"/>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                 <rect x="6" y="14" width="12" height="8"/>
             </svg>
+            <svg x-show="uploading" xmlns="http://www.w3.org/2000/svg" class="animate-spin" width="28" height="28" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
         </button>
 
+        <!-- S3 upload success banner -->
+        <div x-show="uploadSuccess" x-transition
+             class="no-print mb-3 px-4 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-800 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            Receipt saved!
+            <a :href="uploadedUrl" target="_blank" class="underline font-semibold ml-1">View PDF</a>
+        </div>
+
+        <!-- S3 upload error banner -->
+        <div x-show="uploadError" x-transition
+             class="no-print mb-3 px-4 py-2 bg-red-50 border border-red-300 rounded-lg text-sm text-red-800">
+            <span x-text="uploadError"></span>
+        </div>
+
+        <!-- Store header -->
         <div class="grid grid-cols-3 gap-4 items-start mb-4">
             <div class="col-span-2">
                 <h1 class="text-lg font-bold tracking-wide">Mariviles Graphic Studio</h1>
@@ -167,10 +178,8 @@
             </div>
             <div class="flex flex-col items-center justify-center">
                 <div class="flex items-center justify-center w-40 h-20 rounded-md mb-1">
-                    <img
-                        src="{{ asset('images/ace.jpg') }}"
-                        alt="Company Logo"
-                        class="object-contain max-w-full max-h-full">
+                    <img src="{{ asset('images/ace.jpg') }}" alt="Company Logo"
+                         class="object-contain max-w-full max-h-full">
                 </div>
             </div>
         </div>
@@ -218,7 +227,7 @@
             </div>
         </div>
 
-        <!-- Table header (Qty / Item / Unit Price / Customize / Total) -->
+        <!-- Table header -->
         <div class="mt-3 border-t border-b border-yellow-400 bg-yellow-400 text-[11px] font-semibold">
             <div class="grid grid-cols-12 py-1.5 px-3">
                 <div class="col-span-1 text-left text-black">Qty</div>
@@ -233,29 +242,19 @@
         <template x-for="(item, index) in receipt.items" :key="index">
             <div class="grid grid-cols-12 py-1.5 px-3 text-[11px] border-b border-gray-100">
                 <div class="col-span-1 font-bold text-base" x-text="item.quantity || item.qty || '1'"></div>
-
                 <div class="col-span-5">
-                    <p class="font-semibold text-gray-800" x-text="item.product_name || item.description || 'N/A'"></p>                  
+                    <p class="font-semibold text-gray-800" x-text="item.product_name || item.description || 'N/A'"></p>
                     <p class="text-[10px] text-gray-600" x-show="item.size || item.color">
                         <span x-show="item.size">Size: <span x-text="item.size"></span></span>
-                        <span x-show="item.color">
-                            | Color:
-                            <span x-text="colorNameFromHex(item.color)"></span>
-                        </span>
+                        <span x-show="item.color"> | Color: <span x-text="colorNameFromHex(item.color)"></span></span>
                     </p>
                 </div>
-
-                <!-- Unit price (selling with markup) -->
                 <div class="col-span-2 text-right">
                     ₱<span x-text="Number(item.unit_price || 0).toFixed(2)"></span>
                 </div>
-
-                <!-- Customize fee (line) -->
                 <div class="col-span-2 text-right">
                     ₱<span x-text="Number(item.custom_amount || 0).toFixed(2)"></span>
                 </div>
-
-                <!-- Line total -->
                 <div class="col-span-2 text-right font-semibold">
                     ₱<span x-text="Number(item.amount || 0).toFixed(2)"></span>
                 </div>
@@ -265,57 +264,37 @@
         <!-- Totals -->
         <div class="mt-3 flex justify-end">
             <div class="w-56 text-[11px] space-y-0.5">
-                <!-- Subtotal / Total stay the same -->
                 <div class="flex justify-between">
                     <span>Subtotal</span>
-                    <span>
-                        ₱<span x-text="Number(receipt.amount || grandTotal()).toFixed(2)"></span>
-                    </span>
+                    {{-- FIX #2: was grandTotal() which is undefined in this scope — use receipt.amount directly --}}
+                    <span>₱<span x-text="Number(receipt.amount || 0).toFixed(2)"></span></span>
                 </div>
-
                 <div class="flex justify-between font-semibold border-t border-gray-200 pt-1">
                     <span>Total</span>
-                    <span>
-                        ₱<span x-text="Number(receipt.amount || grandTotal()).toFixed(2)"></span>
-                    </span>
+                    <span>₱<span x-text="Number(receipt.amount || 0).toFixed(2)"></span></span>
                 </div>
-
-                 <!-- Balance FIRST, only red if > 0 -->
                 <div class="flex justify-between pt-1">
                     <span>Balance</span>
-                    <span
-                        :class="Number(receipt.balance || paymentBalance || 0) > 0
-                                ? 'text-red-600 font-semibold'
-                                : 'text-black font-semibold'">
-                        ₱<span x-text="Number(receipt.balance || paymentBalance || 0).toFixed(2)"></span>
+                    <span :class="Number(receipt.balance || 0) > 0 ? 'text-red-600 font-semibold' : 'text-black font-semibold'">
+                        ₱<span x-text="Number(receipt.balance || 0).toFixed(2)"></span>
                     </span>
                 </div>
-
-                <!-- Cash -->
                 <div class="flex justify-between">
                     <span>Cash</span>
-                    <span>
-                        ₱<span x-text="Number(receipt.cash || paymentCash || 0).toFixed(2)"></span>
-                    </span>
+                    {{-- FIX #4: was paymentCash.toFixed(2) which crashes when null --}}
+                    <span>₱<span x-text="Number(receipt.cash || 0).toFixed(2)"></span></span>
                 </div>
-
-                <!-- Change -->
                 <div class="flex justify-between">
                     <span>Change</span>
-                    <span>
-                        ₱<span x-text="Number(receipt.change_amount || paymentChange || 0).toFixed(2)"></span>
-                    </span>
+                    {{-- FIX #3: was paymentChange which doesn't exist in paymentComponent scope --}}
+                    <span>₱<span x-text="Number(receipt.change_amount || 0).toFixed(2)"></span></span>
                 </div>
             </div>
         </div>
 
-
         <div class="mt-4 text-[11px]">
             <p class="font-semibold mb-1">Notes</p>
-            <p>
-                Thank you for choosing Mariviles Graphic Studio.
-                Your positive feedback helps us continue providing quality service.
-            </p>
+            <p>Thank you for choosing Mariviles Graphic Studio. Your positive feedback helps us continue providing quality service.</p>
         </div>
 
         <div class="mt-4 flex justify-end">

@@ -99,54 +99,30 @@ class FileUploadController extends Controller
      */
     public function uploadReceiptPdf(Request $request)
     {
-        $request->validate([
-            'pdf_base64'     => 'required|string',
-            'receipt_number' => 'required|string',
+        $validated = $request->validate([
+            'receipt_html'   => 'required|string',
+            'order_id'       => 'nullable|integer',
+            'receipt_number' => 'nullable|integer',
         ]);
 
         try {
-            // Decode base64 PDF
-            $base64 = $request->pdf_base64;
+            $orderPad   = str_pad($validated['order_id']       ?? 0, 3, '0', STR_PAD_LEFT);
+            $receiptPad = str_pad($validated['receipt_number'] ?? 0, 4, '0', STR_PAD_LEFT);
+            $timestamp  = now()->format('Ymd_His');
+            $filename   = "receipts/O{$orderPad}_R{$receiptPad}_{$timestamp}.html";
 
-            // Remove data URI prefix if present (data:application/pdf;base64,...)
-            if (str_contains($base64, ',')) {
-                $base64 = explode(',', $base64)[1];
-            }
-
-            $pdfContent = base64_decode($base64);
-
-            if (!$pdfContent) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid PDF data.'
-                ], 422);
-            }
-
-            // Build filename: receipts/R-00048-2026-03-07.pdf
-            $filename = 'receipts/' . $request->receipt_number . '-' . now()->format('Y-m-d') . '.pdf';
-
-            // Upload to S3
-            Storage::disk('s3')->put($filename, $pdfContent, [
+            \Storage::disk('s3')->put($filename, $validated['receipt_html'], [
                 'visibility'  => 'public',
-                'ContentType' => 'application/pdf',
+                'ContentType' => 'text/html',
             ]);
 
-            $url = Storage::disk('s3')->url($filename);
+            $url = \Storage::disk('s3')->url($filename);
 
-            \Log::info('Receipt uploaded to S3', ['filename' => $filename, 'url' => $url]);
-
-            return response()->json([
-                'success'  => true,
-                'url'      => $url,
-                'filename' => $filename,
-            ]);
+            return response()->json(['success' => true, 'url' => $url, 'filename' => $filename]);
 
         } catch (\Exception $e) {
-            \Log::error('Receipt S3 upload failed: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Upload failed: ' . $e->getMessage()
-            ], 500);
+            \Log::error('Receipt upload error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
