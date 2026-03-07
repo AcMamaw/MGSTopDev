@@ -426,502 +426,459 @@ const ORDER_STATUS_PRIORITY = {
     '': 99
 };
 
-/* ===============================
-MARK ORDER AS COMPLETED
-===============================*/
 function markAsCompleted(orderId) {
-
     fetch(`/orders/${orderId}/complete`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'Content-Type': 'application/json',
-            'Accept':'application/json'
         }
     })
     .then(res => res.json())
     .then(data => {
-
         if (data.success) {
-            alert(data.message)
-            location.reload()
+            alert(data.message);
+            location.reload();
         } else {
-            alert(data.message || 'Failed to complete order')
+            alert(data.message);
         }
-
     })
-    .catch(err => console.error(err))
-
+    .catch(err => console.error(err));
 }
 
-/* ===============================
-ALPINE COMPONENT
-===============================*/
 function paymentComponent() {
+    return {
+        // Shared properties
+        showAddOrder: false,
+        showOrderDetails: false,
+        searchQuery: '',
+        statusFilter: 'all',
 
-return {
+        // Assign Job Order modal
+        showAssignJobOrderModal: false,
+        employees: [],
+        selectedEmployees: [],
+        selectAllEmployees: false,
+        employeeSearch: '',
 
-    /* UI STATES */
-    showAddOrder:false,
-    showOrderDetails:false,
-    showCompletePaymentModal:false,
-    showAssignJobOrderModal:false,
-    showReceipt:false,
-    showSuccess:false,
+        // Payment modal
+        showCompletePaymentModal: false,
+        paymentBalance: 0,
+        paymentCash: 0,
+        paymentMethod: '',
+        paymentReference: '',
 
-    searchQuery:'',
-    statusFilter:'all',
+        // Selected Order
+        selectedOrderId: 0,
+        // Receipt state
+        showReceipt: false,
+        showSuccess: false,
 
-    /* ORDER */
-    selectedOrderId:0,
+        // ===== S3 UPLOAD STATE =====
+        uploading: false,
+        uploadSuccess: false,
+        uploadError: '',
+        uploadedUrl: '',
 
-    /* EMPLOYEES */
-    employees:[],
-    selectedEmployees:[],
-    selectAllEmployees:false,
-    employeeSearch:'',
+        receipt: {
+            receipt_number: null,
+            items: [],
+            status: '',
+            customer_name: '',
+            customer_address: '',
+            payment_method: '',
+            reference_number: null,
+            payment_date: '',
+            amount: 0,
+            cash: 0,
+            change_amount: 0,
+            balance: 0,
+        },
 
-    /* PAYMENT */
-    paymentBalance:0,
-    paymentCash:0,
-    paymentMethod:'',
-    paymentReference:'',
+        printReceipt() {
+            window.print();
+        },
 
-    /* S3 UPLOAD */
-    uploading:false,
-    uploadSuccess:false,
-    uploadError:'',
-    uploadedUrl:'',
+        colorNameFromHex(hex) {
+            return hex || '';
+        },
 
-    /* RECEIPT */
-    receipt:{
-        receipt_number:null,
-        items:[],
-        status:'',
-        customer_name:'',
-        customer_address:'',
-        payment_method:'',
-        reference_number:null,
-        payment_date:'',
-        amount:0,
-        cash:0,
-        change_amount:0,
-        balance:0
-    },
+        // ===== PRINT + UPLOAD TO S3 via existing FileUploadController route =====
+        async printAndUploadReceipt() {
+            // Print first
+            window.print();
 
-    /* ===============================
-    PRINT RECEIPT
-    ===============================*/
-    printReceipt(){
-        window.print()
-    },
+            // Then upload HTML receipt to S3
+            this.uploading     = true;
+            this.uploadSuccess = false;
+            this.uploadError   = '';
+            this.uploadedUrl   = '';
 
-    colorNameFromHex(hex){
-        return hex || ''
-    },
+            try {
+                const csrfToken   = document.querySelector('meta[name="csrf-token"]')?.content;
+                const receiptHtml = document.getElementById('printableReceipt').innerHTML;
 
-    /* ===============================
-    PRINT + UPLOAD RECEIPT
-    ===============================*/
-    async printAndUploadReceipt(){
+                const response = await fetch('{{ route("upload.receipt.pdf") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        receipt_html:   receiptHtml,
+                        order_id:       this.selectedOrderId,
+                        receipt_number: this.receipt.receipt_number,
+                    }),
+                });
 
-        window.print()
+                // Guard against HTML 500 page instead of JSON
+                const ct = response.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) {
+                    throw new Error('Server error — check Laravel logs (set APP_DEBUG=true in .env).');
+                }
 
-        this.uploading=true
-        this.uploadSuccess=false
-        this.uploadError=''
-        this.uploadedUrl=''
+                const data = await response.json();
 
-        try{
+                if (data.success) {
+                    this.uploadSuccess = true;
+                    this.uploadedUrl   = data.url || '';
+                } else {
+                    this.uploadError = 'Upload failed: ' + (data.message || 'Unknown error');
+                }
+            } catch (err) {
+                console.error('S3 upload error:', err);
+                this.uploadError = 'Upload error: ' + err.message;
+            } finally {
+                this.uploading = false;
+            }
+        },
 
-            const csrfToken=document.querySelector('meta[name="csrf-token"]')?.content
+        // Filter orders
+        filterOrders() {
+            const rows = document.querySelectorAll('.order-row');
+            let visibleCount = 0;
 
-            const receiptElement=document.getElementById('printableReceipt')
+            rows.forEach(row => {
+                const status     = row.getAttribute('data-status');
+                const searchText = row.getAttribute('data-search').toLowerCase();
+                const query      = this.searchQuery.toLowerCase();
 
-            if(!receiptElement){
-                throw new Error('Receipt element not found')
+                const matchesStatus = this.statusFilter === 'all' || status === this.statusFilter;
+                const matchesSearch = !query || searchText.includes(query);
+
+                if (matchesStatus && matchesSearch) {
+                    row.dataset.visible = "true";
+                    visibleCount++;
+                } else {
+                    row.dataset.visible = "false";
+                }
+            });
+
+            const emptyStateFilter = document.querySelector('.empty-state-filter');
+            if (emptyStateFilter) {
+                emptyStateFilter.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
             }
 
-            const receiptHtml=receiptElement.innerHTML
+            if (window.showOrderPage) {
+                window.showOrderPage(1);
+            }
+        },
 
-            const response=await fetch('{{ route("upload.receipt.pdf") }}',{
-                method:'POST',
-                headers:{
-                    'Content-Type':'application/json',
-                    'X-CSRF-TOKEN':csrfToken,
-                    'Accept':'application/json'
+        // Assign Job Order
+        async openAssignJobOrder(orderId) {
+            this.selectedOrderId     = orderId;
+            this.showAssignJobOrderModal = true;
+            this.selectedEmployees   = [];
+            this.selectAllEmployees  = false;
+            this.employees           = [];
+            this.employeeSearch      = '';
+
+            try {
+                const res = await fetch('/employees/active', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!res.ok) {
+                    alert('Failed to load employees: ' + res.statusText);
+                    this.employees = [];
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.employees && Array.isArray(data.employees)) {
+                    this.employees = data.employees;
+                } else {
+                    this.employees = [];
+                    alert('Invalid employee data format received');
+                }
+            } catch (err) {
+                console.error('Error fetching employees:', err);
+                alert('Error loading employees: ' + err.message);
+                this.employees = [];
+            }
+        },
+
+        toggleSelectAll() {
+            if (this.selectAllEmployees) {
+                const filteredEmployees = this.employees.filter(e => {
+                    if (!this.employeeSearch) return true;
+                    const search   = this.employeeSearch.toLowerCase();
+                    const fullName = (e.fname + ' ' + e.lname).toLowerCase();
+                    return fullName.includes(search);
+                });
+                this.selectedEmployees = filteredEmployees.map(e => e.employee_id);
+            } else {
+                this.selectedEmployees = [];
+            }
+        },
+
+        submitAssignJobOrder() {
+            if (this.selectedEmployees.length === 0) {
+                alert('Please select at least one employee.');
+                return;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+            fetch('/orders/assign', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
                 },
-                body:JSON.stringify({
-                    receipt_html:receiptHtml,
-                    order_id:this.selectedOrderId,
-                    receipt_number:this.receipt.receipt_number
+                body: JSON.stringify({
+                    order_id:  this.selectedOrderId,
+                    employees: this.selectedEmployees
                 })
             })
-
-            const contentType=response.headers.get('content-type')||''
-
-            if(!contentType.includes('application/json')){
-                throw new Error('Server returned HTML instead of JSON')
-            }
-
-            const data=await response.json()
-
-            if(data.success){
-
-                this.uploadSuccess=true
-                this.uploadedUrl=data.url || ''
-
-            }else{
-
-                this.uploadError=data.message || 'Upload failed'
-
-            }
-
-        }catch(err){
-
-            console.error('Upload error:',err)
-            this.uploadError=err.message
-
-        }
-
-        this.uploading=false
-
-    },
-
-    /* ===============================
-    FILTER ORDERS
-    ===============================*/
-    filterOrders(){
-
-        const rows=document.querySelectorAll('.order-row')
-
-        let visibleCount=0
-
-        rows.forEach(row=>{
-
-            const status=row.getAttribute('data-status') || ''
-            const searchText=(row.getAttribute('data-search') || '').toLowerCase()
-            const query=this.searchQuery.toLowerCase()
-
-            const matchesStatus=this.statusFilter==='all' || status===this.statusFilter
-            const matchesSearch=!query || searchText.includes(query)
-
-            if(matchesStatus && matchesSearch){
-
-                row.dataset.visible="true"
-                visibleCount++
-
-            }else{
-
-                row.dataset.visible="false"
-
-            }
-
-        })
-
-        const emptyState=document.querySelector('.empty-state-filter')
-
-        if(emptyState){
-            emptyState.style.display=(visibleCount===0 && rows.length>0) ? '' : 'none'
-        }
-
-        if(window.showOrderPage){
-            window.showOrderPage(1)
-        }
-
-    },
-
-    /* ===============================
-    OPEN ASSIGN JOB ORDER
-    ===============================*/
-    async openAssignJobOrder(orderId){
-
-        this.selectedOrderId=Number(orderId) || 0
-        this.showAssignJobOrderModal=true
-
-        this.selectedEmployees=[]
-        this.selectAllEmployees=false
-        this.employees=[]
-        this.employeeSearch=''
-
-        try{
-
-            const res=await fetch('/employees/active',{
-                headers:{
-                    'Accept':'application/json',
-                    'X-Requested-With':'XMLHttpRequest'
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Job order assigned successfully!');
+                    this.showAssignJobOrderModal = false;
+                    this.selectedEmployees = [];
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to assign job order.');
                 }
             })
+            .catch(err => {
+                console.error('Assign job order error:', err);
+                alert('An error occurred while assigning job order: ' + err.message);
+            });
+        },
 
-            if(!res.ok){
-                throw new Error('Failed to load employees')
+        // Payment modal
+        openPaymentModal(orderId, balance) {
+            this.selectedOrderId          = orderId;
+            this.paymentBalance           = Number(balance) || 0; // FIX: always Number, never null
+            this.paymentCash              = 0;
+            this.paymentMethod            = '';
+            this.paymentReference         = '';
+            this.showCompletePaymentModal = true;
+        },
+
+        submitCompletePayment() {
+            if (!this.paymentMethod) {
+                alert('Please select a payment method.');
+                return;
+            }
+            if (this.paymentMethod === 'GCash' && !this.paymentReference.trim()) {
+                alert('Please enter a reference number for GCash.');
+                return;
             }
 
-            const data=await res.json()
+            const cashReceived   = Number(this.paymentCash)   || 0;
+            const currentBalance = Number(this.paymentBalance) || 0;
+            const newBalance     = Math.max(currentBalance - cashReceived, 0);
+            const changeAmount   = Math.max(cashReceived - currentBalance, 0);
+            const paymentStatus  = newBalance === 0 ? 'Fully Paid' : 'Partial';
 
-            this.employees=Array.isArray(data.employees) ? data.employees : []
+            const paymentData = {
+                order_id:         this.selectedOrderId,
+                cash:             cashReceived,
+                balance:          newBalance,
+                status:           paymentStatus,
+                change_amount:    changeAmount,
+                payment_method:   this.paymentMethod,
+                reference_number: this.paymentMethod === 'GCash' ? this.paymentReference : null
+            };
 
-        }catch(err){
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
-            console.error(err)
-            alert('Error loading employees')
-
-        }
-
-    },
-
-    toggleSelectAll(){
-
-        if(this.selectAllEmployees){
-
-            const filtered=this.employees.filter(e=>{
-
-                if(!this.employeeSearch) return true
-
-                const search=this.employeeSearch.toLowerCase()
-                const name=(e.fname+' '+e.lname).toLowerCase()
-
-                return name.includes(search)
-
+            fetch('/payments/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(paymentData)
             })
-
-            this.selectedEmployees=filtered.map(e=>e.employee_id)
-
-        }else{
-
-            this.selectedEmployees=[]
-
-        }
-
-    },
-
-    /* ===============================
-    SUBMIT ASSIGN JOB ORDER
-    ===============================*/
-    submitAssignJobOrder(){
-
-        if(this.selectedEmployees.length===0){
-            alert('Select at least one employee')
-            return
-        }
-
-        const csrfToken=document.querySelector('meta[name="csrf-token"]').content
-
-        fetch('/orders/assign',{
-            method:'POST',
-            headers:{
-                'Content-Type':'application/json',
-                'X-CSRF-TOKEN':csrfToken,
-                'Accept':'application/json'
-            },
-            body:JSON.stringify({
-                order_id:this.selectedOrderId,
-                employees:this.selectedEmployees
+            .then(response => {
+                // FIX: guard against HTML 500 error page instead of JSON
+                const ct = response.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) {
+                    return response.text().then(text => {
+                        console.error('Non-JSON response:', text.substring(0, 300));
+                        throw new Error('Server error — set APP_DEBUG=true in .env to see details.');
+                    });
+                }
+                return response.json();
             })
-        })
-        .then(res=>res.json())
-        .then(data=>{
+            .then(data => {
+                if (!data.success) {
+                    alert(data.message || 'Failed to update payment.');
+                    return;
+                }
 
-            if(data.success){
+                const pay   = data.payment || {};
+                const order = data.order   || {};
 
-                alert('Job order assigned')
-                location.reload()
+                // Populate receipt — all values wrapped in Number() to prevent null crashes
+                this.receipt.receipt_number   = pay.payment_id || pay.id || null;
+                this.receipt.status           = pay.status           || paymentStatus;
+                this.receipt.payment_method   = pay.payment_method   || this.paymentMethod;
+                this.receipt.reference_number = pay.reference_number || this.paymentReference || null;
+                this.receipt.payment_date     = pay.payment_date     || new Date().toISOString().slice(0, 10);
+                this.receipt.amount           = Number(pay.amount        ?? currentBalance);
+                this.receipt.cash             = Number(pay.cash          ?? cashReceived);
+                this.receipt.change_amount    = Number(pay.change_amount ?? changeAmount);
+                this.receipt.balance          = Number(pay.balance       ?? newBalance);
+                this.receipt.customer_name    = order.customer_name    || '';
+                this.receipt.customer_address = order.customer_address || '';
+                this.receipt.items            = Array.isArray(order.items) ? order.items : [];
 
-            }else{
+                // Reset S3 upload state for fresh receipt
+                this.uploading     = false;
+                this.uploadSuccess = false;
+                this.uploadError   = '';
+                this.uploadedUrl   = '';
 
-                alert(data.message || 'Failed')
-
-            }
-
-        })
-        .catch(err=>{
-
-            console.error(err)
-            alert('Error assigning job order')
-
-        })
-
-    },
-
-    /* ===============================
-    OPEN PAYMENT MODAL
-    ===============================*/
-    openPaymentModal(orderId,balance){
-
-        this.selectedOrderId=Number(orderId) || 0
-        this.paymentBalance=Number(balance) || 0
-
-        this.paymentCash=0
-        this.paymentMethod=''
-        this.paymentReference=''
-
-        this.showCompletePaymentModal=true
-
-    },
-
-    /* ===============================
-    SUBMIT COMPLETE PAYMENT
-    ===============================*/
-    submitCompletePayment(){
-
-        if(!this.paymentMethod){
-            alert('Select payment method')
-            return
-        }
-
-        if(this.paymentMethod==='GCash' && !this.paymentReference.trim()){
-            alert('Enter GCash reference')
-            return
-        }
-
-        const cashReceived=Number(this.paymentCash) || 0
-        const currentBalance=Number(this.paymentBalance) || 0
-
-        const newBalance=Math.max(currentBalance-cashReceived,0)
-        const changeAmount=Math.max(cashReceived-currentBalance,0)
-
-        const paymentStatus=newBalance===0 ? 'Fully Paid' : 'Partial'
-
-        const csrfToken=document.querySelector('meta[name="csrf-token"]').content
-
-        fetch('/payments/update',{
-            method:'POST',
-            headers:{
-                'Content-Type':'application/json',
-                'X-CSRF-TOKEN':csrfToken,
-                'Accept':'application/json'
-            },
-            body:JSON.stringify({
-                order_id:this.selectedOrderId,
-                cash:cashReceived,
-                balance:newBalance,
-                status:paymentStatus,
-                change_amount:changeAmount,
-                payment_method:this.paymentMethod,
-                reference_number:this.paymentMethod==='GCash' ? this.paymentReference : null
+                this.showCompletePaymentModal = false;
+                this.showReceipt = true;
             })
-        })
-        .then(response=>{
+            .catch(err => {
+                console.error(err);
+                alert('An error occurred: ' + err.message);
+            });
+        }
+    }
+}
 
-            const ct=response.headers.get('content-type') || ''
+// ==================== PAGINATION + INITIAL ORDER ====================
+document.addEventListener('DOMContentLoaded', function() {
+    const orderRowsPerPage     = 5;
+    const orderTableBody       = document.querySelector('#order-table tbody');
+    const orderPaginationLinks = document.getElementById('order-pagination-links');
+    const orderPaginationInfo  = document.getElementById('order-pagination-info');
 
-            if(!ct.includes('application/json')){
-                throw new Error('Server returned HTML instead of JSON')
-            }
-
-            return response.json()
-
-        })
-        .then(data=>{
-
-            if(!data.success){
-                alert(data.message || 'Payment failed')
-                return
-            }
-
-            const pay=data.payment || {}
-            const order=data.order || {}
-
-            this.receipt={
-                receipt_number:pay.payment_id || null,
-                status:pay.status || paymentStatus,
-                payment_method:pay.payment_method || this.paymentMethod,
-                reference_number:pay.reference_number || null,
-                payment_date:pay.payment_date || new Date().toISOString().slice(0,10),
-                amount:Number(pay.amount ?? currentBalance),
-                cash:Number(pay.cash ?? cashReceived),
-                change_amount:Number(pay.change_amount ?? changeAmount),
-                balance:Number(pay.balance ?? newBalance),
-                customer_name:order.customer_name || '',
-                customer_address:order.customer_address || '',
-                items:Array.isArray(order.items) ? order.items : []
-            }
-
-            this.showCompletePaymentModal=false
-            this.showReceipt=true
-
-        })
-        .catch(err=>{
-
-            console.error(err)
-            alert('Payment error: '+err.message)
-
-        })
-
+    if (!orderTableBody || !orderPaginationLinks || !orderPaginationInfo) {
+        return;
     }
 
-}
-}
+    let orderCurrentPage = 1;
 
-/* ===============================
-PAGINATION SYSTEM
-===============================*/
-document.addEventListener('DOMContentLoaded',function(){
+    function orderInitialRows() {
+        const rows = Array.from(orderTableBody.querySelectorAll('.order-row'));
+        rows.forEach(r => { if (!r.dataset.visible) r.dataset.visible = "true"; });
 
-const rowsPerPage=5
-const tableBody=document.querySelector('#order-table tbody')
-const links=document.getElementById('order-pagination-links')
-const info=document.getElementById('order-pagination-info')
+        rows.sort((a, b) => {
+            const sa = a.getAttribute('data-status') || '';
+            const sb = b.getAttribute('data-status') || '';
+            const pa = ORDER_STATUS_PRIORITY[sa] ?? 99;
+            const pb = ORDER_STATUS_PRIORITY[sb] ?? 99;
 
-if(!tableBody) return
+            if (pa !== pb) return pa - pb;
 
-let currentPage=1
+            const ca = a.getAttribute('data-created-at') || '';
+            const cb = b.getAttribute('data-created-at') || '';
+            return ca.localeCompare(cb);
+        });
 
-function getRows(){
-return Array.from(tableBody.querySelectorAll('.order-row'))
-}
+        rows.forEach(r => orderTableBody.appendChild(r));
+    }
 
-window.showOrderPage=function(page){
+    window.getVisibleOrderRows = function() {
+        return Array.from(orderTableBody.querySelectorAll('.order-row'))
+            .filter(row => row.dataset.visible !== "false");
+    };
 
-const rows=getRows()
-const total=rows.length
-const totalPages=Math.ceil(total/rowsPerPage)
+    window.showOrderPage = function(page) {
+        const visibleRows     = window.getVisibleOrderRows();
+        const totalResults    = visibleRows.length;
+        const orderTotalPages = Math.ceil(totalResults / orderRowsPerPage) || 1;
 
-currentPage=page
+        if (page < 1) page = 1;
+        if (page > orderTotalPages) page = orderTotalPages;
 
-rows.forEach(r=>r.style.display='none')
+        orderCurrentPage = page;
 
-const start=(page-1)*rowsPerPage
-const end=start+rowsPerPage
+        Array.from(orderTableBody.querySelectorAll('.order-row')).forEach(row => {
+            row.style.display = 'none';
+        });
 
-rows.slice(start,end).forEach(r=>r.style.display='')
+        const start = (page - 1) * orderRowsPerPage;
+        const end   = start + orderRowsPerPage;
+        visibleRows.slice(start, end).forEach(row => {
+            row.style.display = '';
+        });
 
-renderPagination(totalPages,total)
+        window.renderOrderPagination(orderTotalPages, totalResults);
+    };
 
-}
+    window.renderOrderPagination = function(totalPages, totalResults) {
+        orderPaginationLinks.innerHTML = '';
 
-function renderPagination(totalPages,total){
+        const prev = document.createElement('li');
+        prev.className = 'border rounded px-2 py-1';
+        prev.innerHTML = orderCurrentPage === 1 ? '« Prev' : '<a href="#">« Prev</a>';
+        if (orderCurrentPage !== 1) {
+            prev.querySelector('a').addEventListener('click', e => {
+                e.preventDefault();
+                window.showOrderPage(orderCurrentPage - 1);
+            });
+        }
+        orderPaginationLinks.appendChild(prev);
 
-links.innerHTML=''
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = 'border rounded px-2 py-1' + (i === orderCurrentPage ? ' bg-yellow-400 text-black' : '');
+            li.innerHTML = i === orderCurrentPage ? i : `<a href="#">${i}</a>`;
+            if (i !== orderCurrentPage) {
+                li.querySelector('a').addEventListener('click', e => {
+                    e.preventDefault();
+                    window.showOrderPage(i);
+                });
+            }
+            orderPaginationLinks.appendChild(li);
+        }
 
-for(let i=1;i<=totalPages;i++){
+        const next = document.createElement('li');
+        next.className = 'border rounded px-2 py-1';
+        next.innerHTML = orderCurrentPage === totalPages ? 'Next »' : '<a href="#">Next »</a>';
+        if (orderCurrentPage !== totalPages) {
+            next.querySelector('a').addEventListener('click', e => {
+                e.preventDefault();
+                window.showOrderPage(orderCurrentPage + 1);
+            });
+        }
+        orderPaginationLinks.appendChild(next);
 
-const li=document.createElement('li')
+        const start = (orderCurrentPage - 1) * orderRowsPerPage + 1;
+        const end   = Math.min(orderCurrentPage * orderRowsPerPage, totalResults);
+        orderPaginationInfo.textContent =
+            `Showing ${totalResults ? start : 0} to ${end} of ${totalResults} results`;
+    };
 
-li.className='border rounded px-2 py-1 '+(i===currentPage?'bg-yellow-400':'')
-
-li.innerHTML=i===currentPage ? i : `<a href="#">${i}</a>`
-
-if(i!==currentPage){
-
-li.querySelector('a').addEventListener('click',e=>{
-e.preventDefault()
-showOrderPage(i)
-})
-
-}
-
-links.appendChild(li)
-
-}
-
-info.textContent=`Page ${currentPage} of ${totalPages} (${total} orders)`
-
-}
-
-showOrderPage(1)
-
-})
+    orderInitialRows();
+    window.showOrderPage(1);
+});
 </script>
 @endsection
 
