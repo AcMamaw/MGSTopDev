@@ -423,4 +423,36 @@ class ReportController extends Controller
         return [$data, $ids];
     }
 
+
+    public function export(Request $request, $type)
+    {
+        return response()->json(['success' => true]);
+    }
+
+    public function generate(Request $request)
+    {
+        return response()->json(['success' => true]);
+    }
+
+    public function saveReceipt(Request $request)
+    {
+        // Receipt is handled client-side via window.print()
+        // This endpoint just confirms the receipt data was received
+        return response()->json([
+            'success' => true,
+            'message' => 'Receipt ready to print.',
+            'receipt' => [
+                'payment_id'     => $request->payment_id,
+                'customer_name'  => $request->customer_name,
+                'payment_date'   => $request->payment_date,
+                'payment_method' => $request->payment_method,
+                'amount'         => $request->amount,
+                'cash'           => $request->cash,
+                'change_amount'  => $request->change_amount,
+                'balance'        => $request->balance,
+                'status'         => $request->status,
+            ]
+        ]);
+    }
+    
 } 

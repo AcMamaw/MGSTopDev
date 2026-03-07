@@ -74,7 +74,8 @@ Route::middleware('auth')->group(function () {
             ->name('stock-adjustments.approve');
        
         Route::get('/reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
-
+        Route::post('reports/save-receipt', [App\Http\Controllers\ReportController::class, 'saveReceipt'])->name('reports.saveReceipt');
+        
         Route::post('/payments/update', [OrderController::class, 'updatePayment'])->name('payments.update');
 
         Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');

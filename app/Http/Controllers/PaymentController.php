@@ -7,6 +7,8 @@ use App\Models\Payment;
 use App\Models\Order;  
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentController extends Controller
 {
@@ -110,4 +112,28 @@ class PaymentController extends Controller
         ]);
     }
 
+    public function generateAndUploadReceipt($paymentId) {
+        $payment = Payment::with(['order.items.stock.product', 'order.customer', 'employee'])->findOrFail($paymentId);
+        // Build receipt data (similar to your Blade logic)
+        $data = [
+            'payment' => $payment,
+            'customerName' => trim(($payment->order->customer->fname ?? '') . ' ' . ($payment->order->customer->lname ?? '')),
+            'items' => $payment->order->items->map(fn($item) => [
+                'quantity' => $item->quantity,
+                'product_name' => $item->stock->product->product_name ?? 'N/A',
+                'size' => $item->size,
+                'color' => $item->color,
+                'unit_price' => $item->price,
+                'amount' => $item->quantity * $item->price + ($item->custom_amount ?? 0),
+            ]),
+            // Add other receipt fields
+        ];
+
+        $pdf = Pdf::loadView('receipt_template', $data); // Create a Blade view for the receipt HTML
+        $fileName = 'receipt_' . $paymentId . '.pdf';
+        $path = 'receipts/' . $fileName;
+        Storage::disk('s3')->put($path, $pdf->output());
+
+        return response()->json(['url' => Storage::disk('s3')->url($path)]);
+    }
 }
