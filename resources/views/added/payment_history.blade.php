@@ -1,3 +1,10 @@
+<?php
+// filepath: routes/web.php
+Route::middleware(['web'])->group(function () {
+    // ... your routes ...
+});
+?>
+
 <div
     x-data="{
         showPaymentHistory: false,
@@ -558,3 +565,28 @@
         </div>
     </div>
 </div>
+
+<!-- SCRIPT -->
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('productData', () => ({
+        showToast: false,
+        toastMessage: '',
+        // ... other data ...
+        uploadImage() {
+            const formData = new FormData();
+            formData.append('image', this.$refs.imageInput.files[0]);
+            fetch('/managestore/product', {  // Ensure this is HTTPS
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    this.toastMessage = 'Image uploaded!';
+                    this.showToast = true;
+                }
+            }).catch(error => console.error(error));
+        }
+    }));
+});
+</script>
