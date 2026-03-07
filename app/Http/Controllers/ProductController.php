@@ -7,10 +7,17 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
+use App\Services\FileUploadService;
 
 
 class ProductController extends Controller
 {
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
     // List products + suppliers + categories for dropdown
     public function index()
     {
@@ -98,21 +105,27 @@ class ProductController extends Controller
             'image' => 'required|image|max:2048', // 2MB
         ]);
 
-        // delete old file if present
-        if ($product->image_path && str_starts_with($product->image_path, 'storage/')) {
-            $oldRelative = str_replace('storage/', '', $product->image_path);
-            Storage::disk('public')->delete($oldRelative);
+        // Delete old Cloudinary image if exists
+        if ($product->image_path && str_starts_with($product->image_path, 'https://res.cloudinary.com')) {
+            // Extract public_id from URL if stored
+            // You might want to store public_id separately in the future
         }
 
-        // store new file
-        $path = $request->file('image')->store('products', 'public'); // storage/app/public/products
+        // Upload to Cloudinary
+        $uploadResult = $this->fileUploadService->uploadProductImage($request->file('image'));
 
-        $product->image_path = 'storage/' . $path; // for asset()
+        if (!$uploadResult['success']) {
+            return response()->json([
+                'error' => 'Failed to upload image: ' . $uploadResult['error']
+            ], 500);
+        }
+
+        $product->image_path = $uploadResult['url'];
         $product->save();
 
         return response()->json([
             'product_id' => $product->product_id,
-            'image_path' => asset($product->image_path),
+            'image_path' => $product->image_path,
         ]);
     }
 

@@ -9,9 +9,16 @@ use App\Models\User;
 use App\Mail\SendCredentialsMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
+use App\Services\FileUploadService;
 
 class EmployeeController extends Controller
 {
+    protected $fileUploadService;
+
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
     public function index()
     {
         $employees = Employee::with(['role', 'user'])->get();
@@ -36,10 +43,15 @@ class EmployeeController extends Controller
         ]);
 
         if ($request->hasFile('pictures')) {
-            $file     = $request->file('pictures');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('public/employees', $filename);
-            $data['pictures'] = $filename;
+            $uploadResult = $this->fileUploadService->uploadEmployeePicture($request->file('pictures'));
+            if ($uploadResult['success']) {
+                $data['pictures'] = $uploadResult['url'];
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to upload profile picture: ' . $uploadResult['error']
+                ], 500);
+            }
         }
 
         // create employee (includes alt_email)

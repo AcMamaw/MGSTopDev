@@ -19,6 +19,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RequestController; 
 use App\Http\Controllers\CategoryController; 
 use App\Http\Controllers\JoborderController;
+use App\Http\Controllers\FileUploadController;
 
 
 // --------------------------
@@ -223,6 +224,16 @@ Route::middleware('auth')->group(function () {
     // Logout
     // --------------------------
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // --------------------------
+    // File Upload (S3 + Cloudinary)
+    // --------------------------
+    Route::prefix('files')->group(function () {
+        Route::post('/upload-delivery-receipt', [FileUploadController::class, 'uploadDeliveryReceipt'])->name('upload.delivery.receipt');
+        Route::post('/upload-report', [FileUploadController::class, 'uploadReport'])->name('upload.report');
+        Route::post('/upload-document', [FileUploadController::class, 'uploadDocument'])->name('upload.document');
+        Route::post('/delete', [FileUploadController::class, 'deleteFile'])->name('delete.file');
+    });
 });
 
 // --------------------------

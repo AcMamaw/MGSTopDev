@@ -5,6 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $employee_id
+ * @property int $role_id
+ * @property string $fname
+ * @property string $lname
+ * @property string $gender
+ * @property string $bdate
+ * @property string $email
+ * @property string|null $alt_email
+ * @property string $contact_no
+ * @property string|null $status
+ * @property string|null $pictures
+ * @property string|null $archive
+ */
 class Employee extends Model
 {
     use HasFactory;
