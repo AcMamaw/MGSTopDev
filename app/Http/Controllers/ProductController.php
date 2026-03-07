@@ -104,15 +104,35 @@ class ProductController extends Controller
     // -------------------------------------------------------
     public function updateImage(Request $request, Product $product)
     {
+        // ── DEBUG: log everything we receive ──────────────────────────
+        \Log::info('updateImage called', [
+            'product_id' => $product->product_id,
+            'has_file'   => $request->hasFile('image'),
+            'all_input'  => $request->all(),
+        ]);
+
         $request->validate([
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         try {
-            // Build Cloudinary upload URL directly (no package needed)
-            $cloudName = env('CLOUDINARY_CLOUD_NAME', 'dlhcczwfz');
-            $apiKey    = env('CLOUDINARY_API_KEY',    '896181671383421');
-            $apiSecret = env('CLOUDINARY_API_SECRET', 'H2xrDLLGgPTU8Tr6HjGQBrMu5yY');
+            $cloudName = env('CLOUDINARY_CLOUD_NAME');
+            $apiKey    = env('CLOUDINARY_API_KEY');
+            $apiSecret = env('CLOUDINARY_API_SECRET');
+
+            // ── DEBUG: check env vars are loaded ──────────────────────
+            \Log::info('Cloudinary env', [
+                'cloud_name' => $cloudName,
+                'api_key'    => $apiKey,
+                'has_secret' => !empty($apiSecret),
+            ]);
+
+            if (empty($cloudName) || empty($apiKey) || empty($apiSecret)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cloudinary credentials missing from environment. cloud_name=' . $cloudName . ' api_key=' . $apiKey,
+                ], 500);
+            }
 
             $file      = $request->file('image');
             $filePath  = $file->getRealPath();
@@ -133,15 +153,14 @@ class ProductController extends Controller
             $signatureString = rtrim($signatureString, '&') . $apiSecret;
             $signature = sha1($signatureString);
 
-            // Upload via multipart POST to Cloudinary REST API
             $uploadUrl = "https://api.cloudinary.com/v1_1/{$cloudName}/image/upload";
 
             $postFields = [
-                'file'       => new \CURLFile($filePath, $file->getMimeType(), $file->getClientOriginalName()),
-                'api_key'    => $apiKey,
-                'timestamp'  => $timestamp,
-                'public_id'  => $publicId,
-                'signature'  => $signature,
+                'file'      => new \CURLFile($filePath, $file->getMimeType(), $file->getClientOriginalName()),
+                'api_key'   => $apiKey,
+                'timestamp' => $timestamp,
+                'public_id' => $publicId,
+                'signature' => $signature,
             ];
 
             $ch = curl_init();
@@ -149,24 +168,37 @@ class ProductController extends Controller
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // needed on some servers
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            $response  = curl_exec($ch);
+            $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
             curl_close($ch);
 
+            // ── DEBUG: log curl result ─────────────────────────────────
+            \Log::info('Cloudinary response', [
+                'http_code'  => $httpCode,
+                'curl_error' => $curlError,
+                'response'   => $response,
+            ]);
+
             if ($curlError) {
-                throw new \Exception('cURL error: ' . $curlError);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'cURL error: ' . $curlError,
+                ], 500);
             }
 
             $result = json_decode($response, true);
 
             if ($httpCode !== 200 || !isset($result['secure_url'])) {
-                $errMsg = $result['error']['message'] ?? 'Unknown Cloudinary error';
-                throw new \Exception('Cloudinary error: ' . $errMsg);
+                $errMsg = $result['error']['message'] ?? ('Unknown error. HTTP ' . $httpCode . ' Response: ' . $response);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cloudinary error: ' . $errMsg,
+                ], 500);
             }
 
-            // Save URL to DB
             $product->image_path = $result['secure_url'];
             $product->save();
 
@@ -177,11 +209,13 @@ class ProductController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Cloudinary upload failed for product ' . $product->product_id . ': ' . $e->getMessage());
+            \Log::error('updateImage exception: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Image upload failed: ' . $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
