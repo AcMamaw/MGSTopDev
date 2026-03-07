@@ -495,14 +495,14 @@ Route::middleware(['web'])->group(function () {
                 <div class="flex justify-between">
                     <span>Subtotal</span>
                     <span>
-                        ₱<span x-text="Number(receipt.amount || grandTotal()).toFixed(2)"></span>
+                        ₱<span x-text="Number(receipt.amount || 0).toFixed(2)"></span>
                     </span>
                 </div>
 
                 <div class="flex justify-between font-semibold border-t border-gray-200 pt-1">
                     <span>Total</span>
                     <span>
-                        ₱<span x-text="Number(receipt.amount || grandTotal()).toFixed(2)"></span>
+                        ₱<span x-text="Number(receipt.amount || 0).toFixed(2)"></span>
                     </span>
                 </div>
 
