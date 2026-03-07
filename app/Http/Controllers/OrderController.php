@@ -96,7 +96,7 @@ class OrderController extends Controller
 
             DB::beginTransaction();
 
-            // Get customer for later use
+            // Get customer
             $customer = Customer::find($validated['customer_id']);
             if (!$customer) {
                 throw new \Exception("Customer not found");
@@ -129,7 +129,7 @@ class OrderController extends Controller
             $clientTotal = round((float) $validated['total_amount'], 2);
 
             if (abs($clientTotal - $computedTotal) > 0.01) {
-                throw new \Exception("Total mismatch. Client total ({$clientTotal}) does not equal computed total ({$computedTotal}).");
+                throw new \Exception("Total mismatch");
             }
 
             // Payment logic
@@ -138,28 +138,23 @@ class OrderController extends Controller
             $change_amount = max($cash - $amount, 0);
             $balance = max($amount - $cash, 0);
 
-            // For Ready Made: require full payment
             if ($validated['product_type'] === 'stockin_id' && $cash < $amount) {
                 throw new \Exception('Full payment is required for Ready Made products!');
             }
 
             $paymentStatus = ($balance > 0) ? 'Partial' : 'Fully Paid';
-
-            // Determine product type text
             $orderProductTypeText = ($validated['product_type'] === 'stockin_id') ? 'Ready Made' : 'Customize Item';
+            $orderStatus = ($validated['product_type'] === 'stockin_id' && $paymentStatus === 'Fully Paid') ? 'Completed' : 'Pending';
 
-            // Determine order status
-            $orderStatus = 'Pending';
-            if ($validated['product_type'] === 'stockin_id' && $paymentStatus === 'Fully Paid') {
-                $orderStatus = 'Completed';
-            }
+            // Get employee ID
+            $employeeId = auth()->check() && auth()->user()->employee ? auth()->user()->employee->employee_id : null;
 
             // Create Order
             $order = Order::create([
                 'customer_id'   => $validated['customer_id'],
                 'category_id'   => $categoryId,
                 'order_date'    => $validated['order_date'],
-                'ordered_by'    => auth()->user()->employee->employee_id ?? null,
+                'ordered_by'    => $employeeId,
                 'product_type'  => $orderProductTypeText,
                 'total_amount'  => $amount,
                 'status'        => $orderStatus,
@@ -191,7 +186,7 @@ class OrderController extends Controller
                     }
 
                     if ($inventory->current_stock < $quantity) {
-                        throw new \Exception("Insufficient stock for item. Available: {$inventory->current_stock}, Requested: {$quantity}");
+                        throw new \Exception("Insufficient stock");
                     }
 
                     // Update inventory
@@ -199,30 +194,25 @@ class OrderController extends Controller
                     $inventory->last_updated = now();
                     $inventory->save();
 
-                    // Create stockout record with only existing columns
-                    $stockoutData = [
-                        'stock_id'     => $stockId,
-                        'employee_id'  => auth()->user()->employee->employee_id ?? null,
-                        'quantity_out' => $quantity,
-                        'date_out'     => now(),
-                        'reason'       => 'Order #' . $order->order_id . ' - Customer: ' . $customer->fname . ' ' . $customer->lname,
-                        'status'       => 'Completed',
-                        'approved_by'  => null,
-                    ];
-
-                    // Only add these if they exist in your table
-                    // Check your stockout table structure first
-                    // $stockoutData['product_type'] = $inventory->product_type ?? $orderProductTypeText;
-                    // $stockoutData['size'] = $size;
-
-                    Stockout::create($stockoutData);
+                    // Create stockout record with ALL columns
+                    Stockout::create([
+                        'stock_id'      => $stockId,
+                        'employee_id'   => $employeeId,
+                        'quantity_out'  => $quantity,
+                        'date_out'      => now(),
+                        'reason'        => 'Order #' . $order->order_id . ' - Customer: ' . $customer->fname . ' ' . $customer->lname,
+                        'status'        => 'Completed',
+                        'approved_by'   => null,
+                        'size'          => $size,
+                        'product_type'  => $inventory->product_type ?? $orderProductTypeText,
+                    ]);
                 }
             }
 
             // Create Payment
             $payment = Payment::create([
                 'order_id'        => $order->order_id,
-                'employee_id'     => auth()->user()->employee->employee_id ?? null,
+                'employee_id'     => $employeeId,
                 'payment_date'    => $validated['order_date'],
                 'amount'          => $amount,
                 'cash'            => $cash,
@@ -236,7 +226,6 @@ class OrderController extends Controller
 
             DB::commit();
 
-            // Load relationships for response
             $order->load(['customer', 'items', 'payment']);
 
             return response()->json([
@@ -246,19 +235,9 @@ class OrderController extends Controller
                 'payment' => $payment,
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors'  => $e->errors(),
-            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Order Store Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
-            ]);
-            
+            \Log::error('Order Store Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
