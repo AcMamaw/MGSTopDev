@@ -599,40 +599,6 @@
                     </svg>
                     <span class="text-sm font-medium">Save PDF</span>
                 </button>
-
-                {{-- ── 4. PRINT button (browser print) ── --}}
-                <button type="button"
-                        @click="printReport()"
-                        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
-                        title="Print this report">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 6 2 18 2 18 9"/>
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                        <rect x="6" y="14" width="12" height="8"/>
-                    </svg>
-                    <span class="text-sm font-medium">Print</span>
-                </button>
-
-                {{-- ── 5. EXCEL export ── --}}
-                <button type="button"
-                        @click="exportToExcel()"
-                        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
-                        title="Export to Excel/CSV">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <rect x="2" y="3" width="9" height="18" rx="1" ry="1" fill="#107C41"></rect>
-                        <path d="M4.5 9.5 L8 14.5 M8 9.5 L4.5 14.5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"></path>
-                        <rect x="9" y="4" width="11" height="16" rx="1" ry="1" stroke="#107C41" stroke-width="1.5" fill="none"></rect>
-                        <line x1="13" y1="5.5" x2="13" y2="18.5" stroke="#107C41" stroke-width="1"></line>
-                        <line x1="17" y1="5.5" x2="17" y2="18.5" stroke="#107C41" stroke-width="1"></line>
-                        <line x1="10.5" y1="9"   x2="19.5" y2="9"   stroke="#107C41" stroke-width="1"></line>
-                        <line x1="10.5" y1="12.5" x2="19.5" y2="12.5" stroke="#107C41" stroke-width="1"></line>
-                        <line x1="10.5" y1="16"  x2="19.5" y2="16"  stroke="#107C41" stroke-width="1"></line>
-                    </svg>
-                    <span class="text-sm font-medium">Excel</span>
-                </button>
-
             </div>
 
            {{-- ORDER TABLE --}}
