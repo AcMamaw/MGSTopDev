@@ -91,8 +91,8 @@
                             @change="onFilterChange()"
                             class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400">
                         <option value="">Select Product Type</option>
-                        <option value="Ready Made">Ready Made</option>
-                        <option value="Customize Item">Customized Item</option>
+                        <option value="stockin_id">Ready Made</option>
+                        <option value="deliverydetails_id">Customized Item</option>
                     </select>
                 </div>
             </div>
@@ -436,9 +436,9 @@
 
         <!-- Print FAB -->
         <button type="button"
-                onclick="printAndUploadReceipt(this)"
+                @click="printReceipt()"
                 class="no-print fixed bottom-8 right-8 p-4 rounded-full bg-yellow-400 text-black shadow-2xl hover:bg-yellow-500 hover:scale-110 transition-all duration-200 z-50 border-4 border-white"
-                title="Print & Save Receipt">
+                title="Print Receipt">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 6 2 18 2 18 9"/>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
