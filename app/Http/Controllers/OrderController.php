@@ -73,177 +73,270 @@ class OrderController extends Controller
         ));
     }
 
-    public function store(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'customer_id'       => 'required|exists:customers,customer_id',
-                'order_date'        => 'required|date',
-                'product_type'      => 'required|string|in:stockin_id,deliverydetails_id',
-                'items'             => 'required|array|min:1',
-                'items.*.stock_id'  => 'required|exists:inventory,stock_id',
-                'items.*.quantity'  => 'required|integer|min:1',
-                'items.*.price'     => 'required|numeric|min:0',
-                'items.*.custom_amount' => 'nullable|numeric|min:0',
-                'items.*.profit'        => 'required|numeric',
-                'items.*.color'         => 'nullable|string',
-                'items.*.size'          => 'nullable|string',
-                'total_amount'      => 'required|numeric|min:0',
-                'cash'              => 'required|numeric|min:0',
-                'payment_method'    => 'required|string|in:Cash,GCash',
-                'reference_number'  => 'nullable|string',
-            ]);
+   public function store(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'customer_id'           => 'required|exists:customers,customer_id',
+            'order_date'            => 'required|date',
+            'product_type'          => 'required|string|in:stockin_id,deliverydetails_id',
+            'items'                 => 'required|array|min:1',
+            'items.*.stock_id'      => 'required|exists:inventory,stock_id',
+            'items.*.quantity'      => 'required|integer|min:1',
+            'items.*.price'         => 'required|numeric|min:0',
+            'items.*.custom_amount' => 'nullable|numeric|min:0',
+            'items.*.profit'        => 'required|numeric',
+            'items.*.color'         => 'nullable|string',
+            'items.*.size'          => 'nullable|string',
+            'total_amount'          => 'required|numeric|min:0',
+            'cash'                  => 'required|numeric|min:0',
+            'payment_method'        => 'required|string|in:Cash,GCash',
+            'reference_number'      => 'nullable|string',
+        ]);
 
-            DB::beginTransaction();
+        DB::beginTransaction();
 
-            // Get customer
-            $customer = Customer::find($validated['customer_id']);
-            if (!$customer) {
-                throw new \Exception("Customer not found");
-            }
+        // Get customer
+        $customer = Customer::find($validated['customer_id']);
+        if (!$customer) {
+            throw new \Exception("Customer not found");
+        }
 
-            // Get first item's inventory for category
-            $firstStockId = $validated['items'][0]['stock_id'];
-            $firstInventory = Inventory::with(['product'])->find($firstStockId);
-            $categoryId = $firstInventory && $firstInventory->product ? $firstInventory->product->category_id : null;
+        // ✅ Determine product type once — used throughout
+        $isReadyMade          = $validated['product_type'] === 'stockin_id';
+        $orderProductTypeText = $isReadyMade ? 'Ready Made' : 'Customize Item';
 
-            // Calculate totals
-            $computedTotal = 0.0;
-            $computedProfit = 0.0;
+        // Get category from first item's product
+        $firstInventory = Inventory::with('product')->find($validated['items'][0]['stock_id']);
+        $categoryId     = $firstInventory?->product?->category_id ?? null;
 
-            foreach ($validated['items'] as $it) {
-                $qty = (int) $it['quantity'];
-                $unitPrice = (float) $it['price'];
-                $lineCustom = (float) ($it['custom_amount'] ?? 0);
-                $profitPerUnit = (float) $it['profit'];
+        // -----------------------------------------------
+        // Calculate totals & profit
+        // -----------------------------------------------
+        $computedTotal  = 0.0;
+        $computedProfit = 0.0;
 
-                $lineTotal = $unitPrice * $qty + $lineCustom;
-                $lineProfit = $profitPerUnit * $qty + $lineCustom;
+        foreach ($validated['items'] as $it) {
+            $qty           = (int)   $it['quantity'];
+            $unitPrice     = (float) $it['price'];
+            $lineCustom    = (float) ($it['custom_amount'] ?? 0);
+            $profitPerUnit = (float) $it['profit'];
 
-                $computedTotal += $lineTotal;
-                $computedProfit += $lineProfit;
-            }
+            $computedTotal  += ($unitPrice * $qty) + $lineCustom;
+            $computedProfit += ($profitPerUnit * $qty) + $lineCustom;
+        }
 
-            $computedTotal = round($computedTotal, 2);
-            $computedProfit = round($computedProfit, 2);
-            $clientTotal = round((float) $validated['total_amount'], 2);
+        $computedTotal  = round($computedTotal, 2);
+        $computedProfit = round($computedProfit, 2);
+        $clientTotal    = round((float) $validated['total_amount'], 2);
 
-            if (abs($clientTotal - $computedTotal) > 0.01) {
-                throw new \Exception("Total mismatch");
-            }
+        if (abs($clientTotal - $computedTotal) > 0.01) {
+            throw new \Exception(
+                "Total mismatch: server computed ₱{$computedTotal}, client sent ₱{$clientTotal}"
+            );
+        }
 
-            // Payment logic
-            $amount = $clientTotal;
-            $cash = (float) $validated['cash'];
-            $change_amount = max($cash - $amount, 0);
-            $balance = max($amount - $cash, 0);
+        // -----------------------------------------------
+        // Payment calculations
+        // -----------------------------------------------
+        $amount        = $clientTotal;
+        $cash          = (float) $validated['cash'];
+        $change_amount = max($cash - $amount, 0);
+        $balance       = max($amount - $cash, 0);
 
-            if ($validated['product_type'] === 'stockin_id' && $cash < $amount) {
-                throw new \Exception('Full payment is required for Ready Made products!');
-            }
+        // ✅ Ready Made = full payment required (on-the-spot purchase)
+        if ($isReadyMade && $cash < $amount) {
+            throw new \Exception('Full payment is required for Ready Made products!');
+        }
 
-            $paymentStatus = ($balance > 0) ? 'Partial' : 'Fully Paid';
-            $orderProductTypeText = ($validated['product_type'] === 'stockin_id') ? 'Ready Made' : 'Customize Item';
-            $orderStatus = ($validated['product_type'] === 'stockin_id' && $paymentStatus === 'Fully Paid') ? 'Completed' : 'Pending';
+        $paymentStatus = ($balance > 0) ? 'Partial' : 'Fully Paid';
 
-            // Get employee ID
-            $employeeId = auth()->check() && auth()->user()->employee ? auth()->user()->employee->employee_id : null;
+        // ✅ Ready Made = Completed immediately (one-step transaction)
+        // ✅ Customize  = Pending (enters job order workflow)
+        $orderStatus = $isReadyMade ? 'Completed' : 'Pending';
 
-            // Create Order
-            $order = Order::create([
-                'customer_id'   => $validated['customer_id'],
-                'category_id'   => $categoryId,
-                'order_date'    => $validated['order_date'],
-                'ordered_by'    => $employeeId,
-                'product_type'  => $orderProductTypeText,
-                'total_amount'  => $amount,
-                'status'        => $orderStatus,
-            ]);
+        // Get employee ID safely
+        $employeeId = null;
+        if (auth()->check() && auth()->user()->employee) {
+            $employeeId = auth()->user()->employee->employee_id;
+        }
 
-            // Process each item
-            foreach ($validated['items'] as $it) {
-                $stockId = $it['stock_id'];
-                $quantity = (int) $it['quantity'];
-                $price = (float) $it['price'];
-                $color = $it['color'] ?? null;
-                $size = $it['size'] ?? null;
+        // -----------------------------------------------
+        // Create Order
+        // -----------------------------------------------
+        $order = Order::create([
+            'customer_id'  => $validated['customer_id'],
+            'category_id'  => $categoryId,
+            'order_date'   => $validated['order_date'],
+            'ordered_by'   => $employeeId,
+            'product_type' => $orderProductTypeText,
+            'total_amount' => $amount,
+            'status'       => $orderStatus,
+        ]);
 
-                // Create OrderDetail (without custom_amount and profit)
-                OrderDetail::create([
-                    'order_id' => $order->order_id,
-                    'stock_id' => $stockId,
-                    'color'    => $color,
-                    'size'     => $size,
-                    'quantity' => $quantity,
-                    'price'    => $price,
+        // -----------------------------------------------
+        // Process each item
+        // -----------------------------------------------
+        foreach ($validated['items'] as $it) {
+            $stockId  = $it['stock_id'];
+            $quantity = (int)   $it['quantity'];
+            $price    = (float) $it['price'];
+            $color    = $it['color'] ?? null;
+            $size     = $it['size']  ?? null;
+
+            if ($isReadyMade) {
+                // ✅ READY MADE: validate stock → deduct → stockout (all on the spot)
+                $inventory = Inventory::find($stockId);
+
+                if (!$inventory) {
+                    throw new \Exception("Stock item not found: {$stockId}");
+                }
+
+                if ($inventory->current_stock < $quantity) {
+                    $productName = $inventory->product->product_name ?? "Stock ID {$stockId}";
+                    throw new \Exception(
+                        "Insufficient stock for '{$productName}'. " .
+                        "Available: {$inventory->current_stock}, Required: {$quantity}"
+                    );
+                }
+
+                // Deduct inventory immediately
+                $inventory->current_stock -= $quantity;
+                $inventory->last_updated   = now();
+                $inventory->save();
+
+                // Record stockout
+                Stockout::create([
+                    'stock_id'     => $stockId,
+                    'employee_id'  => $employeeId,
+                    'quantity_out' => $quantity,
+                    'date_out'     => now(),
+                    'reason'       => 'Ready Made Sale - Order #' . $order->order_id .
+                                     ' | Customer: ' . $customer->fname . ' ' . $customer->lname,
+                    'status'       => 'Completed',
+                    'approved_by'  => null,
+                    'size'         => $size,
+                    'product_type' => 'Ready Made',
                 ]);
 
-                // For Ready Made: update inventory and create stockout
-                if ($validated['product_type'] === 'stockin_id') {
-                    $inventory = Inventory::find($stockId);
-                    if (!$inventory) {
-                        throw new \Exception("Stock item not found: {$stockId}");
-                    }
-
-                    if ($inventory->current_stock < $quantity) {
-                        throw new \Exception("Insufficient stock");
-                    }
-
-                    // Update inventory
-                    $inventory->current_stock -= $quantity;
-                    $inventory->last_updated = now();
-                    $inventory->save();
-
-                    // Create stockout record with ALL columns
-                    Stockout::create([
-                        'stock_id'      => $stockId,
-                        'employee_id'   => $employeeId,
-                        'quantity_out'  => $quantity,
-                        'date_out'      => now(),
-                        'reason'        => 'Order #' . $order->order_id . ' - Customer: ' . $customer->fname . ' ' . $customer->lname,
-                        'status'        => 'Completed',
-                        'approved_by'   => null,
-                        'size'          => $size,
-                        'product_type'  => $inventory->product_type ?? $orderProductTypeText,
-                    ]);
-                }
             }
+            // ✅ CUSTOMIZE ITEM: NO stock deduction here.
+            //    Stock is deducted later in JoborderController@pickJobOrder
+            //    when the worker physically picks the materials.
 
-            // Create Payment
-            $payment = Payment::create([
-                'order_id'        => $order->order_id,
-                'employee_id'     => $employeeId,
-                'payment_date'    => $validated['order_date'],
-                'amount'          => $amount,
-                'cash'            => $cash,
-                'change_amount'   => $change_amount,
-                'balance'         => $balance,
-                'status'          => $paymentStatus,
-                'payment_method'  => $validated['payment_method'],
-                'reference_number'=> $validated['reference_number'] ?? null,
-                'profit'          => $computedProfit,
+            // Create OrderDetail (both types)
+            OrderDetail::create([
+                'order_id' => $order->order_id,
+                'stock_id' => $stockId,
+                'color'    => $color,
+                'size'     => $size,
+                'quantity' => $quantity,
+                'price'    => $price,
             ]);
+        }
 
-            DB::commit();
+        // -----------------------------------------------
+        // Create Payment record
+        // -----------------------------------------------
+        $payment = Payment::create([
+            'order_id'         => $order->order_id,
+            'employee_id'      => $employeeId,
+            'payment_date'     => $validated['order_date'],
+            'amount'           => $amount,
+            'cash'             => $cash,
+            'change_amount'    => $change_amount,
+            'balance'          => $balance,
+            'status'           => $paymentStatus,
+            'payment_method'   => $validated['payment_method'],
+            'reference_number' => $validated['reference_number'] ?? null,
+            'profit'           => $computedProfit,
+        ]);
 
-            $order->load(['customer', 'items', 'payment']);
+        DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Order created successfully',
-                'order'   => $order,
-                'payment' => $payment,
-            ]);
+        $order->load(['customer', 'items', 'payment']);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Order Store Error: ' . $e->getMessage());
+        return response()->json([
+            'success' => true,
+            'message' => 'Order created successfully',
+            'order'   => $order,
+            'payment' => $payment,
+        ]);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        // ✅ Return JSON not HTML — prevents "Unexpected token '<'" JS error
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors'  => $e->errors(),
+        ], 422);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Order Store Error: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function markAsCompleted($orderId)
+{
+    try {
+        DB::beginTransaction();
+
+        $order = Order::with(['items', 'customer'])->find($orderId);
+
+        if (!$order) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+                'message' => 'Order not found.'
+            ], 404);
         }
+
+        // ✅ Ready Made is already Completed from store() — block it here just in case
+        if ($order->product_type === 'Ready Made') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ready Made orders are completed automatically upon purchase. No further action needed.'
+            ], 400);
+        }
+
+        // ✅ Only Customize Item reaches this point
+        // Stock was already deducted in pickJobOrder() — just update status
+        if ($order->status !== 'Released') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order must be in Released status before it can be marked as Completed. Current status: ' . $order->status
+            ], 400);
+        }
+
+        $order->status = 'Completed';
+        $order->save();
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order marked as Completed. Customer can now claim their item.'
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Mark as Completed Error: ' . $e->getMessage(), [
+            'order_id' => $orderId,
+            'trace'    => $e->getTraceAsString(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
 
     public function storeCustomer(Request $request)
     {
@@ -261,70 +354,6 @@ class OrderController extends Controller
             'success'  => true,
             'customer' => $customer
         ]);
-    }
-
-    public function markAsCompleted($orderId)
-    {
-        try {
-            DB::beginTransaction();
-
-            $order = Order::with('items')->find($orderId);
-
-            if (!$order) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Order not found.'
-                ], 404);
-            }
-
-            // FOR CUSTOMIZED ITEMS: Deduct inventory when marking as completed
-            if ($order->product_type === 'deliverydetails_id') {
-                foreach ($order->items as $orderDetail) {
-                    $inventory = Inventory::find($orderDetail->stock_id);
-                    
-                    if (!$inventory) {
-                        throw new \Exception("Stock item not found: {$orderDetail->stock_id}");
-                    }
-
-                    if ($inventory->current_stock < $orderDetail->quantity) {
-                        throw new \Exception("Insufficient stock for: {$inventory->product->product_name}. Available: {$inventory->current_stock}, Required: {$orderDetail->quantity}");
-                    }
-
-                    $inventory->current_stock -= $orderDetail->quantity;
-                    $inventory->last_updated   = now();
-                    $inventory->save();
-
-                    Stockout::create([
-                        'stock_id'    => $orderDetail->stock_id,
-                        'employee_id' => auth()->user()->employee->employee_id,
-                        'quantity_out'=> $orderDetail->quantity,
-                        'date_out'    => now(),
-                        'reason'      => 'Customized Order #' . $order->order_id . ' Completed - Customer: ' . $order->customer->fname . ' ' . $order->customer->lname,
-                        'status'      => 'Completed',
-                        'approved_by' => null,
-                    ]);
-                }
-            }
-
-            $order->status = 'Completed';
-            $order->save();
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Order marked as Completed.'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Mark as Completed Error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
-        }
     }
 
     public function updatePayment(Request $request)
