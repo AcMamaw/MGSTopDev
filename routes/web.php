@@ -75,9 +75,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
         Route::post('reports/save-receipt', [ReportController::class, 'saveReceipt'])->name('reports.saveReceipt');
 
-        // ✅ REMOVED duplicate payments.update from here
         Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
-        Route::get('/payments/{paymentId}/receipt-pdf', [OrderController::class, 'generateReceiptPdf']);
 
         Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
         Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
@@ -163,6 +161,10 @@ Route::middleware('auth')->group(function () {
     // Payments
     // --------------------------
     Route::post('/payments/update', [OrderController::class, 'updatePayment'])->name('payments.update');
+
+    // ← MOVED HERE: outside maincontent prefix so URL is /payments/{id}/receipt-pdf
+    Route::get('/payments/{paymentId}/receipt-pdf', [OrderController::class, 'generateReceiptPdf'])
+        ->name('payments.receipt-pdf');
 
     // --------------------------
     // Auth Users

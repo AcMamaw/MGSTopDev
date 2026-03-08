@@ -413,10 +413,11 @@
             </div>
         </div>
     </div>
-     @include('added.payment_complete')
-    @include('added.assign_joborders')
 </div>
-       
+
+        @include('added.payment_complete')
+        @include('added.assign_joborders')
+
 <script>
 const ORDER_STATUS_PRIORITY = {
     'Released': 1,
@@ -470,7 +471,7 @@ function paymentComponent() {
         // Selected Order
         selectedOrderId: null,
 
-        // ===== RECEIPT STATE =====
+        // ===== RECEIPT STATE (NEW) =====
         showReceipt: false,
         showSuccess: false,
         receipt: {
@@ -486,7 +487,6 @@ function paymentComponent() {
             cash: 0,
             change_amount: 0,
             balance: 0,
-            pdf_url: null,  // ← ADDED
         },
 
         printReceipt() {
@@ -497,7 +497,7 @@ function paymentComponent() {
             return hex || '';
         },
 
-        // Filter orders
+        // Filter orders (set logical visibility only)
         filterOrders() {
             const rows = document.querySelectorAll('.order-row');
             let visibleCount = 0;
@@ -528,7 +528,7 @@ function paymentComponent() {
             }
         },
 
-        // Assign Job Order Methods
+        // Assign Job Order Methods (unchanged)
         async openAssignJobOrder(orderId) {
             this.selectedOrderId = orderId;
             this.showAssignJobOrderModal = true;
@@ -675,7 +675,7 @@ function paymentComponent() {
                 const pay   = data.payment || {};
                 const order = data.order   || {};
 
-                // Fill receipt info
+                // Fill minimal receipt info
                 this.receipt.receipt_number   = pay.payment_id || pay.id || null;
                 this.receipt.status           = pay.status || paymentStatus;
                 this.receipt.payment_method   = pay.payment_method || this.paymentMethod;
@@ -685,12 +685,10 @@ function paymentComponent() {
                 this.receipt.cash             = Number(pay.cash ?? cashReceived);
                 this.receipt.change_amount    = Number(pay.change_amount ?? changeAmount);
                 this.receipt.balance          = Number(pay.balance ?? newBalance);
+
                 this.receipt.customer_name    = order.customer_name || '';
                 this.receipt.customer_address = order.customer_address || '';
                 this.receipt.items            = Array.isArray(order.items) ? order.items : [];
-
-                // ← ADDED: S3 PDF download URL
-                this.receipt.pdf_url = data.receipt_url || null;
 
                 this.showCompletePaymentModal = false;
                 this.showReceipt = true;
@@ -705,8 +703,8 @@ function paymentComponent() {
 
 // ==================== PAGINATION + INITIAL ORDER ====================
 document.addEventListener('DOMContentLoaded', function() {
-    const orderRowsPerPage     = 5;
-    const orderTableBody       = document.querySelector('#order-table tbody');
+    const orderRowsPerPage   = 5;
+    const orderTableBody     = document.querySelector('#order-table tbody');
     const orderPaginationLinks = document.getElementById('order-pagination-links');
     const orderPaginationInfo  = document.getElementById('order-pagination-info');
 
@@ -716,6 +714,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let orderCurrentPage = 1;
 
+    // Sort rows once by status (Released → In Progress → Pending)
     function orderInitialRows() {
         const rows = Array.from(orderTableBody.querySelectorAll('.order-row'));
         rows.forEach(r => { if (!r.dataset.visible) r.dataset.visible = "true"; });
@@ -736,14 +735,16 @@ document.addEventListener('DOMContentLoaded', function() {
         rows.forEach(r => orderTableBody.appendChild(r));
     }
 
+    // Get rows that are logically visible (for pagination)
     window.getVisibleOrderRows = function() {
         return Array.from(orderTableBody.querySelectorAll('.order-row'))
             .filter(row => row.dataset.visible !== "false");
     };
 
+    // Show a page
     window.showOrderPage = function(page) {
-        const visibleRows     = window.getVisibleOrderRows();
-        const totalResults    = visibleRows.length;
+        const visibleRows    = window.getVisibleOrderRows();
+        const totalResults   = visibleRows.length;
         const orderTotalPages = Math.ceil(totalResults / orderRowsPerPage) || 1;
 
         if (page < 1) page = 1;
@@ -764,6 +765,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.renderOrderPagination(orderTotalPages, totalResults);
     };
 
+    // Render pagination buttons + info
     window.renderOrderPagination = function(totalPages, totalResults) {
         orderPaginationLinks.innerHTML = '';
 
