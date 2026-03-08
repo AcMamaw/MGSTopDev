@@ -79,7 +79,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'customer_id'           => 'required|exists:customers,customer_id',
             'order_date'            => 'required|date',
-            'product_type'          => 'required|string|in:stockin_id,deliverydetails_id',
+            'product_type'          => 'required|string|in:Ready Made,Customize Item',
             'items'                 => 'required|array|min:1',
             'items.*.stock_id'      => 'required|exists:inventory,stock_id',
             'items.*.quantity'      => 'required|integer|min:1',

@@ -241,7 +241,7 @@
         <div class="flex items-center justify-between mb-6 border-b pb-3">
             <h2 class="text-2xl font-bold text-gray-800">
                 Order Details - ID:
-               <span class="text-black-600" x-text="selectedOrderId ? 'O' + selectedOrderId.toString().padStart(3, '0') : 'O000'"></span>
+                <span x-text="selectedOrderId ? 'O' + selectedOrderId.toString().padStart(3, '0') : ''"></span>
             </h2>
 
             <button
@@ -425,29 +425,42 @@ const ORDER_STATUS_PRIORITY = {
     '': 99
 };
 
-function markAsCompleted(orderId) {
-    fetch(`/orders/${orderId}/complete`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            location.reload();
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch(err => console.error(err));
-}
+    function markAsCompleted(orderId) {
+        fetch(`/orders/${orderId}/complete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Server error: ' + res.status);
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('An error occurred: ' + err.message);
+        });
+    }
+
 
 function paymentComponent() {
     return {
-        // Shared properties
+        uploading: false,
+        uploadSuccess: false,
+        uploadedUrl: '',
+        uploadError: '',
+
         showAddOrder: false,
         showOrderDetails: false,
         searchQuery: '',
@@ -664,7 +677,13 @@ function paymentComponent() {
                 },
                 body: JSON.stringify(paymentData)
             })
-            .then(response => response.json())
+            .then(response => {
+                // ✅ Guard against non‑JSON responses (like HTML error pages)
+                if (!response.ok) {
+                    throw new Error('Server error: ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (!data.success) {
                     alert(data.message || 'Failed to update payment.');
