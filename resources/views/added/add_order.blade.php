@@ -623,12 +623,20 @@
         </div>
 
         <!-- Close button -->
-        <div class="mt-6 flex justify-center no-print">
+        <div class="mt-6 flex justify-center gap-3 no-print">
             <button type="button"
                     @click="showReceipt = false; showSuccess = true; window.location.reload()"
                     class="px-8 py-2 rounded-lg bg-yellow-400 text-black text-sm font-semibold hover:bg-yellow-500 transition">
                 Close
             </button>
+
+            {{-- NEW: Download PDF from S3 --}}
+            <a :href="receipt.pdf_url"
+            target="_blank"
+            x-show="receipt.pdf_url"
+            class="px-8 py-2 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 transition">
+                ⬇ Download PDF
+            </a>
         </div>
     </div>
 </div>
@@ -641,9 +649,8 @@ function orderData() {
     return {
         selectedCustomer: '',
         product_type: '',
-        selectedCategory: '',   // not used in payload
+        selectedCategory: '',
 
-        // base value kept but not used directly now
         customAddOn: 50,
 
         items: [{
@@ -652,10 +659,10 @@ function orderData() {
             color: '#000000',
             size: '',
             quantity: 1,
-            price: 0,           // unit selling price with markup
-            custom_amount: 0,   // customization fee per line
-            total: 0,           // line total
-            profit: 0,          // per‑unit profit (markup only)
+            price: 0,
+            custom_amount: 0,
+            total: 0,
+            profit: 0,
             category_name: '',
             unavailable: false
         }],
@@ -665,7 +672,7 @@ function orderData() {
             status: '',
             customer_name: '',
             customer_address: '',
-            receipt_number: null,   // will hold payment_id from backend
+            receipt_number: null,
             payment_method: '',
             reference_number: null,
             payment_date: '',
@@ -673,7 +680,8 @@ function orderData() {
             cash: 0,
             change_amount: 0,
             balance: 0,
-            items: []
+            items: [],
+            pdf_url: null,   // ← ADDED
         },
 
         showSuccess: false,
@@ -683,7 +691,6 @@ function orderData() {
             this.showSuccess = true;
         },
 
-        // inventory with unit_cost, markup_rule, category_name
         stockList: {
             @foreach($inventories as $stock)
             '{{ $stock->stock_id }}': {
@@ -748,7 +755,7 @@ function orderData() {
             return map[value] || 'Custom Color';
         },
 
-        // product‑type helpers -------------------------------------
+        // product-type helpers -------------------------------------
 
         selectedTypeKey() {
             if (this.product_type === 'stockin_id') return 'ready';
@@ -979,7 +986,6 @@ function orderData() {
             return cost * (1 + markup);
         },
 
-        // quantity-based customization fee per unit
         computeCustomFeePerUnit(qty) {
             const q = Number(qty || 0);
             if (q >= 1 && q <= 3) return 100;
@@ -999,16 +1005,15 @@ function orderData() {
 
                 let customPerUnit = 0;
                 if (this.selectedTypeKey() === 'custom') {
-                    // tiered fee per piece
                     customPerUnit = this.computeCustomFeePerUnit(qty);
                 }
                 const customLine = customPerUnit * qty;
 
-                const baseProfitPerUnit = pricePerUnit - cost; // markup profit (you can also add customPerUnit if you want)
+                const baseProfitPerUnit = pricePerUnit - cost;
                 const lineTotal = (pricePerUnit * qty) + customLine;
 
                 item.price         = Number(pricePerUnit.toFixed(2));
-                item.custom_amount = Number(customLine.toFixed(2));  // total custom fee for this line (e.g. 50 * 10 = 500)
+                item.custom_amount = Number(customLine.toFixed(2));
                 item.total         = Number(lineTotal.toFixed(2));
                 item.profit        = Number(baseProfitPerUnit.toFixed(2));
             } else {
@@ -1019,7 +1024,6 @@ function orderData() {
             }
         },
 
-        // Grand Total (sum of item.total)
         grandTotal() {
             return Number(
                 this.items.reduce((sum,i) => sum + Number(i.total || 0), 0).toFixed(2)
@@ -1093,7 +1097,6 @@ function orderData() {
             if (this.items.length === 0 || !this.items.some(i => i.stock_id)) { alert('Please add at least one item.'); return; }
             if (!this.paymentMethod)   { alert('Please select a payment method.'); return; }
 
-            // Ready made must be fully paid
             if (this.selectedTypeKey() === 'ready' &&
                 Number(this.paymentCash || 0) < this.paymentAmount) {
                 alert('Full payment is required for Ready Made products!');
@@ -1174,6 +1177,9 @@ function orderData() {
                 this.receipt.cash             = this.paymentCash;
                 this.receipt.change_amount    = this.paymentChange;
                 this.receipt.balance          = this.paymentBalance;
+
+                // ← ADDED: S3 PDF download URL
+                this.receipt.pdf_url = data.receipt_url || null;
 
                 this.showReceipt = true;
             })

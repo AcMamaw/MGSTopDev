@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Inventory;
 use App\Models\Customer;
 use App\Models\Order;
@@ -165,7 +167,7 @@ class OrderController extends Controller
                     $orderStatus = 'Completed';
                 }
 
-                // 4) Create Order (now with category_id)
+                // 4) Create Order
                 $order = Order::create([
                     'customer_id'  => $validated['customer_id'],
                     'category_id'  => $categoryId,
@@ -201,7 +203,6 @@ class OrderController extends Controller
 
                     $lineProfit = $profitPerUnit * $quantity + $custom_amount;
 
-                    // Order detail already stores size
                     OrderDetail::create([
                         'order_id'      => $order->order_id,
                         'stock_id'      => $stockId,
@@ -213,7 +214,6 @@ class OrderController extends Controller
                         'profit'        => $lineProfit,
                     ]);
 
-                    // For Ready Made: update inventory and create stockout, now storing product_type and size
                     if ($validated['product_type'] === 'stockin_id') {
                         if ($inventory->current_stock < $quantity) {
                             throw new \Exception("Insufficient stock for: {$inventory->product->product_name}. Available: {$inventory->current_stock}, Requested: {$quantity}");
@@ -223,9 +223,7 @@ class OrderController extends Controller
                         $inventory->last_updated   = now();
                         $inventory->save();
 
-                        // Decide what product_type to store on stockout
-                        $productTypeForStockout = $inventory->product_type
-                            ?? $orderProductTypeText; // fallback to order text
+                        $productTypeForStockout = $inventory->product_type ?? $orderProductTypeText;
 
                         Stockout::create([
                             'stock_id'      => $stockId,
@@ -236,15 +234,13 @@ class OrderController extends Controller
                                             $order->customer->fname . ' ' . $order->customer->lname,
                             'status'        => 'Completed',
                             'approved_by'   => null,
-
-                            // NEW FIELDS YOU ASKED FOR:
                             'product_type'  => $productTypeForStockout,
                             'size'          => $size,
                         ]);
                     }
                 }
 
-                // 6) Create Payment, including total profit
+                // 6) Create Payment
                 $payment = Payment::create([
                     'order_id'        => $order->order_id,
                     'employee_id'     => auth()->user()->employee->employee_id,
@@ -260,12 +256,66 @@ class OrderController extends Controller
                 ]);
             });
 
+            // -------------------------------------------------------
+            // 7) Generate PDF receipt and upload to S3
+            // -------------------------------------------------------
+            $receiptUrl = null;
+
+            try {
+                // Load order items with product names
+                $orderItems = $order->load('items.stock.product')->items->map(function ($od) {
+                    $productName = optional(optional($od->stock)->product)->product_name ?? 'N/A';
+                    $unitPrice   = (float) $od->price;
+                    $customAmt   = (float) ($od->custom_amount ?? 0);
+                    $qty         = (int) $od->quantity;
+
+                    return [
+                        'quantity'      => $qty,
+                        'product_name'  => $productName,
+                        'size'          => $od->size,
+                        'color'         => $od->color,
+                        'unit_price'    => $unitPrice,
+                        'custom_amount' => $customAmt,
+                        'amount'        => ($unitPrice * $qty) + $customAmt,
+                    ];
+                })->toArray();
+
+                $customer = $order->customer;
+
+                // Generate PDF from blade view
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('receipts.receipt', [
+                    'payment'         => $payment,
+                    'items'           => $orderItems,
+                    'customerName'    => $customer->fname . ' ' . $customer->lname,
+                    'customerAddress' => $customer->address ?? '',
+                    'authorizedBy'    => auth()->user()->employee->fname . ' ' . auth()->user()->employee->lname,
+                ]);
+
+                // Upload PDF to S3
+                $filename = 'receipts/R-' . str_pad($payment->payment_id, 5, '0', STR_PAD_LEFT) . '.pdf';
+                \Illuminate\Support\Facades\Storage::disk('s3')->put($filename, $pdf->output(), 'private');
+
+                // Generate signed URL valid for 1 hour
+                $receiptUrl = \Illuminate\Support\Facades\Storage::disk('s3')->temporaryUrl(
+                    $filename,
+                    now()->addHour()
+                );
+
+            } catch (\Exception $pdfError) {
+                // Don't fail the order if PDF fails — just log it
+                \Log::error('PDF/S3 Upload Error: ' . $pdfError->getMessage());
+            }
+
+            // -------------------------------------------------------
+
             return response()->json([
-                'success' => true,
-                'message' => 'Order and payment created successfully',
-                'order'   => $order->load('items', 'customer', 'payments'),
-                'payment' => $payment,
+                'success'     => true,
+                'message'     => 'Order and payment created successfully',
+                'order'       => $order->load('items', 'customer', 'payments'),
+                'payment'     => $payment,
+                'receipt_url' => $receiptUrl, // ← null if PDF failed, URL if success
             ]);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
