@@ -6,26 +6,19 @@
          @click.away="showReceipt = false"
          class="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 relative text-gray-800 max-h-[90vh] overflow-y-auto">
 
-        <!-- Print Button -->
-        <button type="button"
-                @click="printAndUploadReceipt()"
-                :disabled="uploading"
-                class="no-print absolute top-4 right-4 p-3 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-500 transition disabled:opacity-60"
-                title="Print & Save Receipt">
-
-            <!-- Printer icon -->
-            <svg x-show="!uploading" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
-                 fill="none" stroke="currentColor" stroke-width="2">
+       <!-- Download PDF Button -->
+        <a :href="receipt.pdf_url || '#'"
+        :target="receipt.pdf_url ? '_blank' : '_self'"
+        x-show="receipt.pdf_url"
+        class="no-print absolute top-4 right-4 p-3 rounded-full bg-yellow-400 text-black shadow-lg hover:bg-yellow-500 transition"
+        title="Download PDF Receipt">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="6 9 6 2 18 2 18 9"/>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                 <rect x="6" y="14" width="12" height="8"/>
             </svg>
-
-            <!-- Loading icon -->
-            <svg x-show="uploading" class="animate-spin" width="22" height="22" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
-            </svg>
-        </button>
+        </a>
 
         <!-- Upload Success -->
         <div x-show="uploadSuccess"

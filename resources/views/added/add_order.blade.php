@@ -444,17 +444,17 @@
          @click.away="showReceipt = false"
          class="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 relative text-gray-800 max-h-[90vh] overflow-y-auto">
 
-        <!-- Print FAB -->
-        <button type="button"
-                @click="printReceipt()"
-                class="no-print fixed bottom-8 right-8 p-4 rounded-full bg-yellow-400 text-black shadow-2xl hover:bg-yellow-500 hover:scale-110 transition-all duration-200 z-50 border-4 border-white"
-                title="Print Receipt">
+         <!-- Print/Download FAB -->
+        <a :href="receipt.pdf_url || '#'"
+        :target="receipt.pdf_url ? '_blank' : '_self'"
+        class="no-print fixed bottom-8 right-8 p-4 rounded-full bg-yellow-400 text-black shadow-2xl hover:bg-yellow-500 hover:scale-110 transition-all duration-200 z-50 border-4 border-white"
+        title="Download PDF Receipt">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 6 2 18 2 18 9"/>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                 <rect x="6" y="14" width="12" height="8"/>
             </svg>
-        </button>
+        </a>
 
         <!-- Header: store + logo -->
         <div class="grid grid-cols-3 gap-4 items-start mb-4">
@@ -629,14 +629,6 @@
                     class="px-8 py-2 rounded-lg bg-yellow-400 text-black text-sm font-semibold hover:bg-yellow-500 transition">
                 Close
             </button>
-
-            {{-- NEW: Download PDF from S3 --}}
-            <a :href="receipt.pdf_url"
-            target="_blank"
-            x-show="receipt.pdf_url"
-            class="px-8 py-2 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 transition">
-                ⬇ Download PDF
-            </a>
         </div>
     </div>
 </div>

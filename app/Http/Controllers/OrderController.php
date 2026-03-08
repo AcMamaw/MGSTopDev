@@ -432,7 +432,6 @@ class OrderController extends Controller
 
             if (!$payment) {
                 DB::rollBack();
-
                 return response()->json([
                     'success' => false,
                     'message' => 'Payment record not found.',
@@ -441,18 +440,18 @@ class OrderController extends Controller
 
             // Update payment
             $payment->update([
-                'cash'            => $validated['cash'],
-                'balance'         => $validated['balance'],
-                'status'          => $validated['status'],
-                'change_amount'   => $validated['change_amount'],
-                'payment_method'  => $validated['payment_method'],
-                'reference_number'=> $validated['reference_number'],
+                'cash'             => $validated['cash'],
+                'balance'          => $validated['balance'],
+                'status'           => $validated['status'],
+                'change_amount'    => $validated['change_amount'],
+                'payment_method'   => $validated['payment_method'],
+                'reference_number' => $validated['reference_number'],
             ]);
 
             // Reload with fresh values
             $payment->refresh();
 
-            // Load order + customer + items (+ inventory.product for product_name)
+            // Load order + customer + items
             $order = Order::with([
                 'customer',
                 'items' => function ($q) {
@@ -462,15 +461,14 @@ class OrderController extends Controller
 
             // Flatten order items for the receipt
             $receiptItems = $order->items->map(function ($od) {
-                // Prefer stored product_name, else from related product
                 $productName = $od->product_name;
                 if (!$productName && $od->inventory && $od->inventory->product) {
                     $productName = $od->inventory->product->product_name;
                 }
 
-                $unitPrice    = (float)$od->price;
-                $customAmount = (float)($od->custom_amount ?? 0);
-                $qty          = (int)$od->quantity;
+                $unitPrice    = (float) $od->price;
+                $customAmount = (float) ($od->custom_amount ?? 0);
+                $qty          = (int) $od->quantity;
                 $lineTotal    = $unitPrice * $qty + $customAmount;
 
                 return [
@@ -486,13 +484,49 @@ class OrderController extends Controller
 
             DB::commit();
 
+            // -------------------------------------------------------
+            // Generate PDF receipt and upload to S3
+            // -------------------------------------------------------
+            $receiptUrl = null;
+
+            try {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('receipts.receipt', [
+                    'payment'         => $payment,
+                    'items'           => $receiptItems->toArray(),
+                    'customerName'    => $order->customer
+                                            ? $order->customer->fname . ' ' . $order->customer->lname
+                                            : 'N/A',
+                    'customerAddress' => $order->customer->address ?? '',
+                    'authorizedBy'    => auth()->user()->employee->fname . ' ' . auth()->user()->employee->lname,
+                ]);
+
+                $filename = 'receipts/R-' . str_pad($payment->payment_id, 5, '0', STR_PAD_LEFT) . '.pdf';
+
+                \Illuminate\Support\Facades\Storage::disk('s3')->put(
+                    $filename,
+                    $pdf->output(),
+                    'private'
+                );
+
+                $receiptUrl = \Illuminate\Support\Facades\Storage::disk('s3')->temporaryUrl(
+                    $filename,
+                    now()->addHour()
+                );
+
+            } catch (\Exception $pdfError) {
+                // Don't fail the payment if PDF fails — just log it
+                \Log::error('PDF/S3 Upload Error (updatePayment): ' . $pdfError->getMessage());
+            }
+            // -------------------------------------------------------
+
             return response()->json([
-                'success' => true,
-                'message' => $validated['status'] === 'Fully Paid'
+                'success'     => true,
+                'message'     => $validated['status'] === 'Fully Paid'
                     ? 'Payment completed successfully!'
                     : 'Payment updated. Remaining balance: ₱' . number_format($validated['balance'], 2),
-                'payment' => $payment,
-                'order'   => [
+                'payment'     => $payment,
+                'receipt_url' => $receiptUrl,  // ← S3 PDF URL
+                'order'       => [
                     'customer_name'    => $order->customer
                         ? $order->customer->fname . ' ' . $order->customer->lname
                         : '',
