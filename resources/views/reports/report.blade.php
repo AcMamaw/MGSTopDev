@@ -65,19 +65,12 @@
         .badge-red    { background-color: #fee2e2; color: #991b1b; }
         .badge-gray   { background-color: #f3f4f6; color: #374151; }
         .empty-row td { text-align: center; padding: 20px; color: #9ca3af; font-style: italic; }
-        .logo { display: block; margin: 0 auto 6px auto; max-width: 80px; max-height: 50px; }
     </style>
 </head>
 <body>
 
     {{-- HEADER --}}
     <div class="header">
-        @php
-            $logoPath = public_path('images/ace.jpg');
-        @endphp
-        @if(file_exists($logoPath))
-            <img src="{{ $logoPath }}" alt="MGS Logo" class="logo" />
-        @endif
         <h1>Mariviles Graphic Studio</h1>
         <p>Adopted CO. | Mati City</p>
         <div class="report-title">{{ $category }} Report</div>
