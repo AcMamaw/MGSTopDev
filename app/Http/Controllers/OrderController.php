@@ -103,8 +103,9 @@ class OrderController extends Controller
         }
 
         // ✅ Determine product type once — used throughout
-        $isReadyMade          = $validated['product_type'] === 'stockin_id';
+        $isReadyMade = $validated['product_type'] === 'Ready Made';
         $orderProductTypeText = $isReadyMade ? 'Ready Made' : 'Customize Item';
+
 
         // Get category from first item's product
         $firstInventory = Inventory::with('product')->find($validated['items'][0]['stock_id']);

@@ -91,8 +91,8 @@
                             @change="onFilterChange()"
                             class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400">
                         <option value="">Select Product Type</option>
-                        <option value="stockin_id">Ready Made</option>
-                        <option value="deliverydetails_id">Customized Item</option>
+                        <option value="Ready Made">Ready Made</option>
+                        <option value="Customize Item">Customized Item</option>
                     </select>
                 </div>
             </div>

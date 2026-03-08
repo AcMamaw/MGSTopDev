@@ -454,7 +454,7 @@ const ORDER_STATUS_PRIORITY = {
     }
 
 
-function paymentComponent() {
+    function paymentComponent() {
     return {
         uploading: false,
         uploadSuccess: false,
@@ -715,7 +715,7 @@ function paymentComponent() {
                 console.error(err);
                 alert('An error occurred: ' + err.message);
             });
-        }
+        }   
     }
 }
 
