@@ -487,6 +487,7 @@ function paymentComponent() {
             cash: 0,
             change_amount: 0,
             balance: 0,
+            pdf_url: null,
         },
 
         printReceipt() {
@@ -675,7 +676,6 @@ function paymentComponent() {
                 const pay   = data.payment || {};
                 const order = data.order   || {};
 
-                // Fill minimal receipt info
                 this.receipt.receipt_number   = pay.payment_id || pay.id || null;
                 this.receipt.status           = pay.status || paymentStatus;
                 this.receipt.payment_method   = pay.payment_method || this.paymentMethod;
@@ -685,10 +685,10 @@ function paymentComponent() {
                 this.receipt.cash             = Number(pay.cash ?? cashReceived);
                 this.receipt.change_amount    = Number(pay.change_amount ?? changeAmount);
                 this.receipt.balance          = Number(pay.balance ?? newBalance);
-
                 this.receipt.customer_name    = order.customer_name || '';
                 this.receipt.customer_address = order.customer_address || '';
                 this.receipt.items            = Array.isArray(order.items) ? order.items : [];
+                this.receipt.pdf_url          = data.receipt_url || null;
 
                 this.showCompletePaymentModal = false;
                 this.showReceipt = true;

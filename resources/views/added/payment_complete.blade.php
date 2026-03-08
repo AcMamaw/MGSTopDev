@@ -2,9 +2,9 @@
 <div x-show="showCompletePaymentModal" x-cloak x-transition
      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
     <div @click.outside="showCompletePaymentModal = false"
-         class="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
-
-        <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
+        class="bg-white w-full max-w-xl rounded-xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+    
+       <div class="flex justify-between items-center border-b border-gray-200 pb-2 mb-4">
             <h2 class="text-2xl font-bold text-gray-800">Complete Payment</h2>
         </div>
 
@@ -148,19 +148,15 @@
          @click.away="showReceipt = false"
          class="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 relative text-gray-800 max-h-[90vh] overflow-y-auto">
 
-        <!-- ← REPLACED: Download PDF FAB (S3) -->
+        <!-- Download PDF FAB (S3) -->
         <button type="button"
-                @click="
-                    if (receipt.pdf_url) {
-                        window.open(receipt.pdf_url, '_blank');
-                    }
-                "
-                x-show="receipt.pdf_url"
+                @click="window.open(receipt.pdf_url, '_blank')"
+                x-show="showReceipt && receipt.pdf_url"
                 class="no-print fixed bottom-8 right-8 p-4 rounded-full bg-yellow-400 text-black shadow-2xl hover:bg-yellow-500 hover:scale-110 transition-all duration-200 z-50 border-4 border-white"
                 title="Download PDF Receipt">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none"
-                 stroke="currentColor" stroke-width="2.5"
-                 stroke-linecap="round" stroke-linejoin="round">
+                stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 6 2 18 2 18 9"/>
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                 <rect x="6" y="14" width="12" height="8"/>
@@ -168,10 +164,10 @@
         </button>
 
         <!-- Loading FAB (shown while PDF is being generated) -->
-        <div x-show="!receipt.pdf_url"
-             class="no-print fixed bottom-8 right-8 p-4 rounded-full bg-yellow-400 text-black shadow-2xl z-50 border-4 border-white opacity-60">
+        <div x-show="showReceipt && !receipt.pdf_url"
+            class="no-print fixed bottom-8 right-8 p-4 rounded-full bg-yellow-400 text-black shadow-2xl z-50 border-4 border-white opacity-60">
             <svg class="animate-spin" width="28" height="28"
-                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
                 <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
             </svg>
