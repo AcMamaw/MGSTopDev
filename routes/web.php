@@ -75,12 +75,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
         Route::post('reports/save-receipt', [ReportController::class, 'saveReceipt'])->name('reports.saveReceipt');
 
-        Route::post('/payments/update', [OrderController::class, 'updatePayment'])->name('payments.update');
+        // ✅ REMOVED duplicate payments.update from here
         Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
 
         Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
         Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
-    }); // ✅ FIX: was missing this closing }); for maincontent group
+    });
 
     // --------------------------
     // Inventory
@@ -155,10 +155,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/store', [OrderController::class, 'store'])->name('orders.store');
     Route::post('/orders/customer/store', [OrderController::class, 'storeCustomer'])->name('orders.customer.store');
     Route::post('/orders/{order}/complete', [OrderController::class, 'markAsCompleted'])->name('orders.complete');
-    Route::post('/payments/update', [OrderController::class, 'updatePayment'])->name('payments.update');
     Route::get('/employees/active', [OrderController::class, 'getActiveEmployees'])->name('employees.active');
     Route::post('/orders/assign', [OrderController::class, 'assignJobOrder'])->name('orders.assign');
 
+    // --------------------------
+    // Payments
+    // --------------------------
+    Route::post('/payments/update', [OrderController::class, 'updatePayment'])->name('payments.update');
+
+    // --------------------------
+    // Auth Users
+    // --------------------------
     Route::post('/auth/users/store', [AuthController::class, 'createEmployeeUser'])
         ->middleware('role:Admin')->name('auth.users.store');
 
@@ -203,8 +210,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/upload-report', [FileUploadController::class, 'uploadReport'])->name('upload.report');
         Route::post('/upload-document', [FileUploadController::class, 'uploadDocument'])->name('upload.document');
         Route::post('/delete', [FileUploadController::class, 'deleteFile'])->name('delete.file');
-
-        // ✅ NEW: Upload receipt PDF (base64) to S3
         Route::post('/upload-receipt-pdf', [FileUploadController::class, 'uploadReceiptPdf'])
             ->name('upload.receipt.pdf');
     });
