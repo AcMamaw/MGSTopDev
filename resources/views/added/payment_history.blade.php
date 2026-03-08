@@ -1,10 +1,3 @@
-<?php
-// filepath: routes/web.php
-Route::middleware(['web'])->group(function () {
-    // ... your routes ...
-});
-?>
-
 <div
     x-data="{
         showPaymentHistory: false,
@@ -380,10 +373,10 @@ Route::middleware(['web'])->group(function () {
              class="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 relative text-gray-800 max-h-[90vh] overflow-y-auto">
 
             <!-- Print FAB -->
-           <button type="button"
-                    onclick="printAndUploadReceipt(this)"
+            <button type="button"
+                    @click="printReceipt()"
                     class="no-print fixed bottom-8 right-8 p-4 rounded-full bg-yellow-400 text-black shadow-2xl hover:bg-yellow-500 hover:scale-110 transition-all duration-200 z-50 border-4 border-white"
-                    title="Print & Save Receipt">
+                    title="Print Receipt">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 6 2 18 2 18 9"/>
                     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
@@ -495,14 +488,14 @@ Route::middleware(['web'])->group(function () {
                 <div class="flex justify-between">
                     <span>Subtotal</span>
                     <span>
-                        ₱<span x-text="Number(receipt.amount || 0).toFixed(2)"></span>
+                        ₱<span x-text="Number(receipt.amount || grandTotal()).toFixed(2)"></span>
                     </span>
                 </div>
 
                 <div class="flex justify-between font-semibold border-t border-gray-200 pt-1">
                     <span>Total</span>
                     <span>
-                        ₱<span x-text="Number(receipt.amount || 0).toFixed(2)"></span>
+                        ₱<span x-text="Number(receipt.amount || grandTotal()).toFixed(2)"></span>
                     </span>
                 </div>
 
@@ -565,28 +558,3 @@ Route::middleware(['web'])->group(function () {
         </div>
     </div>
 </div>
-
-<!-- SCRIPT -->
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('productData', () => ({
-        showToast: false,
-        toastMessage: '',
-        // ... other data ...
-        uploadImage() {
-            const formData = new FormData();
-            formData.append('image', this.$refs.imageInput.files[0]);
-            fetch('/managestore/product', {  // Ensure this is HTTPS
-                method: 'POST',
-                body: formData,
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
-            }).then(response => response.json()).then(data => {
-                if (data.success) {
-                    this.toastMessage = 'Image uploaded!';
-                    this.showToast = true;
-                }
-            }).catch(error => console.error(error));
-        }
-    }));
-});
-</script>

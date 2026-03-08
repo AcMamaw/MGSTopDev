@@ -89,24 +89,29 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Product Type</label>
                     <select name="product_type" x-model="product_type"
                             @change="onFilterChange()"
-                            :disabled="hasItems()"
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400"
-                            :class="{'bg-gray-100 cursor-not-allowed': hasItems()}">
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400">
+                        
                         <option value="">Select Product Type</option>
-                        <option value="stockin_id">Ready Made</option>
-                        <option value="deliverydetails_id">Customized Item</option>
+                        
+                        <!-- Disabled Ready Made -->
+                        <option value="stockin_id" disabled>
+                            Ready Made (Under Maintenance)
+                        </option>
+                        
+                        <!-- Active Option -->
+                        <option value="deliverydetails_id">
+                            Customized Item
+                        </option>
+
                     </select>
-                    <p x-show="hasItems()" class="text-xs text-gray-500 mt-1">
-                        Product type cannot be changed while items exist
-                    </p>
                 </div>
             </div>
-
+            
             <!-- Order Items (Card Layout) -->
             <div class="space-y-4">
                 <template x-for="(item, index) in items" :key="index">
                     <div class="bg-white border rounded-xl shadow p-4">
-                       <!-- Card Header -->
+                        <!-- Card Header -->
                         <div class="flex justify-between items-center mb-3">
                             <h3 class="text-lg font-semibold text-gray-800">
                                 Item <span x-text="index + 1"></span>
@@ -118,18 +123,18 @@
                                         class="text-blue-400 hover:text-blue-600 hover:bg-blue-100 p-2 rounded-full transition"
                                         title="Duplicate Item">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <rect x="9" y="9" width="13" height="13" rx="2"></rect>
                                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                     </svg>
                                 </button>
 
-                                <!-- Delete Button - REPLACED WITH NEW ONE -->
+                                <!-- Delete Button -->
                                 <button type="button"
-                                        @click="removeItem(index)"
+                                        @click="items.splice(index, 1);"
                                         class="text-red-400 hover:text-red-600 hover:bg-red-100 p-2 rounded-full transition">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <line x1="3" y1="6" x2="21" y2="6" />
                                         <rect x="6" y="6" width="12" height="14" rx="2" />
                                         <line x1="10" y1="10" x2="10" y2="18" />
@@ -736,32 +741,11 @@ function orderData() {
 
             if (/^#([0-9a-f]{3})$/i.test(value)) {
                 const r = value[1], g = value[2], b = value[3];
-                const full = `#${r}${r}${g}${g}${b}${b}`;
+                const full = `#${r}${r}${g}{g}${b}${b}`;
                 return map[full] || 'Custom Color';
             }
 
             return map[value] || 'Custom Color';
-        },
-
-        // Check if any items have been added
-        hasItems() {
-            return this.items.some(item => item.stock_id);
-        },
-
-        // Get the type of the first item to enforce consistency
-        getFirstItemType() {
-            if (this.items.length > 0 && this.items[0].stock_id) {
-                const stock = this.stockList[this.items[0].stock_id];
-                return stock ? stock.product_type : null;
-            }
-            return null;
-        },
-
-        // Check if a new item can be added based on existing items
-        canAddItemType(itemType) {
-            const firstType = this.getFirstItemType();
-            if (!firstType) return true; // No items yet, can add anything
-            return firstType === itemType;
         },
 
         // product‑type helpers -------------------------------------
@@ -886,12 +870,6 @@ function orderData() {
                 item.stock_id = firstAvailable.stock_id;
                 const stock = this.stockList[item.stock_id];
                 item.category_name = stock ? (stock.category_name || '') : '';
-                
-                // Set product_type based on the selected stock
-                if (stock) {
-                    this.product_type = stock.product_type === 'Ready Made' ? 'stockin_id' : 'deliverydetails_id';
-                }
-                
                 this.updateTotal(item);
             } else {
                 item.unavailable = true;
@@ -946,19 +924,6 @@ function orderData() {
         // item add/duplicate ---------------------------------------
 
         addNewItem() {
-            // Check if trying to mix different product types
-            if (this.items.length > 0 && this.items[0].stock_id) {
-                const firstItemStock = this.stockList[this.items[0].stock_id];
-                if (firstItemStock) {
-                    const expectedType = firstItemStock.product_type === 'Ready Made' ? 'stockin_id' : 'deliverydetails_id';
-                    
-                    if (this.product_type !== expectedType) {
-                        alert(`You can only add ${firstItemStock.product_type} items to this order. Please complete or cancel the current order first.`);
-                        return;
-                    }
-                }
-            }
-
             this.items.push({
                 selected_product_name: '',
                 stock_id: '',
@@ -974,38 +939,14 @@ function orderData() {
             });
         },
 
-        removeItem(index) {
-            this.items.splice(index, 1);
-            
-            // Reset product type if no items left
-            if (this.items.length === 0 || !this.items.some(i => i.stock_id)) {
-                this.product_type = '';
-            }
-        },
-
         duplicateItem(index) {
             const itemToDuplicate = this.items[index];
-            
-            // Check if trying to duplicate with mixed types
-            if (this.items.length > 0 && this.items[0].stock_id) {
-                const firstItemStock = this.stockList[this.items[0].stock_id];
-                const itemToDuplicateStock = this.stockList[itemToDuplicate.stock_id];
-                
-                if (firstItemStock && itemToDuplicateStock && 
-                    firstItemStock.product_type !== itemToDuplicateStock.product_type) {
-                    alert('Cannot duplicate items of different product types.');
-                    return;
-                }
-            }
-
             const newItem = JSON.parse(JSON.stringify(itemToDuplicate));
             newItem.unavailable = false;
-            
             if (newItem.selected_product_name) {
                 const sizes = this.getAvailableSizesForProduct(newItem.selected_product_name);
                 const currentSizeIndex = sizes.findIndex(s => s.size === newItem.size);
                 let nextSize = null;
-                
                 if (currentSizeIndex !== -1) {
                     for (let i = currentSizeIndex + 1; i < sizes.length; i++) {
                         if (!sizes[i].disabled) { nextSize = sizes[i]; break; }
@@ -1018,7 +959,6 @@ function orderData() {
                 } else {
                     nextSize = sizes.find(s => !s.disabled) || sizes[0];
                 }
-                
                 if (nextSize) {
                     newItem.size = nextSize.size;
                     newItem.stock_id = nextSize.stock_id;
@@ -1064,11 +1004,11 @@ function orderData() {
                 }
                 const customLine = customPerUnit * qty;
 
-                const baseProfitPerUnit = pricePerUnit - cost; // markup profit
+                const baseProfitPerUnit = pricePerUnit - cost; // markup profit (you can also add customPerUnit if you want)
                 const lineTotal = (pricePerUnit * qty) + customLine;
 
                 item.price         = Number(pricePerUnit.toFixed(2));
-                item.custom_amount = Number(customLine.toFixed(2));
+                item.custom_amount = Number(customLine.toFixed(2));  // total custom fee for this line (e.g. 50 * 10 = 500)
                 item.total         = Number(lineTotal.toFixed(2));
                 item.profit        = Number(baseProfitPerUnit.toFixed(2));
             } else {
@@ -1153,23 +1093,10 @@ function orderData() {
             if (this.items.length === 0 || !this.items.some(i => i.stock_id)) { alert('Please add at least one item.'); return; }
             if (!this.paymentMethod)   { alert('Please select a payment method.'); return; }
 
-            // Validate all items have stock_id
-            const invalidItems = this.items.filter(i => !i.stock_id && i.selected_product_name);
-            if (invalidItems.length > 0) {
-                alert('Please complete all item selections before submitting.');
-                return;
-            }
-
             // Ready made must be fully paid
             if (this.selectedTypeKey() === 'ready' &&
                 Number(this.paymentCash || 0) < this.paymentAmount) {
                 alert('Full payment is required for Ready Made products!');
-                return;
-            }
-
-            // Validate GCash reference number
-            if (this.paymentMethod === 'GCash' && !this.paymentReference) {
-                alert('Please enter GCash reference number.');
                 return;
             }
 
@@ -1201,14 +1128,8 @@ function orderData() {
                 },
                 body: JSON.stringify(payload)
             })
-            .then(async res => {
-                const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.message || 'Server error occurred');
-                }
-                return data;
-            })
-            .then(data => {
+            .then(res=>res.json())
+            .then(data=>{
                 if(!data.success){
                     console.log(data.errors || data.message);
                     alert(data.message || 'Failed to create order and payment');
@@ -1256,35 +1177,10 @@ function orderData() {
 
                 this.showReceipt = true;
             })
-            .catch(err => {
+            .catch(err=>{
                 console.error('Submit error:', err);
-                alert(err.message || 'An error occurred. Please try again.');
+                alert('An error occurred. Please try again.');
             });
-        },
-
-        // Reset the form
-        resetForm() {
-            this.selectedCustomer = '';
-            this.product_type = '';
-            this.items = [{
-                selected_product_name: '',
-                stock_id: '',
-                color: '#000000',
-                size: '',
-                quantity: 1,
-                price: 0,
-                custom_amount: 0,
-                total: 0,
-                profit: 0,
-                category_name: '',
-                unavailable: false
-            }];
-            this.paymentCash = 0;
-            this.paymentMethod = '';
-            this.paymentReference = '';
-            this.paymentData.payment_date = '{{ date("Y-m-d") }}';
-            this.showReceipt = false;
-            this.showSuccess = false;
         }
     }
 }
