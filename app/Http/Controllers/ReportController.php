@@ -12,6 +12,8 @@ use App\Models\StockOut;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
@@ -88,7 +90,7 @@ class ReportController extends Controller
         // 3) Prepare
         $ordersData    = [];
         $ids           = [];
-        $stockIds      = []; // for inventory / stock-related categories
+        $stockIds      = [];
         $categoryLabel = $request->category;
         $coverage      = $request->coverage ?? 'N/A';
 
@@ -107,7 +109,6 @@ class ReportController extends Controller
                 break;
 
             case 'Inventory':
-                // returns [$data, $inventoryIds, $relatedStockIds]
                 [$ordersData, $ids, $stockIds] = $this->buildInventoryData($request);
                 break;
 
@@ -146,7 +147,7 @@ class ReportController extends Controller
 
         // 6) Attach representative foreign key
         $firstId    = $ids[0]      ?? null;
-        $firstStock = $stockIds[0] ?? null; // only filled for inventory
+        $firstStock = $stockIds[0] ?? null;
 
         if ($firstId !== null) {
             switch ($request->category) {
@@ -180,7 +181,7 @@ class ReportController extends Controller
         // 7) Save report
         $report = Report::create($payload);
 
-        // 8) Return JSON for Alpine; ordersData is already date‑filtered
+        // 8) Return JSON for Alpine
         return response()->json([
             'success'           => true,
             'report'            => $report,
@@ -192,7 +193,57 @@ class ReportController extends Controller
     }
 
     /* ===========================
-       Helper builders (date‑filtered)
+       Generate PDF → Upload to S3
+       Route: POST /reports/{report}/pdf
+       Body:  { orders: [...], generated_by_name: "..." }
+       =========================== */
+
+    public function generateReportPdf(Request $request, Report $report)
+    {
+        try {
+            $rows            = $request->input('orders', []);
+            $generatedByName = $request->input('generated_by_name', 'System');
+
+            // Build PDF from blade view at resources/views/reports/report.blade.php
+            $pdf = Pdf::loadView('reports.report', [
+                'reportId'    => $report->report_id,
+                'category'    => $report->category,
+                'reportType'  => $report->report_type,
+                'coverage'    => $report->coverage ?? 'N/A',
+                'generatedAt' => now()->format('M d, Y h:i A'),
+                'generatedBy' => $generatedByName,
+                'rows'        => $rows,
+            ])->setPaper('a4', 'landscape');
+
+            // S3 path: reports/RPT-00001.pdf  (separate from receipts/)
+            $filename = 'reports/RPT-' . str_pad($report->report_id, 5, '0', STR_PAD_LEFT) . '.pdf';
+
+            // Upload to S3 as private
+            Storage::disk('s3')->put($filename, $pdf->output(), 'private');
+
+            // Signed URL valid for 1 hour
+            $reportUrl = Storage::disk('s3')->temporaryUrl(
+                $filename,
+                now()->addHour()
+            );
+
+            return response()->json([
+                'success'    => true,
+                'report_url' => $reportUrl,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Report PDF/S3 Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /* ===========================
+       Helper builders (date-filtered)
        =========================== */
 
     private function buildOrderData(Request $request): array
@@ -223,7 +274,7 @@ class ReportController extends Controller
 
     private function buildDeliveriesData(Request $request): array
     {
-        $deliveries = Delivery::with(['supplier', 'employee', 'receiver']) // if you have a receiver relation
+        $deliveries = Delivery::with(['supplier', 'employee', 'receiver'])
             ->whereBetween('delivery_date_request', [$request->date_from, $request->date_to])
             ->orderBy('delivery_date_request', 'desc')
             ->get();
@@ -232,28 +283,27 @@ class ReportController extends Controller
         $data = [];
 
         foreach ($deliveries as $delivery) {
-            // receiver name from relation, fallback to raw column
             $receivedByName = $delivery->receiver
                 ? trim(($delivery->receiver->fname ?? '') . ' ' . ($delivery->receiver->lname ?? ''))
                 : ($delivery->received_by ?? '—');
 
             $data[] = [
-                'order_id'           => $delivery->delivery_id,
-                'customer_name'      => $delivery->supplier->supplier_name ?? '—',
-                'category_name'      => 'Delivery',
-                'product_type'       => 'N/A',
-                'total_amount'       => 0,
-                'order_date'         => $delivery->delivery_date_request,
-                'date_received'      => $delivery->delivery_date_received ?? null,
-                'received_by'        => $receivedByName,
-                'status'             => $delivery->status ?? 'Pending',
+                'order_id'      => $delivery->delivery_id,
+                'customer_name' => $delivery->supplier->supplier_name ?? '—',
+                'category_name' => 'Delivery',
+                'product_type'  => 'N/A',
+                'total_amount'  => 0,
+                'order_date'    => $delivery->delivery_date_request,
+                'date_received' => $delivery->delivery_date_received ?? null,
+                'received_by'   => $receivedByName,
+                'status'        => $delivery->status ?? 'Pending',
             ];
         }
 
         return [$data, $ids];
     }
 
-        private function buildJobOrderData(Request $request): array
+    private function buildJobOrderData(Request $request): array
     {
         $jobOrders = Joborder::with(['employee', 'product'])
             ->whereBetween('created_at', [$request->date_from, $request->date_to])
@@ -281,7 +331,6 @@ class ReportController extends Controller
         return [$data, $ids];
     }
 
-
     private function buildInventoryData(Request $request): array
     {
         $inventories = Inventory::with(['product', 'supplier', 'receiver'])
@@ -293,10 +342,8 @@ class ReportController extends Controller
         $data = [];
 
         foreach ($inventories as $inv) {
-            // Product size from inventory row
             $size = $inv->size ?? '—';
 
-            // Name of the employee who received the stock
             $receivedByName = $inv->receiver
                 ? trim(($inv->receiver->fname ?? '') . ' ' . ($inv->receiver->lname ?? ''))
                 : ($inv->received_by ?? '—');
@@ -330,15 +377,15 @@ class ReportController extends Controller
 
         foreach ($stockouts as $out) {
             $data[] = [
-                'order_id'       => $out->stockout_id,
-                'customer_name'  => trim(($out->employee->fname ?? '') . ' ' . ($out->employee->lname ?? '')),
-                'category_name'  => 'Stock Out',
-                'product_type'   => $out->stock->product->product_name ?? 'N/A',
-                'size'           => $out->size ?? '—',
-                'reason'         => $out->reason ?? '—',
-                'total_amount'   => $out->quantity_out ?? 0,
-                'order_date'     => $out->date_out,
-                'status'         => $out->status ?? 'Completed',
+                'order_id'      => $out->stockout_id,
+                'customer_name' => trim(($out->employee->fname ?? '') . ' ' . ($out->employee->lname ?? '')),
+                'category_name' => 'Stock Out',
+                'product_type'  => $out->stock->product->product_name ?? 'N/A',
+                'size'          => $out->size ?? '—',
+                'reason'        => $out->reason ?? '—',
+                'total_amount'  => $out->quantity_out ?? 0,
+                'order_date'    => $out->date_out,
+                'status'        => $out->status ?? 'Completed',
             ];
         }
 
@@ -357,8 +404,7 @@ class ReportController extends Controller
 
         foreach ($adjustments as $adj) {
             $requesterName = trim(($adj->employee->fname ?? '') . ' ' . ($adj->employee->lname ?? ''));
-
-            $productName = $adj->stock->product->product_name ?? '—';
+            $productName   = $adj->stock->product->product_name ?? '—';
 
             $adjustedByName = $adj->adjustedBy
                 ? trim(($adj->adjustedBy->fname ?? '') . ' ' . ($adj->adjustedBy->lname ?? ''))
@@ -369,24 +415,24 @@ class ReportController extends Controller
                 : ($adj->approved_by ?? '—');
 
             $data[] = [
-                'order_id'       => $adj->stockadjustment_id,
-                'customer_name'  => $requesterName ?: '—',
-                'category_name'  => 'Stock Adjustment',
-                'product_type'   => $adj->adjustment_type ?? 'N/A',
-                'product_name'   => $productName,
-                'total_amount'   => $adj->quantity_adjusted ?? 0,
-                'order_date'     => $adj->request_date,
-                'reason'         => $adj->reason ?? '—',
-                'status'         => $adj->status ?? 'Pending',
-                'adjusted_by'    => $adjustedByName ?: '—',
-                'approved_by'    => $approvedByName ?: '—',
+                'order_id'      => $adj->stockadjustment_id,
+                'customer_name' => $requesterName ?: '—',
+                'category_name' => 'Stock Adjustment',
+                'product_type'  => $adj->adjustment_type ?? 'N/A',
+                'product_name'  => $productName,
+                'total_amount'  => $adj->quantity_adjusted ?? 0,
+                'order_date'    => $adj->request_date,
+                'reason'        => $adj->reason ?? '—',
+                'status'        => $adj->status ?? 'Pending',
+                'adjusted_by'   => $adjustedByName ?: '—',
+                'approved_by'   => $approvedByName ?: '—',
             ];
         }
 
         return [$data, $ids];
     }
 
-        private function buildPaymentData(Request $request): array
+    private function buildPaymentData(Request $request): array
     {
         $payments = Payment::with(['order.customer', 'employee'])
             ->whereBetween('payment_date', [$request->date_from, $request->date_to])
@@ -407,22 +453,21 @@ class ReportController extends Controller
             }
 
             $data[] = [
-                'order_id'       => $payment->payment_id,
-                'customer_name'  => $customerName,
-                'category_name'  => 'Payment',
-                'product_type'   => $payment->payment_method ?? 'N/A',
-                'total_amount'   => $payment->amount ?? 0,
-                'cash'           => $payment->cash ?? 0,
-                'balance'        => $payment->balance ?? 0,
-                'change_amount'  => $payment->change_amount ?? 0,
-                'order_date'     => $payment->payment_date,
-                'status'         => $payment->status ?? 'Completed',
+                'order_id'      => $payment->payment_id,
+                'customer_name' => $customerName,
+                'category_name' => 'Payment',
+                'product_type'  => $payment->payment_method ?? 'N/A',
+                'total_amount'  => $payment->amount ?? 0,
+                'cash'          => $payment->cash ?? 0,
+                'balance'       => $payment->balance ?? 0,
+                'change_amount' => $payment->change_amount ?? 0,
+                'order_date'    => $payment->payment_date,
+                'status'        => $payment->status ?? 'Completed',
             ];
         }
 
         return [$data, $ids];
     }
-
 
     public function export(Request $request, $type)
     {
@@ -436,8 +481,6 @@ class ReportController extends Controller
 
     public function saveReceipt(Request $request)
     {
-        // Receipt is handled client-side via window.print()
-        // This endpoint just confirms the receipt data was received
         return response()->json([
             'success' => true,
             'message' => 'Receipt ready to print.',
@@ -454,5 +497,4 @@ class ReportController extends Controller
             ]
         ]);
     }
-    
-} 
+}

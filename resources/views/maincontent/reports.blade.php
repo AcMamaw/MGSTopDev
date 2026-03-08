@@ -119,47 +119,52 @@
             showPrintable: false,
             generatedByName: '{{ auth()->user()->employee->fname ?? "" }} {{ auth()->user()->employee->lname ?? "" }}' || 'System',
 
+            // ── NEW: S3 PDF state ──────────────────────────────────────
+            reportPdfUrl:  null,   // holds the S3 signed URL once ready
+            generatingPdf: false,  // true while uploading
+            lastReportId:  null,   // report_id of the last generated report
+            // ──────────────────────────────────────────────────────────
+
             // ---------- helpers for headers / fields ----------
             getTableHeaders() {
                 const headers = {
-                    'Order': ['Order ID', 'Customer', 'Category', 'Product Type', 'Total Amount', 'Order Date', 'Status'],
-                    'Deliveries': ['Delivery ID', 'Supplier', 'Employee', 'Request Date', 'Date Received', 'Received By', 'Status'],
-                    'Job Order': ['Job Order ID', 'Product', 'Assigned To', 'Estimated Time', 'Start', 'End', 'Status'],
-                    'Inventory': ['Stock ID', 'Product', 'Size', 'Type', 'Total', 'Current', 'Received By', 'Stock Level'],
-                    'Stock Out': ['Stockout ID', 'Product', 'Employee', 'Size', 'Product Type', 'Quantity Out', 'Date Out', 'Reason', 'Status'],
+                    'Order':            ['Order ID', 'Customer', 'Category', 'Product Type', 'Total Amount', 'Order Date', 'Status'],
+                    'Deliveries':       ['Delivery ID', 'Supplier', 'Employee', 'Request Date', 'Date Received', 'Received By', 'Status'],
+                    'Job Order':        ['Job Order ID', 'Product', 'Assigned To', 'Estimated Time', 'Start', 'End', 'Status'],
+                    'Inventory':        ['Stock ID', 'Product', 'Size', 'Type', 'Total', 'Current', 'Received By', 'Stock Level'],
+                    'Stock Out':        ['Stockout ID', 'Product', 'Employee', 'Size', 'Product Type', 'Quantity Out', 'Date Out', 'Reason', 'Status'],
                     'Stock Adjustment': ['Adjustment ID', 'Product', 'Employee', 'Type', 'Quantity', 'Request Date', 'Reason', 'Status', 'Adjusted By', 'Approved By'],
-                    'Payment': ['Payment ID', 'Authorized By', 'Method', 'Reference #', 'Date', 'Amount', 'Cash', 'Balance', 'Change', 'Status']
+                    'Payment':          ['Payment ID', 'Authorized By', 'Method', 'Reference #', 'Date', 'Amount', 'Cash', 'Balance', 'Change', 'Status'],
                 };
                 return headers[this.category] || headers['Order'];
             },
 
             getDataFields() {
                 const fields = {
-                    'Order': ['order_id', 'customer_name', 'category_name', 'product_type', 'total_amount', 'order_date', 'status'],
-                    'Deliveries': ['delivery_id', 'supplier_name', 'employee_name', 'request_date', 'delivery_received_date', 'received_by', 'status'],
-                    'Job Order': ['job_order_id', 'product_name', 'assigned_to', 'estimated_time', 'start_date', 'end_date', 'status'],
-                    'Inventory': ['stock_id', 'product_name', 'size', 'product_type', 'total_quantity', 'current_quantity', 'received_by', 'stock_level'],
-                    'Stock Out': ['stockout_id', 'product_name', 'employee_name', 'size', 'product_type', 'quantity_out', 'date_out', 'reason', 'status'],
+                    'Order':            ['order_id', 'customer_name', 'category_name', 'product_type', 'total_amount', 'order_date', 'status'],
+                    'Deliveries':       ['delivery_id', 'supplier_name', 'employee_name', 'request_date', 'delivery_received_date', 'received_by', 'status'],
+                    'Job Order':        ['job_order_id', 'product_name', 'assigned_to', 'estimated_time', 'start_date', 'end_date', 'status'],
+                    'Inventory':        ['stock_id', 'product_name', 'size', 'product_type', 'total_quantity', 'current_quantity', 'received_by', 'stock_level'],
+                    'Stock Out':        ['stockout_id', 'product_name', 'employee_name', 'size', 'product_type', 'quantity_out', 'date_out', 'reason', 'status'],
                     'Stock Adjustment': ['adjustment_id', 'product_name', 'employee_name', 'adjustment_type', 'quantity', 'request_date', 'reason', 'status', 'adjusted_by', 'approved_by'],
-                    'Payment': ['payment_id', 'authorized_by', 'payment_method', 'reference_number', 'date', 'amount', 'cash', 'balance', 'change', 'status']
+                    'Payment':          ['payment_id', 'authorized_by', 'payment_method', 'reference_number', 'date', 'amount', 'cash', 'balance', 'change', 'status'],
                 };
                 return fields[this.category] || fields['Order'];
             },
 
-            // ---------- stock level helper (used by Inventory table) ----------
+            // ---------- stock level helper ----------
             stockLevel(qtyRaw) {
                 const qty = Number(qtyRaw ?? 0);
-
-                if (qty <= 0)   return { cls: 'bg-gray-400',  text: 'Out of Stock' };
-                if (qty <= 30)  return { cls: 'bg-red-500',   text: 'Low Stock' };
-                if (qty <= 60)  return { cls: 'bg-yellow-500',text: 'Medium Stock' };
-                return { cls: 'bg-green-500', text: 'High Stock' };
+                if (qty <= 0)  return { cls: 'bg-gray-400',   text: 'Out of Stock' };
+                if (qty <= 30) return { cls: 'bg-red-500',    text: 'Low Stock' };
+                if (qty <= 60) return { cls: 'bg-yellow-500', text: 'Medium Stock' };
+                return           { cls: 'bg-green-500',       text: 'High Stock' };
             },
 
             // ---------- date / type / coverage ----------
             computeTypeAndCoverage() {
                 if (!this.dateFrom || !this.dateTo) {
-                    this.reportType = '';
+                    this.reportType   = '';
                     this.coverageText = '';
                     return;
                 }
@@ -168,15 +173,14 @@
                 const end   = new Date(this.dateTo);
 
                 if (isNaN(start) || isNaN(end) || end < start) {
-                    this.reportType = 'Invalid Range';
+                    this.reportType   = 'Invalid Range';
                     this.coverageText = '';
                     return;
                 }
 
-                const diffMs   = end - start;
-                const diffDays = diffMs / (1000 * 60 * 60 * 24) + 1;
+                const diffDays = (end - start) / (1000 * 60 * 60 * 24) + 1;
                 const y1 = start.getFullYear(), m1 = start.getMonth(), d1 = start.getDate();
-                const y2 = end.getFullYear(),   m2 = end.getMonth(), d2 = end.getDate();
+                const y2 = end.getFullYear(),   m2 = end.getMonth(),   d2 = end.getDate();
 
                 this.reportType = 'Custom';
 
@@ -191,7 +195,6 @@
                     this.reportType = 'Daily';
                 }
 
-                // Coverage text used in header and sent to backend
                 this.coverageText = `${this.dateFrom} to ${this.dateTo}`;
             },
 
@@ -200,18 +203,16 @@
                 const tableBody = document.getElementById('report-table-body');
                 const emptyRow  = document.getElementById('report-empty-row');
 
-                if (emptyRow) {
-                    emptyRow.style.display = 'none';
-                }
+                if (emptyRow) emptyRow.style.display = 'none';
 
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-gray-50 transition-colors report-row';
 
                 let badgeClass = 'bg-gray-100 text-gray-800';
-                if (report.report_type === 'Monthly') badgeClass = 'bg-blue-100 text-blue-800';
-                else if (report.report_type === 'Yearly') badgeClass = 'bg-green-100 text-green-800';
-                else if (report.report_type === 'Weekly') badgeClass = 'bg-black-100 text-black-800';
-                else if (report.report_type === 'Daily')  badgeClass = 'bg-black-100 text-black-800';
+                if      (report.report_type === 'Monthly') badgeClass = 'bg-blue-100 text-blue-800';
+                else if (report.report_type === 'Yearly')  badgeClass = 'bg-green-100 text-green-800';
+                else if (report.report_type === 'Weekly')  badgeClass = 'bg-purple-100 text-purple-800';
+                else if (report.report_type === 'Daily')   badgeClass = 'bg-orange-100 text-orange-800';
 
                 tr.innerHTML = `
                     <td class="px-4 py-3 text-gray-900 font-medium">${report.report_id}</td>
@@ -229,7 +230,7 @@
                 tableBody.insertBefore(tr, tableBody.firstChild);
             },
 
-            // ---------- generate report (POST -> controller) ----------
+            // ---------- generate report (POST → controller) ----------
             generate() {
                 this.computeTypeAndCoverage();
 
@@ -247,11 +248,11 @@
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     },
                     body: JSON.stringify({
-                        category: this.category,
+                        category:    this.category,
                         report_type: this.reportType,
-                        coverage: this.coverageText,
-                        date_from: this.dateFrom,
-                        date_to: this.dateTo,
+                        coverage:    this.coverageText,
+                        date_from:   this.dateFrom,
+                        date_to:     this.dateTo,
                     }),
                 })
                 .then(res => res.json())
@@ -260,11 +261,10 @@
 
                     const createdDate = new Date(data.report.created_at);
                     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                    const formatted =
+                    data.report.created_at_formatted =
                         `${months[createdDate.getMonth()]} ${createdDate.getDate()}, ${createdDate.getFullYear()} ` +
                         `${createdDate.getHours() % 12 || 12}:${String(createdDate.getMinutes()).padStart(2,'0')} ` +
                         `${createdDate.getHours() >= 12 ? 'PM' : 'AM'}`;
-                    data.report.created_at_formatted = formatted;
 
                     this.reports.unshift(data.report);
                     this.addReportRowToTable(data.report);
@@ -273,10 +273,15 @@
                         updateReportPagination();
                     }
 
-                    // data.orders is already date‑filtered by the controller
                     if (data.orders) {
                         this.currentOrders = data.orders;
-                        this.showPrintable = true;
+                        this.showPrintable  = true;
+
+                        // ── NEW: store the report id and reset PDF state ──
+                        this.lastReportId  = data.report.report_id;
+                        this.reportPdfUrl  = null;
+                        this.generatingPdf = false;
+                        // ─────────────────────────────────────────────────
 
                         if (data.generated_by_name) {
                             this.generatedByName = data.generated_by_name;
@@ -296,31 +301,60 @@
                 .finally(() => this.submitting = false);
             },
 
-            // ---------- actions ----------
+            // ── NEW: generate PDF → upload to S3 → return signed URL ──
+            generateReportPdf() {
+                if (!this.lastReportId || !this.currentOrders.length) {
+                    alert('Please generate a report first.');
+                    return;
+                }
+
+                this.generatingPdf = true;
+                this.reportPdfUrl  = null;
+
+                fetch(`/reports/${this.lastReportId}/pdf`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        orders:            this.currentOrders,
+                        generated_by_name: this.generatedByName,
+                    }),
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) throw new Error(data.message || 'PDF generation failed');
+                    this.reportPdfUrl = data.report_url; // S3 signed URL
+                })
+                .catch(err => {
+                    console.error('Report PDF error:', err);
+                    alert('Failed to generate PDF. Please try again.');
+                })
+                .finally(() => { this.generatingPdf = false; });
+            },
+            // ──────────────────────────────────────────────────────────
+
+            // ---------- print (browser) ----------
             printReport() {
                 window.print();
             },
 
+            // ---------- excel export ----------
             exportToExcel() {
                 let csvContent = this.getTableHeaders().join(',') + '\n';
-                const fields = this.getDataFields();
+                const fields   = this.getDataFields();
 
                 this.currentOrders.forEach(order => {
-                    const row = fields.map(field => {
-                        const val = order[field] || '';
-                        return `"${val}"`;
-                    }).join(',');
+                    const row = fields.map(field => `"${order[field] || ''}"`).join(',');
                     csvContent += row + '\n';
                 });
 
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
-                const url  = URL.createObjectURL(blob);
-
-                link.setAttribute('href', url);
-                link.setAttribute('download', `${this.category.toLowerCase()}_report_${this.coverageText.replace(/\s+/g, '_')}.csv`);
+                link.setAttribute('href', URL.createObjectURL(blob));
+                link.setAttribute('download', `${this.category.toLowerCase()}_report_${this.coverageText.replace(/\s+/g,'_')}.csv`);
                 link.style.visibility = 'hidden';
-
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -329,28 +363,29 @@
             // ---------- misc helpers ----------
             getStatusColor(status) {
                 const colors = {
-                    'Pending': 'bg-gray-500',
+                    'Pending':     'bg-gray-500',
                     'In Progress': 'bg-yellow-500',
-                    'Released': 'bg-blue-500',
-                    'Completed': 'bg-green-500',
-                    'Cancelled': 'bg-red-500',
-                    'In Stock': 'bg-green-500'
+                    'Released':    'bg-blue-500',
+                    'Completed':   'bg-green-500',
+                    'Cancelled':   'bg-red-500',
+                    'In Stock':    'bg-green-500',
                 };
                 return colors[status] || 'bg-gray-400';
             },
 
             formatDate(dateString) {
                 if (!dateString) return '';
-                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
                 try {
-                    return new Date(dateString).toLocaleDateString('en-US', options);
-                } catch (e) {
-                    return dateString;
-                }
-            }
+                    return new Date(dateString).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                } catch (e) { return dateString; }
+            },
         }
     }
 </script>
+
 
 <div x-data="reportManager()" x-cloak>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -518,33 +553,86 @@
             x-show="showPrintable && currentOrders.length > 0"
             x-transition
         >
-            <div class="print-buttons flex justify-end items-center gap-4 mb-4">
+            <div class="print-buttons flex justify-end items-center gap-3 mb-4">
+
+                {{-- ── 1. DOWNLOAD PDF link (appears after S3 upload succeeds) ── --}}
+                <a :href="reportPdfUrl"
+                target="_blank"
+                x-show="reportPdfUrl"
+                x-cloak
+                x-transition
+                class="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-300 text-red-700 bg-red-50 hover:bg-red-100 font-semibold transition"
+                title="Open PDF from S3">
+                    {{-- Download / arrow-down icon --}}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span class="text-sm">Download PDF</span>
+                </a>
+
+                {{-- ── 2. SPINNER while uploading to S3 ── --}}
+                <div x-show="generatingPdf && !reportPdfUrl"
+                    x-cloak
+                    class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 text-gray-400 cursor-not-allowed select-none">
+                    <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                    </svg>
+                    <span class="text-sm">Saving PDF…</span>
+                </div>
+
+                {{-- ── 3. SAVE PDF button (default, before PDF is generated) ── --}}
                 <button type="button"
-                        @click="printReport()"
-                        class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition">
+                        x-show="!reportPdfUrl && !generatingPdf"
+                        @click="generateReportPdf()"
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+                        title="Save PDF to S3">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <rect x="2" y="2" width="20" height="20" rx="2" ry="2" fill="#DC143C"></rect>
-                        <polygon points="22,2 22,6 18,2" fill="#DC143C"></polygon>
-                        <text x="12" y="16" font-size="10" font-weight="bold" fill="white" text-anchor="middle">PDF</text>
+                        <polygon points="22,2 22,6 18,2" fill="#9B0E0E"></polygon>
+                        <text x="12" y="16" font-size="8" font-weight="bold" fill="white" text-anchor="middle">PDF</text>
                     </svg>
-                    <span class="text-sm font-medium">PDF</span>
+                    <span class="text-sm font-medium">Save PDF</span>
                 </button>
-                
+
+                {{-- ── 4. PRINT button (browser print) ── --}}
+                <button type="button"
+                        @click="printReport()"
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+                        title="Print this report">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 6 2 18 2 18 9"/>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                        <rect x="6" y="14" width="12" height="8"/>
+                    </svg>
+                    <span class="text-sm font-medium">Print</span>
+                </button>
+
+                {{-- ── 5. EXCEL export ── --}}
                 <button type="button"
                         @click="exportToExcel()"
-                        class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition">
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+                        title="Export to Excel/CSV">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <rect x="2" y="3" width="9" height="18" rx="1" ry="1" fill="#107C41"></rect>
                         <path d="M4.5 9.5 L8 14.5 M8 9.5 L4.5 14.5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"></path>
                         <rect x="9" y="4" width="11" height="16" rx="1" ry="1" stroke="#107C41" stroke-width="1.5" fill="none"></rect>
                         <line x1="13" y1="5.5" x2="13" y2="18.5" stroke="#107C41" stroke-width="1"></line>
                         <line x1="17" y1="5.5" x2="17" y2="18.5" stroke="#107C41" stroke-width="1"></line>
-                        <line x1="10.5" y1="9"  x2="19.5" y2="9"  stroke="#107C41" stroke-width="1"></line>
+                        <line x1="10.5" y1="9"   x2="19.5" y2="9"   stroke="#107C41" stroke-width="1"></line>
                         <line x1="10.5" y1="12.5" x2="19.5" y2="12.5" stroke="#107C41" stroke-width="1"></line>
-                        <line x1="10.5" y1="16" x2="19.5" y2="16" stroke="#107C41" stroke-width="1"></line>
+                        <line x1="10.5" y1="16"  x2="19.5" y2="16"  stroke="#107C41" stroke-width="1"></line>
                     </svg>
                     <span class="text-sm font-medium">Excel</span>
                 </button>
+
             </div>
 
            {{-- ORDER TABLE --}}

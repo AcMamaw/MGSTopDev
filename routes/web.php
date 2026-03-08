@@ -165,7 +165,8 @@ Route::middleware('auth')->group(function () {
     // ← MOVED HERE: outside maincontent prefix so URL is /payments/{id}/receipt-pdf
     Route::get('/payments/{paymentId}/receipt-pdf', [OrderController::class, 'generateReceiptPdf'])
         ->name('payments.receipt-pdf');
-
+    Route::post('/reports/{report}/pdf', [ReportController::class, 'generateReportPdf'])
+        ->name('reports.pdf');
     // --------------------------
     // Auth Users
     // --------------------------
