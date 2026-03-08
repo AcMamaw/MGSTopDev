@@ -73,8 +73,12 @@ class OrderController extends Controller
         ));
     }
 
-    public function store(Request $request)
+        public function store(Request $request)
     {
+        // Log the entire request for debugging
+        \Log::info('========== ORDER STORE REQUEST ==========');
+        \Log::info('Request data:', $request->all());
+        
         try {
             $validated = $request->validate([
                 'customer_id'       => 'required|exists:customers,customer_id',
@@ -88,61 +92,87 @@ class OrderController extends Controller
                 'items.*.profit'        => 'required|numeric',
                 'items.*.color'         => 'nullable|string',
                 'items.*.size'          => 'nullable|string',
-
                 'total_amount'      => 'required|numeric|min:0',
                 'cash'              => 'required|numeric|min:0',
                 'payment_method'    => 'required|string|in:Cash,GCash',
                 'reference_number'  => 'nullable|string',
             ]);
+            
+            \Log::info('Validation passed:', $validated);
+
+            // 🔴 CHECK IF USER HAS EMPLOYEE RECORD - ADDED HERE
+            if (!auth()->user()->employee) {
+                throw new \Exception('Logged-in user does not have an associated employee record. User ID: ' . auth()->id());
+            }
+            \Log::info('Employee check passed:', ['employee_id' => auth()->user()->employee->employee_id]);
 
             DB::transaction(function () use ($validated, &$order, &$payment) {
+                \Log::info('Starting database transaction');
+                
+                // Log each item being processed
+                foreach ($validated['items'] as $index => $item) {
+                    \Log::info("Processing item {$index}:", $item);
+                }
 
                 // 0) Derive category_id from first item
                 $firstStockId   = $validated['items'][0]['stock_id'];
+                \Log::info('First stock_id: ' . $firstStockId);
+                
                 $firstInventory = Inventory::with(['product', 'stockin', 'deliveryDetail'])->find($firstStockId);
                 
                 if (!$firstInventory) {
                     throw new \Exception("Inventory item with ID {$firstStockId} not found");
                 }
                 
-                $categoryId     = $firstInventory && $firstInventory->product
-                                ? $firstInventory->product->category_id
-                                : null;
+                \Log::info('First inventory found:', [
+                    'stock_id' => $firstInventory->stock_id,
+                    'product_type' => $firstInventory->product_type,
+                    'product_name' => $firstInventory->product->product_name ?? 'N/A'
+                ]);
+                
+                $categoryId = $firstInventory->product ? $firstInventory->product->category_id : null;
 
-                // 1) Recompute totals from items (no VAT)
-                $computedTotal  = 0.0;
+                // 1) Recompute totals
+                $computedTotal = 0.0;
                 $computedProfit = 0.0;
 
                 foreach ($validated['items'] as $it) {
-                    $qty           = (int) $it['quantity'];
-                    $unitPrice     = (float) $it['price'];
-                    $lineCustom    = (float) ($it['custom_amount'] ?? 0);
+                    $qty = (int) $it['quantity'];
+                    $unitPrice = (float) $it['price'];
+                    $lineCustom = (float) ($it['custom_amount'] ?? 0);
                     $profitPerUnit = (float) $it['profit'];
 
-                    $lineTotal  = $unitPrice * $qty + $lineCustom;
+                    $lineTotal = $unitPrice * $qty + $lineCustom;
                     $lineProfit = $profitPerUnit * $qty + $lineCustom;
 
-                    $computedTotal  += $lineTotal;
+                    $computedTotal += $lineTotal;
                     $computedProfit += $lineProfit;
                 }
 
-                $computedTotal  = round($computedTotal, 2);
+                $computedTotal = round($computedTotal, 2);
                 $computedProfit = round($computedProfit, 2);
-                $clientTotal    = round((float) $validated['total_amount'], 2);
+                $clientTotal = round((float) $validated['total_amount'], 2);
+
+                \Log::info('Totals:', [
+                    'computed' => $computedTotal,
+                    'client' => $clientTotal,
+                    'profit' => $computedProfit
+                ]);
 
                 if (abs($clientTotal - $computedTotal) > 0.01) {
                     throw new \Exception("Total mismatch. Client total ({$clientTotal}) does not equal computed total ({$computedTotal}).");
                 }
 
                 // 2) Payment logic
-                $amount        = $clientTotal;
-                $cash          = (float) $validated['cash'];
+                $amount = $clientTotal;
+                $cash = (float) $validated['cash'];
                 $change_amount = max($cash - $amount, 0);
-                $balance       = max($amount - $cash, 0);
+                $balance = max($amount - $cash, 0);
 
-                // FIXED: Check for ready-made items using product_type from inventory
+                // Check for ready-made items
                 $isReadyMade = $firstInventory->product_type === 'Ready Made';
-                
+                \Log::info('Is ready made: ' . ($isReadyMade ? 'YES' : 'NO'));
+
                 if ($isReadyMade && $cash < $amount) {
                     throw new \Exception('Full payment is required for Ready Made products!');
                 }
@@ -158,33 +188,56 @@ class OrderController extends Controller
                     $orderStatus = 'Completed';
                 }
 
-                // 4) Create Order (now with category_id)
-                $order = Order::create([
-                    'customer_id'  => $validated['customer_id'],
-                    'category_id'  => $categoryId,
-                    'order_date'   => $validated['order_date'],
-                    'ordered_by'   => auth()->user()->employee->employee_id,
+                \Log::info('Creating order with:', [
+                    'customer_id' => $validated['customer_id'],
+                    'category_id' => $categoryId,
+                    'order_date' => $validated['order_date'],
+                    'ordered_by' => auth()->user()->employee->employee_id,
                     'product_type' => $orderProductTypeText,
                     'total_amount' => $amount,
-                    'status'       => $orderStatus,
+                    'status' => $orderStatus
                 ]);
+
+                // 4) Create Order
+                $order = Order::create([
+                    'customer_id' => $validated['customer_id'],
+                    'category_id' => $categoryId,
+                    'order_date' => $validated['order_date'],
+                    'ordered_by' => auth()->user()->employee->employee_id,
+                    'product_type' => $orderProductTypeText,
+                    'total_amount' => $amount,
+                    'status' => $orderStatus,
+                ]);
+
+                if (!$order) {
+                    throw new \Exception('Failed to create order');
+                }
+
+                \Log::info('Order created with ID: ' . $order->order_id);
 
                 // 5) Create OrderDetails and handle stock
                 foreach ($validated['items'] as $it) {
-                    $stockId       = $it['stock_id'];
-                    $quantity      = (int) $it['quantity'];
-                    $price         = (float) $it['price'];
-                    $color         = $it['color'] ?? null;
-                    $size          = $it['size'] ?? null;
+                    $stockId = $it['stock_id'];
+                    $quantity = (int) $it['quantity'];
+                    $price = (float) $it['price'];
+                    $color = $it['color'] ?? null;
+                    $size = $it['size'] ?? null;
                     $custom_amount = (float) ($it['custom_amount'] ?? 0);
                     $profitPerUnit = (float) $it['profit'];
 
-                    $inventory = Inventory::with(['product', 'stockin', 'deliveryDetail'])->find($stockId);
+                    $inventory = Inventory::with(['product'])->find($stockId);
                     if (!$inventory) {
                         throw new \Exception("Stock item not found: {$stockId}");
                     }
 
-                    // FIXED: Check if inventory type matches the selected product type
+                    \Log::info('Processing inventory item:', [
+                        'stock_id' => $stockId,
+                        'product_type' => $inventory->product_type,
+                        'current_stock' => $inventory->current_stock,
+                        'quantity' => $quantity
+                    ]);
+
+                    // Check if inventory type matches
                     $expectedType = $validated['product_type'] === 'stockin_id' ? 'Ready Made' : 'Customize Item';
                     if ($inventory->product_type !== $expectedType) {
                         throw new \Exception("Selected product '{$inventory->product->product_name}' is not a {$expectedType}");
@@ -192,17 +245,21 @@ class OrderController extends Controller
 
                     $lineProfit = $profitPerUnit * $quantity + $custom_amount;
 
-                    // Order detail already stores size
-                    OrderDetail::create([
-                        'order_id'      => $order->order_id,
-                        'stock_id'      => $stockId,
-                        'color'         => $color,
-                        'size'          => $size,
-                        'quantity'      => $quantity,
-                        'price'         => $price,
+                    // Create order detail
+                    $orderDetail = OrderDetail::create([
+                        'order_id' => $order->order_id,
+                        'stock_id' => $stockId,
+                        'color' => $color,
+                        'size' => $size,
+                        'quantity' => $quantity,
+                        'price' => $price,
                         'custom_amount' => $custom_amount,
-                        'profit'        => $lineProfit,
+                        'profit' => $lineProfit,
                     ]);
+
+                    if (!$orderDetail) {
+                        throw new \Exception("Failed to create order detail for stock_id: {$stockId}");
+                    }
 
                     // For Ready Made: update inventory and create stockout
                     if ($inventory->product_type === 'Ready Made') {
@@ -211,61 +268,86 @@ class OrderController extends Controller
                         }
 
                         $inventory->current_stock -= $quantity;
-                        $inventory->last_updated   = now();
+                        $inventory->last_updated = now();
                         $inventory->save();
 
-                        Stockout::create([
-                            'stock_id'      => $stockId,
-                            'employee_id'   => auth()->user()->employee->employee_id,
-                            'quantity_out'  => $quantity,
-                            'date_out'      => now(),
-                            'reason'        => 'Order #' . $order->order_id . ' - Customer: ' .
-                                            $order->customer->fname . ' ' . $order->customer->lname,
-                            'status'        => 'Completed',
-                            'approved_by'   => null,
-                            'product_type'  => $inventory->product_type,
-                            'size'          => $size,
+                        \Log::info('Stock updated for ready-made item:', [
+                            'new_stock' => $inventory->current_stock
                         ]);
+
+                        $stockout = Stockout::create([
+                            'stock_id' => $stockId,
+                            'employee_id' => auth()->user()->employee->employee_id,
+                            'quantity_out' => $quantity,
+                            'date_out' => now(),
+                            'reason' => 'Order #' . $order->order_id . ' - Customer',
+                            'status' => 'Completed',
+                            'approved_by' => null,
+                            'product_type' => $inventory->product_type,
+                            'size' => $size,
+                        ]);
+
+                        if (!$stockout) {
+                            throw new \Exception("Failed to create stockout record for stock_id: {$stockId}");
+                        }
                     }
                 }
 
-                // 6) Create Payment, including total profit
-                $payment = Payment::create([
-                    'order_id'        => $order->order_id,
-                    'employee_id'     => auth()->user()->employee->employee_id,
-                    'payment_date'    => $validated['order_date'],
-                    'amount'          => $amount,
-                    'cash'            => $cash,
-                    'change_amount'   => $change_amount,
-                    'balance'         => $balance,
-                    'status'          => $paymentStatus,
-                    'payment_method'  => $validated['payment_method'],
-                    'reference_number'=> $validated['reference_number'],
-                    'profit'          => $computedProfit,
+                // 6) Create Payment
+                \Log::info('Creating payment with:', [
+                    'order_id' => $order->order_id,
+                    'amount' => $amount,
+                    'cash' => $cash,
+                    'balance' => $balance,
+                    'status' => $paymentStatus
                 ]);
+
+                $payment = Payment::create([
+                    'order_id' => $order->order_id,
+                    'employee_id' => auth()->user()->employee->employee_id,
+                    'payment_date' => $validated['order_date'],
+                    'amount' => $amount,
+                    'cash' => $cash,
+                    'change_amount' => $change_amount,
+                    'balance' => $balance,
+                    'status' => $paymentStatus,
+                    'payment_method' => $validated['payment_method'],
+                    'reference_number' => $validated['reference_number'],
+                    'profit' => $computedProfit,
+                ]);
+
+                if (!$payment) {
+                    throw new \Exception('Failed to create payment record');
+                }
+
+                \Log::info('Payment created with ID: ' . $payment->payment_id);
+                \Log::info('Transaction completed successfully');
             });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Order and payment created successfully',
-                'order'   => $order->load('items', 'customer', 'payments'),
+                'order' => $order->load('items', 'customer', 'payments'),
                 'payment' => $payment,
             ]);
+            
         } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed:', $e->errors());
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors'  => $e->errors(),
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             \Log::error('Order Store Error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 500);
         }
     }
-    
+
     public function storeCustomer(Request $request)
     {
         $validated = $request->validate([
