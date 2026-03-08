@@ -651,4 +651,74 @@ class OrderController extends Controller
         ]);
     }
 
+
+        public function generateReceiptPdf($paymentId)
+    {
+        try {
+            $payment = Payment::findOrFail($paymentId);
+
+            $order = Order::with([
+                'customer',
+                'items' => function ($q) {
+                    $q->with('inventory.product');
+                },
+            ])->findOrFail($payment->order_id);
+
+            $receiptItems = $order->items->map(function ($od) {
+                $productName = $od->product_name;
+                if (!$productName && $od->inventory && $od->inventory->product) {
+                    $productName = $od->inventory->product->product_name;
+                }
+
+                $unitPrice    = (float) $od->price;
+                $customAmount = (float) ($od->custom_amount ?? 0);
+                $qty          = (int) $od->quantity;
+
+                return [
+                    'quantity'      => $qty,
+                    'product_name'  => $productName,
+                    'size'          => $od->size,
+                    'color'         => $od->color,
+                    'unit_price'    => $unitPrice,
+                    'custom_amount' => $customAmount,
+                    'amount'        => ($unitPrice * $qty) + $customAmount,
+                ];
+            })->toArray();
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('receipts.receipt', [
+                'payment'         => $payment,
+                'items'           => $receiptItems,
+                'customerName'    => $order->customer
+                                        ? $order->customer->fname . ' ' . $order->customer->lname
+                                        : 'N/A',
+                'customerAddress' => $order->customer->address ?? '',
+                'authorizedBy'    => auth()->user()->employee->fname . ' ' . auth()->user()->employee->lname,
+            ]);
+
+            $filename = 'receipts/R-' . str_pad($payment->payment_id, 5, '0', STR_PAD_LEFT) . '.pdf';
+
+            \Illuminate\Support\Facades\Storage::disk('s3')->put(
+                $filename,
+                $pdf->output(),
+                'private'
+            );
+
+            $receiptUrl = \Illuminate\Support\Facades\Storage::disk('s3')->temporaryUrl(
+                $filename,
+                now()->addHour()
+            );
+
+            return response()->json([
+                'success'     => true,
+                'receipt_url' => $receiptUrl,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Generate Receipt PDF Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

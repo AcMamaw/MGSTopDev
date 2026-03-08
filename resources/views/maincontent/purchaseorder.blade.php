@@ -413,11 +413,10 @@
             </div>
         </div>
     </div>
+     @include('added.payment_complete')
+    @include('added.assign_joborders')
 </div>
-
-        @include('added.payment_complete')
-        @include('added.assign_joborders')
-
+       
 <script>
 const ORDER_STATUS_PRIORITY = {
     'Released': 1,

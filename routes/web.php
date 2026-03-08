@@ -77,6 +77,7 @@ Route::middleware('auth')->group(function () {
 
         // ✅ REMOVED duplicate payments.update from here
         Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+        Route::get('/payments/{paymentId}/receipt-pdf', [OrderController::class, 'generateReceiptPdf']);
 
         Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
         Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
