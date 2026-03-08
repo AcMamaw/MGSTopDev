@@ -29,17 +29,27 @@
 </head>
 <body>
 
+    @php $logoPath = public_path('images/ace.jpg'); @endphp
+
     {{-- Header --}}
     <table class="two-col">
         <tr>
-            <td style="width:60%">
+            {{-- Left: Store info --}}
+            <td style="width:60%; vertical-align:top;">
                 <p class="store-name">Mariviles Graphic Studio</p>
                 <p>Adopted CO.</p>
                 <p>Mati City</p>
                 <br>
                 <p><strong>Receipt #:</strong> R-{{ str_pad($payment->payment_id, 5, '0', STR_PAD_LEFT) }}</p>
             </td>
-            <td style="width:40%; text-align:right;">
+
+            {{-- Right: Logo + RECEIPT title + meta --}}
+            <td style="width:40%; text-align:right; vertical-align:top;">
+                @if(file_exists($logoPath))
+                    <img src="{{ $logoPath }}"
+                         alt="MGS Logo"
+                         style="max-width:110px; max-height:55px; display:inline-block; margin-bottom:4px;">
+                @endif
                 <p class="receipt-title">RECEIPT</p>
                 <br>
                 <p><strong>Receipt Date:</strong> {{ $payment->payment_date }}</p>
