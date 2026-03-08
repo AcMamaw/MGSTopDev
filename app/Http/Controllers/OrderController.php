@@ -100,6 +100,11 @@ class OrderController extends Controller
                 // 0) Derive category_id from first item
                 $firstStockId   = $validated['items'][0]['stock_id'];
                 $firstInventory = Inventory::with(['product', 'stockin', 'deliveryDetail'])->find($firstStockId);
+                
+                if (!$firstInventory) {
+                    throw new \Exception("Inventory item with ID {$firstStockId} not found");
+                }
+                
                 $categoryId     = $firstInventory && $firstInventory->product
                                 ? $firstInventory->product->category_id
                                 : null;
@@ -135,33 +140,21 @@ class OrderController extends Controller
                 $change_amount = max($cash - $amount, 0);
                 $balance       = max($amount - $cash, 0);
 
-                if ($validated['product_type'] === 'stockin_id' && $cash < $amount) {
+                // FIXED: Check for ready-made items using product_type from inventory
+                $isReadyMade = $firstInventory->product_type === 'Ready Made';
+                
+                if ($isReadyMade && $cash < $amount) {
                     throw new \Exception('Full payment is required for Ready Made products!');
                 }
 
                 $paymentStatus = ($balance > 0) ? 'Partial' : 'Fully Paid';
 
                 // 3) Derive order product_type text
-                $orderProductTypeText = ($validated['product_type'] === 'stockin_id')
-                    ? 'Ready Made'
-                    : 'Customize Item';
-
-                if ($firstInventory) {
-                    if (!empty($firstInventory->product_type)) {
-                        $orderProductTypeText = $firstInventory->product_type;
-                    } else {
-                        if ($validated['product_type'] === 'stockin_id'
-                            && $firstInventory->stockin && !empty($firstInventory->stockin->type)) {
-                            $orderProductTypeText = $firstInventory->stockin->type;
-                        } elseif ($validated['product_type'] === 'deliverydetails_id'
-                            && $firstInventory->deliveryDetail && !empty($firstInventory->deliveryDetail->type)) {
-                            $orderProductTypeText = $firstInventory->deliveryDetail->type;
-                        }
-                    }
-                }
+                $orderProductTypeText = $firstInventory->product_type ?? 
+                    ($validated['product_type'] === 'stockin_id' ? 'Ready Made' : 'Customize Item');
 
                 $orderStatus = 'Pending';
-                if ($validated['product_type'] === 'stockin_id' && $paymentStatus === 'Fully Paid') {
+                if ($isReadyMade && $paymentStatus === 'Fully Paid') {
                     $orderStatus = 'Completed';
                 }
 
@@ -177,8 +170,6 @@ class OrderController extends Controller
                 ]);
 
                 // 5) Create OrderDetails and handle stock
-                $selectedType = $validated['product_type'] === 'stockin_id' ? 'ready' : 'custom';
-
                 foreach ($validated['items'] as $it) {
                     $stockId       = $it['stock_id'];
                     $quantity      = (int) $it['quantity'];
@@ -193,10 +184,10 @@ class OrderController extends Controller
                         throw new \Exception("Stock item not found: {$stockId}");
                     }
 
-                    $stockType = $this->mapInventoryType($inventory->product_type);
-                    if ($stockType !== $selectedType) {
-                        $expectedText = $selectedType === 'custom' ? 'Customized item' : 'Ready Made item';
-                        throw new \Exception("Selected product '{$inventory->product->product_name}' is not a {$expectedText}");
+                    // FIXED: Check if inventory type matches the selected product type
+                    $expectedType = $validated['product_type'] === 'stockin_id' ? 'Ready Made' : 'Customize Item';
+                    if ($inventory->product_type !== $expectedType) {
+                        throw new \Exception("Selected product '{$inventory->product->product_name}' is not a {$expectedType}");
                     }
 
                     $lineProfit = $profitPerUnit * $quantity + $custom_amount;
@@ -213,8 +204,8 @@ class OrderController extends Controller
                         'profit'        => $lineProfit,
                     ]);
 
-                    // For Ready Made: update inventory and create stockout, now storing product_type and size
-                    if ($validated['product_type'] === 'stockin_id') {
+                    // For Ready Made: update inventory and create stockout
+                    if ($inventory->product_type === 'Ready Made') {
                         if ($inventory->current_stock < $quantity) {
                             throw new \Exception("Insufficient stock for: {$inventory->product->product_name}. Available: {$inventory->current_stock}, Requested: {$quantity}");
                         }
@@ -222,10 +213,6 @@ class OrderController extends Controller
                         $inventory->current_stock -= $quantity;
                         $inventory->last_updated   = now();
                         $inventory->save();
-
-                        // Decide what product_type to store on stockout
-                        $productTypeForStockout = $inventory->product_type
-                            ?? $orderProductTypeText; // fallback to order text
 
                         Stockout::create([
                             'stock_id'      => $stockId,
@@ -236,9 +223,7 @@ class OrderController extends Controller
                                             $order->customer->fname . ' ' . $order->customer->lname,
                             'status'        => 'Completed',
                             'approved_by'   => null,
-
-                            // NEW FIELDS YOU ASKED FOR:
-                            'product_type'  => $productTypeForStockout,
+                            'product_type'  => $inventory->product_type,
                             'size'          => $size,
                         ]);
                     }
@@ -280,7 +265,7 @@ class OrderController extends Controller
             ], 500);
         }
     }
-
+    
     public function storeCustomer(Request $request)
     {
         $validated = $request->validate([
