@@ -15,9 +15,9 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\ProductController; 
-use App\Http\Controllers\RequestController; 
-use App\Http\Controllers\CategoryController; 
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\RequestController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\JoborderController;
 use App\Http\Controllers\FileUploadController;
 
@@ -61,7 +61,6 @@ Route::middleware('auth')->group(function () {
             ->name('joborders.joborder-history');
         Route::get('/joborders/{joborderId}', [JoborderController::class, 'show'])
             ->name('joborders.show');
-
         Route::post('/joborders/{orderId}/pick', [JoborderController::class, 'pickJobOrder'])
             ->name('joborders.pick');
         Route::post('/joborders/{orderId}/done', [JoborderController::class, 'doneJobOrder'])
@@ -73,10 +72,8 @@ Route::middleware('auth')->group(function () {
             ->name('stock-adjustments.approve');
 
         Route::get('/reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
-        Route::post('reports/save-receipt', [ReportController::class, 'saveReceipt'])->name('reports.saveReceipt');
-
+        Route::post('/reports/save-receipt', [ReportController::class, 'saveReceipt'])->name('reports.saveReceipt');
         Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
-
         Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
         Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
     });
@@ -160,13 +157,16 @@ Route::middleware('auth')->group(function () {
     // --------------------------
     // Payments
     // --------------------------
-    Route::post('/payments/update', [OrderController::class, 'updatePayment'])->name('payments.update');
-
-    // ← MOVED HERE: outside maincontent prefix so URL is /payments/{id}/receipt-pdf
+    Route::post('/payments/update', [OrderController::class, 'updatePayment'])->name('payments.process');
     Route::get('/payments/{paymentId}/receipt-pdf', [OrderController::class, 'generateReceiptPdf'])
         ->name('payments.receipt-pdf');
+
+    // --------------------------
+    // Reports PDF
+    // --------------------------
     Route::post('/reports/{report}/pdf', [ReportController::class, 'generateReportPdf'])
         ->name('reports.pdf');
+
     // --------------------------
     // Auth Users
     // --------------------------
@@ -174,7 +174,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:Admin')->name('auth.users.store');
 
     // --------------------------
-    // Archive
+    // Archive / Unarchive / Delete
     // --------------------------
     Route::put('/categories/{category}/archive', [CategoryController::class, 'archive'])->name('categories.archive');
     Route::put('/categories/{category}/unarchive', [CategoryController::class, 'unarchive'])->name('categories.unarchive');
