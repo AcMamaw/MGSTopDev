@@ -408,7 +408,6 @@ function productPage() {
             reader.readAsDataURL(file);
         },
 
-        // ✅ FIXED uploadImage() — handles errors, shows toast, no more 500 silent fail
         uploadImage() {
             if (!this.imageProductId || !this.imageFile) {
                 alert('Please choose an image file first.');
@@ -418,27 +417,34 @@ function productPage() {
             const formData = new FormData();
             formData.append('image', this.imageFile);
 
-            // Disable upload button while uploading
             const uploadBtn = document.getElementById('upload-image-btn');
             if (uploadBtn) {
                 uploadBtn.disabled = true;
                 uploadBtn.textContent = 'Uploading...';
             }
 
-            fetch('{{ route("products.updateImage", 0) }}'.replace('/0', '/' + this.imageProductId), {
+            // ✅ FIXED: use direct URL path instead of fragile .replace() trick
+            fetch(`/management/products/${this.imageProductId}/image`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    // ✅ NO Content-Type header — browser sets it automatically for FormData
                 },
                 body: formData
             })
             .then(res => {
-                // ✅ Check HTTP status before parsing JSON
                 if (!res.ok) {
-                    return res.json().then(errData => {
-                        throw new Error(errData.message || 'Server error ' + res.status);
-                    }).catch(() => {
-                        throw new Error('Server returned error ' + res.status + '. Check Laravel logs.');
+                    return res.text().then(text => {
+                        // Handle HTML responses (like redirects) gracefully
+                        let msg = 'Server error ' + res.status;
+                        try {
+                            const json = JSON.parse(text);
+                            msg = json.message || msg;
+                        } catch (e) {
+                            // Response was HTML (e.g. 302 redirect or 419 page)
+                            msg = 'Server returned ' + res.status + ' — session may have expired. Please refresh the page.';
+                        }
+                        throw new Error(msg);
                     });
                 }
                 return res.json();
@@ -448,7 +454,7 @@ function productPage() {
                     throw new Error(p.message || 'Upload failed');
                 }
 
-                // ✅ Update the row's image_path dataset
+                // Update the row's image_path dataset
                 const tbody = document.getElementById('product-table-body');
                 if (tbody) {
                     const row = Array.from(tbody.querySelectorAll('tr'))
@@ -460,7 +466,6 @@ function productPage() {
 
                 this.closeImageModal();
 
-                // ✅ Show green toast instead of alert
                 this.toastMessage = 'Product image updated successfully!';
                 this.showToast = true;
                 setTimeout(() => { this.showToast = false; }, 3000);
@@ -470,7 +475,6 @@ function productPage() {
                 alert('Upload failed: ' + err.message);
             })
             .finally(() => {
-                // Re-enable button
                 if (uploadBtn) {
                     uploadBtn.disabled = false;
                     uploadBtn.textContent = 'Upload & Save';
@@ -748,6 +752,36 @@ productSearchInput.addEventListener('input', applyProductSearch);
 
 // initialize on load
 updateProductPagination();
+</script>
+
+<script>
+function markArchive(button) {
+    if (!confirm('Are you sure you want to archive this product?')) return;
+
+    const row = button.closest('tr');
+    if (!row) return;
+
+    const id = row.dataset.id;
+
+    fetch('{{ route("products.archive", ":id") }}'.replace(':id', id), {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            archive: 'Archived'
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert('Product archived successfully!');
+        location.reload();
+    })
+    .catch(() => {
+        alert('Failed to archive product. Please try again.');
+    });
+}
 </script>
 
 <script>
