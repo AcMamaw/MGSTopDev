@@ -59,8 +59,8 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 
-Deployment 
-Documentation 
+## Deployment Documentation 
+
 Cloud Deployment Guide 
  
 This document describes the deployment architecture and step-by-step 
@@ -119,10 +119,10 @@ Go to AWS Console → EC2 → Launch Instance
  
 Go to EC2 → Security Groups → Edit Inbound Rules 
  
-TYPE PORT SOURCE 
-SSH 22 MY IP 
-HTTP 80 0.0.0.0/0 
-HTTPS 443 0.0.0.0/0 
+TYPE   |   PORT    |   SOURCE 
+SSH    |    22     |    MY IP 
+HTTP   |    80     |  0.0.0.0/0 
+HTTPS  |    443    |  0.0.0.0/0 
  
  
  
@@ -156,13 +156,6 @@ Bash:
  - sudo apt update && sudo apt upgrade -y 
  
  
- 
- 
- 
- 
- 
- 
- 
 Step 2: Install PHP 8.2 and Extensions 
  
 Bash: 
@@ -192,6 +185,7 @@ Verify Installation
 Bash: - php -v - nginx -v - composer --version - git --version 
  
  
+
  
 5. Clone and Configure Laravel App 
  
@@ -215,8 +209,7 @@ APP_KEY=base64:vPm8a2Quxtw15R+ij+5cFTchuASlm5A2o/H5VxjbBS8=
 APP_DEBUG=false 
 APP_URL=http://3.106.132.231 
 DB_CONNECTION=mysql 
-DB_HOST=mgstopdev-db2.cdqqyk0q8x8z.ap-southeast-2.rds.amazonaws.co
-m 
+DB_HOST=mgstopdev-db2.cdqqyk0q8x8z.ap-southeast-2.rds.amazonaws.com 
 DB_PORT=3306 
 DB_DATABASE=mgsdb 
 DB_USERNAME=admin 
@@ -237,6 +230,9 @@ QBrMu5yY@dlhcczwfz
 FILESYSTEM_DISK=s3 
 QUEUE_CONNECTION=database 
 CACHE_STORE=database 
+
+
+
 6. Set Permissions and Run Migrations 
 Step 1: Set File Permissions 
 Bash: - - - - 
@@ -255,6 +251,9 @@ Bash: - - -
 php artisan config:cache 
 php artisan route:cache 
 php artisan view:cache 
+
+
+
 7. Configure Nginx Web Server 
 Step 1: Create Nginx Config 
 Bash: - 
@@ -301,15 +300,6 @@ Step 1: Create S3 Bucket
 ●  Set region to ap-southeast-2 
 ●  Keep Block Public Access enabled (private bucket) 
  
- 
- 
- 
- 
- 
- 
- 
- 
- 
 Step 2: Create IAM User with S3 Policy 
  
 1. Go to IAM → Users → Create User 
@@ -340,7 +330,7 @@ In config/filesystems.php the s3 driver is already configured.
 Set FILESYSTEM_DISK=s3 in .env to use S3 as default storage. 
  
  
- 
+
 9. Deploying Updates 
  
 After pushing changes to GitHub, SSH into EC2 and run: 
@@ -349,24 +339,22 @@ Bash:
  - cd /var/www/mgs - git pull origin main - composer install --no-dev --optimize-autoloader - php artisan migrate --force - php artisan config:cache - php artisan route:cache - php artisan view:cache - sudo chown -R www-data:www-data storage bootstrap/cache 
  
  
- 
 This ensures the latest code is deployed without downtime. 
- 
- 
- 
- 
+
  
 Deployment Summary 
  
  
-SERVICE  STATUS DETAILS 
-EC2 Instance Live Ubuntu 24.04, t3.micro 
-Nginx Running Port 80 
-PHP-FPM Running PHP 8.2 
-RDS Connected MariaDB 
-S3 Connected PDF report storage 
-Cloudinary Connected Product image CDN 
-SES Connected Email sending 
+SERVICE       |      STATUS        |         DETAILS 
+EC2 Instance  |       Live         | Ubuntu 24.04, t3.micro 
+Nginx         |      Running       |         Port 80              
+PHP-FPM       |      Running       |         PHP 8.2 
+RDS           |     Connected      |         MariaDB 
+S3            |     Connected      |    PDF report storage 
+Cloudinary    |     Connected      |    Product image CDN 
+SES           |     Connected      |      Email sending 
+
+
  
 Live URL: http://3.106.132.231 
 GitHub Repository: https://github.com/AcMamaw/MGSTopDev
