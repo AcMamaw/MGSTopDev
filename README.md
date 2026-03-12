@@ -237,6 +237,10 @@ QUEUE_CONNECTION=database
 CACHE_STORE=database 
 
 
+SECURITY NOTE: AWS Credentials and IAM Role
+AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are intentionally left empty. The EC2 instance (mgs-server) has an IAM Role (mgs-ec2-s3-role) attached directly to it with AmazonS3FullAccess policy. The Laravel AWS SDK automatically uses the IAM Role credentials — no hardcoded keys are needed. This follows the Principle of Least Privilege and is the recommended AWS security best practice.
+
+
 
 6. Set Permissions and Run Migrations 
 Step 1: Set File Permissions 
