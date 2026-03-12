@@ -339,8 +339,61 @@ In config/filesystems.php the s3 driver is already configured.
 Set FILESYSTEM_DISK=s3 in .env to use S3 as default storage. 
  
  
+9. Configure AWS RDS MariaDB Database
 
-9. Deploying Updates 
+Step 1: Create RDS Instance
+Go to AWS Console, open RDS, and click Create Database
+Select Standard Create, choose MariaDB, and select Free Tier
+Set DB identifier to mgstopdev-db2, username to admin, password to MGSAdmin2025
+Choose db.t3.micro, set storage to 20 GB, and set Public Access to No
+
+Step 2: Configure Security Group for RDS
+Go to EC2, select Security Groups, and edit inbound rules
+Add MySQL rule on port 3306 with source set to EC2 security group ID only
+
+Step 3: Get RDS Endpoint
+Go to RDS, click the instance, and copy the endpoint
+Set mgstopdev-db2.cdqqyk0q8x8z.ap-southeast-2.rds.amazonaws.com as DB_HOST in .env
+
+
+10. Configure EC2 IAM Role for S3 Access
+
+Step 1: Create IAM Role
+Go to IAM, click Roles, then Create Role
+Select AWS Service, choose EC2, and attach AmazonS3FullAccess policy
+Name the role mgs-ec2-s3-role and click Create Role
+
+Step 2: Attach Role to EC2 Instance
+Go to EC2, select mgs-server, click Actions, Security, then Modify IAM Role
+Select mgs-ec2-s3-role and click Update IAM Role
+
+Step 3: Remove AWS Keys from .env
+SSH into EC2 and go to cd /var/www/mgs
+Run sed -i to empty AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+Run php artisan config:clear and php artisan config:cache
+
+
+11. Configure HTTPS with Self-Signed SSL Certificate
+
+Step 1: Generate SSL Certificate
+SSH into EC2 and run the openssl command to generate a self-signed SSL certificate valid for 365 days
+Certificate saved to /etc/ssl/certs/mgs-selfsigned.crt
+Private key saved to /etc/ssl/private/mgs-selfsigned.key
+
+Step 2: Update Nginx Configuration for HTTPS
+Run sudo tee to overwrite the Nginx config with two server blocks
+First block listens on port 80 and redirects all HTTP traffic to HTTPS
+Second block listens on port 443 with ssl_certificate and ssl_certificate_key pointing to the generated files
+Run sudo nginx -t to verify the configuration has no errors
+
+Step 3: Update APP_URL and Restart Services
+Run sed -i to update APP_URL from http://16.176.29.94 to https://16.176.29.94 in .env
+Run php artisan config:clear and php artisan config:cache to apply changes
+Run sudo systemctl restart nginx and sudo systemctl restart php8.2-fpm
+Verify at https://16.176.29.94  HTTP now automatically redirects to HTTPS
+
+
+12. Deploying Updates 
  
 After pushing changes to GitHub, SSH into EC2 and run: 
  
