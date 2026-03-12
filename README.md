@@ -131,7 +131,7 @@ HTTPS  |    443    |  0.0.0.0/0
 Option A: From Windows Terminal 
  
 Bash: 
- - ssh -i mgs-key.pem ubuntu@3.106.132.231 - http://3.106.132.231 
+ - ssh -i mgs-key.pem ubuntu@16.176.29.94 - http://16.176.29.94 
  
  
 Option B: From AWS CloudShell (Recommended) 
@@ -143,7 +143,7 @@ Option B: From AWS CloudShell (Recommended)
 Bash: 
  
        -     chmod 400 mgs-key.pem 
-       -     ssh -i mgs-key.pem ubuntu@3.106.132.231 
+       -     ssh -i mgs-key.pem ubuntu@16.176.29.94 
  
  
  
@@ -212,7 +212,7 @@ APP_NAME=Laravel
 APP_ENV=production 
 APP_KEY=base64:vPm8a2Quxtw15R+ij+5cFTchuASlm5A2o/H5VxjbBS8= 
 APP_DEBUG=false 
-APP_URL=http://3.106.132.231 
+APP_URL=http://16.176.29.94 
 DB_CONNECTION=mysql 
 DB_HOST=mgstopdev-db2.cdqqyk0q8x8z.ap-southeast-2.rds.amazonaws.com 
 DB_PORT=3306 
@@ -273,7 +273,7 @@ Paste this configuration:
 Code: 
     server { 
         listen 80; 
-        server_name 3.106.132.231; 
+        server_name 16.176.29.94; 
         root /var/www/mgs/public; 
         index index.php index.html; 
         location / { 
@@ -296,7 +296,7 @@ Bash:
  - sudo ln -s /etc/nginx/sites-available/mgs /etc/nginx/sites-enabled/ - sudo rm /etc/nginx/sites-enabled/default - sudo nginx -t - sudo systemctl restart nginx - sudo systemctl restart php8.2-fpm 
  
  
-Now: http://3.106.132.231 → Nginx → Laravel App (MGS POS System) 
+Now: http://16.176.29.94 → Nginx → Laravel App (MGS POS System) 
  
  
  
@@ -365,5 +365,5 @@ SES           |     Connected      |      Email sending
 
 
  
-Live URL: http://3.106.132.231 
+Live URL: http://16.176.29.94 
 GitHub Repository: https://github.com/AcMamaw/MGSTopDev
