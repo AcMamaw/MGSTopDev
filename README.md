@@ -195,13 +195,18 @@ Bash:
  - cd /var/www - sudo git clone https://github.com/AcMamaw/MGSTopDev.git mgs - sudo chown -R ubuntu:ubuntu /var/www/mgs - cd /var/www/mgs 
  
 Step 2: Install Dependencies 
+
 Bash: - 
 composer install --no-dev --optimize-autoloader 
+
 Step 3: Configure Environment 
+
 Bash: - - - 
 cp .env.example .env 
 php artisan key:generate 
 nano .env 
+
+
 Key .ENV values to set: 
 APP_NAME=Laravel 
 APP_ENV=production 
